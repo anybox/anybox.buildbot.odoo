@@ -39,6 +39,10 @@ The extracts are examples
 
   ln -s ../anybox.buildbot.openerp/buildouts .
 
+* Put a ``slaves.cfg`` file in the master directory.
+  See ``slaves.cfg.sample`` for instructions. This file should not be
+  versionned with the utilities.
+
 Slave setup
 ===========
 

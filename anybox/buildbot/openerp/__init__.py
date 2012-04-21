@@ -1,19 +1,54 @@
 """Provides utilities to be imported from the master.cfg"""
+
+from ConfigParser import ConfigParser
 from buildbot.buildslave import BuildSlave
 from buildbot.config import BuilderConfig
 
 BUILDMASTER_DIR = '' # monkey patched with actual value from master.cfg
+
+BUILDSLAVE_KWARGS = ('max_builds',)
+BUILDSLAVE_REQUIRED = ('password', 'pg_version',)
 
 def make_slaves(conf_path):
     """Create the slave objects from the file at conf_path.
 
     ``conf_path`` is interpreted relative from BUILDMASTER_DIR. It can of
     course be an absolute path.
-    For now, this function is a hardcoded mock-up. The conf_path is ignored.
+
+    The configuration file is in INI format. There's one section per slave,
+    The section name is the slave name.
+    The password must be specified as 'password'
+    Other values either go to slave properties, unless they are from the
+    BUILDSLAVE_KWARGS constant, in which case they are used directly in
+    instantiation keyword arguments.
+
+    There is for now no limitation on which properties can be set.
     """
+    parser = ConfigParser()
+    parser.read(conf_path)
+    slaves = []
+    for slavename in parser.sections():
+        kw = {}
+        kw['properties'] = props = {}
+        seen = set()
+        for key, value in parser.items(slavename):
+            seen.add(key)
+            if key in ('passwd', 'password'):
+                pwd = value
+            elif key in BUILDSLAVE_KWARGS:
+                kw[key] = value
+            else:
+                props[key] = value
 
-    return [BuildSlave('local', 'local', properties=dict(pg_version='8.4'))]
+        for option in BUILDSLAVE_REQUIRED:
+            if option not in seen:
+                logger.error("Buildslave %r lacks option %r. Ignored.",
+                             slavename, option)
+                break
+        else:
+            slaves.append(BuildSlave(slavename, pwd, **kw))
 
+    return slaves
 
 def make_builders(master_config=None, build_factories=None):
     """Create builders from build factories using the whole buildmaster config.

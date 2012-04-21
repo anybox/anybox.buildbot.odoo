@@ -1,0 +1,16 @@
+# Each section is a slave name
+# A closed list of options turns into slaves parameters
+# the others go in build properties
+
+[purity.anybox.eu]
+# required
+password = purity
+pg_version = 9.1
+
+# optional parameters
+max_builds = 2
+notify_on_missing = 'joe@example.com'
+
+# optional build properties
+pg_port = 5433
+
