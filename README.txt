@@ -62,7 +62,11 @@ There is a package for debian-based system that installs them all.
 
 Registration
 ------------
-Have your slave registered to the master admin.
+Have your slave registered to the master admin, specifying your
+version of PostgreSQL (e.g, 8.4, 9.0)
+
+If you happen to have several available versions of PostgreSQL on the
+same host, please make one slave for each one.
 
 .. Emacs
 .. Local Variables:
