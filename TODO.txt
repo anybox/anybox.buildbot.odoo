@@ -13,8 +13,6 @@ Later improvements
   ``openerp-downloads-directory``. That'd solve concurrency issues
   between different slaves.
 
-* EASY: use bzr shared repository (per-builder ? per-slave ?)
-
 * have the slaves retrieve ``build_utils`` directly from VCS. This
   will probably complicate the scheduling setup.
 

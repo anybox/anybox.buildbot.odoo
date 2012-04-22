@@ -98,6 +98,12 @@ def make_factory(name, cfg_path):
     """
 
     factory = BuildFactory()
+    factory.addStep(ShellCommand(command=['bzr', 'init-repo', '..'],
+                                 name="bzr repo",
+                                 description="init bzr repo",
+                                 flunkOnFailure=False,
+                                 warnOnFailure=False,
+                                 ))
     factory.addStep(FileDownload(mastersrc='buildouts/bootstrap.py',
                                  slavedest='bootstrap.py'))
     factory.addStep(FileDownload(mastersrc=cfg_path,
