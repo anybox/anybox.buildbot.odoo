@@ -34,15 +34,15 @@ The extracts are examples
   cd master
   ln -s ../anybox.buildbot.openerp/master.cfg .
 
-* Same with the provided buildouts. A later version may be able to
-  parse your custom tailored buildouts directory. For now it's::
-
-  ln -s ../anybox.buildbot.openerp/buildouts .
-
-* Same with build utilities. A later version may use a VCS step to
+* Copy or link build utilities. A later version may use a VCS step to
   retrieve them from the slave::
 
   ln -s ../anybox.buildbot.openerp/build_utils .
+
+* Use the provided buildouts or make your own (check
+  buildouts/MANIFEST.cfg for an example on how to do that)::
+
+  ln -s ../anybox.buildbot.openerp/buildouts .
 
 * Put a ``slaves.cfg`` file in the master directory.
   See ``slaves.cfg.sample`` for instructions. This file should not be
