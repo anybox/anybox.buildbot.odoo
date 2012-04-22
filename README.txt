@@ -39,6 +39,11 @@ The extracts are examples
 
   ln -s ../anybox.buildbot.openerp/buildouts .
 
+* Same with build utilities. A later version may use a VCS step to
+  retrieve them from the slave::
+
+  ln -s ../anybox.buildbot.openerp/build_utils .
+
 * Put a ``slaves.cfg`` file in the master directory.
   See ``slaves.cfg.sample`` for instructions. This file should not be
   versionned with the utilities.

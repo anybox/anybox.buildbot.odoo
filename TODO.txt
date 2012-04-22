@@ -2,3 +2,8 @@
   ``openerp-downloads-directory``. That'd solve concurrency issues
   between different slaves.
 
+* have the slaves retrieve ``build_utils`` directly from VCS. This
+  will probably complicate the scheduling setup.
+
+* EASY: use (also) test log analyzer and test launching commands from
+  openerp-runbot.
