@@ -118,11 +118,15 @@ def make_factory(name, cfg_path):
     factory.addStep(ShellCommand(command=[
                 'bin/buildout',
                 'buildout:eggs-directory=%s/eggs' % cache,
-                'buildout:openerp-downloads-directory=%s/openerp' % cache
+                'buildout:openerp-downloads-directory=%s/openerp' % cache,
+                WithProperties('openerp:db_port=%(pg_port:-5432)s'),
                 ],
+                                 name="buildout",
+                                 description="buildout",
                                  timeout=3600*4,
                                  haltOnFailure=True,
-                                 locks=[buildout_lock.access('exclusive')]))
+                                 locks=[buildout_lock.access('exclusive')]
+                                 ))
 
     factory.addStep(SetProperty(
             property='testing_db',
