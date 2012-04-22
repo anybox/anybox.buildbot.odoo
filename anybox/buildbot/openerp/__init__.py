@@ -4,10 +4,26 @@ from ConfigParser import ConfigParser
 from buildbot.buildslave import BuildSlave
 from buildbot.config import BuilderConfig
 
+from buildbot import locks
+from buildbot.process.factory import BuildFactory
+from buildbot.steps.shell import ShellCommand
+from buildbot.steps.shell import SetProperty
+from buildbot.steps.transfer import FileDownload
+from buildbot.process.properties import WithProperties
+from buildbot.process.properties import Property
+
 BUILDMASTER_DIR = '' # monkey patched with actual value from master.cfg
 
 BUILDSLAVE_KWARGS = ('max_builds',)
 BUILDSLAVE_REQUIRED = ('password', 'pg_version',)
+
+BUILD_FACTORIES = {} # registry of named build factories
+
+# Running buildouts in parallel on one slave fails
+# if they used shared eggs or downloads area
+buildout_lock = locks.SlaveLock("buildout")
+
+PGCLUSTER = WithProperties('%(pg_version)s/%(pg_cluster:-main)s')
 
 def make_slaves(conf_path):
     """Create the slave objects from the file at conf_path.
@@ -50,7 +66,74 @@ def make_slaves(conf_path):
 
     return slaves
 
-def make_builders(master_config=None, build_factories=None):
+def register_build_factories(manifest_path, registry=BUILD_FACTORIES):
+    """Register a build factory per buildout listed in file at manifest_path.
+
+    manifest_path is interpreted relative to the master dir.
+    For now, only *standalone* buildouts are taken into account, meaning that
+    they are entirely described in one cfg file.
+
+    For easy inclusion of project-specific layouts, we might in the future
+    introduce directory buildouts and even VCS buildouts. For now, developers
+    have to contribute a single file meant for the buildbot.
+    """
+    # TODO actual parsing/looping
+    registry['openerp-6.1'] = make_factory('openerp-6.1', 'buildouts/6.1.cfg')
+
+def make_factory(name, cfg_path):
+    """Return a build factory using name and buildout config at cfg_path.
+
+    cfg_path is relative to the master directory.
+    the factory name is also used as testing database suffix
+    """
+
+    factory = BuildFactory()
+    factory.addStep(FileDownload(mastersrc='buildouts/bootstrap.py',
+                                slavedest='bootstrap.py'))
+    factory.addStep(FileDownload(mastersrc=cfg_path,
+                                slavedest='buildout.cfg'))
+    factory.addStep(FileDownload(mastersrc='build_utils/analyze_oerp_tests.py',
+                                slavedest='analyze_oerp_tests.py'))
+    factory.addStep(ShellCommand(command=['python', 'bootstrap.py']))
+    factory.addStep(ShellCommand(command=['bin/buildout'],
+                                locks=[buildout_lock.access('exclusive')]))
+    factory.addStep(SetProperty(
+            property='testing_db',
+            command=WithProperties(
+                "echo %(db_prefix:-openerb-buildbot)s-" + name)))
+
+    factory.addStep(ShellCommand(command=["dropdb", Property('testing_db')],
+                                name='dropdb',
+                                description=["dropdb", Property('testing_db')],
+                                env=dict(PGCLUSTER=PGCLUSTER),
+                                flunkOnFailure=False))
+    factory.addStep(ShellCommand(command=["createdb", Property('testing_db')],
+                                name='createdb',
+                                description=["createdb",
+                                             Property('testing_db')],
+                                env=dict(PGCLUSTER=PGCLUSTER),
+                                ))
+
+    factory.addStep(ShellCommand(command=[
+                'bin/start_openerp', '-i', 'all',
+                '--stop-after-init',
+                '--log-level=test', '-d', Property('testing_db'),
+                # openerp --logfile does not work with relative paths !
+                WithProperties('--logfile=%(workdir)s/build/test.log')],
+                                name='testing',
+                                description='ran tests',
+                                logfiles=dict(test='test.log'),
+                                ))
+
+    factory.addStep(ShellCommand(
+       command=["python", "analyze_oerp_tests.py", "test.log"],
+       name='analyze',
+       description="analyze",
+    ))
+
+    return factory
+
+def make_builders(master_config=None, build_factories=BUILD_FACTORIES):
     """Create builders from build factories using the whole buildmaster config.
 
     build_factories is a dict names -> build_factories
@@ -64,7 +147,6 @@ def make_builders(master_config=None, build_factories=None):
 
     # they are kwarg for the sake of expliciteness
     assert master_config is not None
-    assert build_factories is not None
 
     slaves = master_config['slaves']
 
