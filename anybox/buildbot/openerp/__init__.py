@@ -115,10 +115,16 @@ def make_factory(name, cfg_path):
                                  ))
 
     cache = '../../buildout-caches'
+    eggs_cache = cache + '/eggs'
+    openerp_cache = cache + '/openerp'
+    factory.addStep(ShellCommand(command=['mkdir', '-p',
+                                          eggs_cache, openerp_cache],
+                                 name="cachedirs",
+                                 description="prepare cache dirs"))
     factory.addStep(ShellCommand(command=[
                 'bin/buildout',
-                'buildout:eggs-directory=%s/eggs' % cache,
-                'buildout:openerp-downloads-directory=%s/openerp' % cache,
+                'buildout:eggs-directory=' + eggs_cache,
+                'buildout:openerp-downloads-directory=' + openerp_cache,
                 WithProperties('openerp:db_port=%(pg_port:-5432)s'),
                 ],
                                  name="buildout",
