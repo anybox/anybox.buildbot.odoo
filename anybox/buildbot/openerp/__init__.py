@@ -99,11 +99,11 @@ def make_factory(name, cfg_path):
 
     factory = BuildFactory()
     factory.addStep(FileDownload(mastersrc='buildouts/bootstrap.py',
-                                slavedest='bootstrap.py'))
+                                 slavedest='bootstrap.py'))
     factory.addStep(FileDownload(mastersrc=cfg_path,
-                                slavedest='buildout.cfg'))
+                                 slavedest='buildout.cfg'))
     factory.addStep(FileDownload(mastersrc='build_utils/analyze_oerp_tests.py',
-                                slavedest='analyze_oerp_tests.py'))
+                                 slavedest='analyze_oerp_tests.py'))
     factory.addStep(ShellCommand(command=['python', 'bootstrap.py'],
                                  haltOnFailure=True,
                                  ))
@@ -117,17 +117,17 @@ def make_factory(name, cfg_path):
                 "echo %(db_prefix:-openerb-buildbot)s-" + name)))
 
     factory.addStep(ShellCommand(command=["dropdb", Property('testing_db')],
-                                name='dropdb',
-                                description=["dropdb", Property('testing_db')],
-                                env=dict(PGCLUSTER=PGCLUSTER),
-                                flunkOnFailure=False))
+                                 name='dropdb',
+                                 description=["dropdb", Property('testing_db')],
+                                 env=dict(PGCLUSTER=PGCLUSTER),
+                                 flunkOnFailure=False))
     factory.addStep(ShellCommand(command=["createdb", Property('testing_db')],
-                                name='createdb',
-                                description=["createdb",
-                                             Property('testing_db')],
-                                env=dict(PGCLUSTER=PGCLUSTER),
+                                 name='createdb',
+                                 description=["createdb",
+                                              Property('testing_db')],
+                                 env=dict(PGCLUSTER=PGCLUSTER),
                                  haltOnFailure=True,
-                                ))
+                                 ))
 
     factory.addStep(ShellCommand(command=[
                 'bin/start_openerp', '-i', 'all',
@@ -135,17 +135,17 @@ def make_factory(name, cfg_path):
                 '--log-level=test', '-d', Property('testing_db'),
                 # openerp --logfile does not work with relative paths !
                 WithProperties('--logfile=%(workdir)s/build/test.log')],
-                                name='testing',
-                                description='ran tests',
-                                logfiles=dict(test='test.log'),
+                                 name='testing',
+                                 description='ran tests',
+                                 logfiles=dict(test='test.log'),
                                  haltOnFailure=True,
-                                ))
+                                 ))
 
     factory.addStep(ShellCommand(
-       command=["python", "analyze_oerp_tests.py", "test.log"],
-       name='analyze',
-       description="analyze",
-    ))
+            command=["python", "analyze_oerp_tests.py", "test.log"],
+            name='analyze',
+            description="analyze",
+            ))
 
     return factory
 
