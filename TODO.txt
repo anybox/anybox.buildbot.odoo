@@ -1,0 +1,4 @@
+* EASY: automatically run buildouts with slave-level ``eggs-directory`` and
+  ``openerp-downloads-directory``. That'd solve concurrency issues
+  between different slaves.
+
