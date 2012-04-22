@@ -1,4 +1,5 @@
 """Provides utilities to be imported from the master.cfg"""
+import os
 
 from ConfigParser import ConfigParser
 from buildbot.buildslave import BuildSlave
@@ -77,8 +78,17 @@ def register_build_factories(manifest_path, registry=BUILD_FACTORIES):
     introduce directory buildouts and even VCS buildouts. For now, developers
     have to contribute a single file meant for the buildbot.
     """
-    # TODO actual parsing/looping
-    registry['openerp-6.1'] = make_factory('openerp-6.1', 'buildouts/6.1.cfg')
+    parser = ConfigParser()
+    parser.read(os.path.join(BUILDMASTER_DIR, manifest_path))
+
+    for name in parser.sections():
+        buildout = parser.get(name, 'buildout').split()
+        btype = buildout[0]
+        if btype != 'standalone':
+            raise ValueError("Buildout type %r in %r not supported" % (
+                    btype, name))
+
+        registry[name] = make_factory(name, buildout[1])
 
 def make_factory(name, cfg_path):
     """Return a build factory using name and buildout config at cfg_path.
@@ -145,7 +155,7 @@ def make_builders(master_config=None, build_factories=BUILD_FACTORIES):
     To demonstrate, for now, we iterate on pg_version
     """
 
-    # they are kwarg for the sake of expliciteness
+    # this parameter is passed as kwarg for the sake of expliciteness
     assert master_config is not None
 
     slaves = master_config['slaves']

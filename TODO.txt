@@ -1,11 +1,9 @@
 Required for actual use
 -----------------------
 
-* Automatic spawning of build factories from a list of buildouts
-  and/or a master configuration file (``buildouts-manifest.cfg``)
-* Scheduler to watch VCS systems from the master configuration file or maybe
-  the buildout themselves (check if openerp-runbot does launchpad
-  polling).
+* Scheduler to watch VCS systems according to conf in buildouts
+  MANIFEST or maybe the buildout themselves (check if openerp-runbot
+  does indeed launchpad polling).
 
 
 Later improvements
@@ -14,6 +12,8 @@ Later improvements
 * EASY: automatically run buildouts with slave-level ``eggs-directory`` and
   ``openerp-downloads-directory``. That'd solve concurrency issues
   between different slaves.
+
+* EASY: use bzr shared repository (per-builder ? per-slave ?)
 
 * have the slaves retrieve ``build_utils`` directly from VCS. This
   will probably complicate the scheduling setup.
