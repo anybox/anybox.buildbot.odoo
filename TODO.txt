@@ -1,3 +1,16 @@
+Required for actual use
+-----------------------
+
+* Automatic spawning of build factories from a list of buildouts
+  and/or a master configuration file (``buildouts-manifest.cfg``)
+* Scheduler to watch VCS systems from the master configuration file or maybe
+  the buildout themselves (check if openerp-runbot does launchpad
+  polling).
+
+
+Later improvements
+------------------
+
 * EASY: automatically run buildouts with slave-level ``eggs-directory`` and
   ``openerp-downloads-directory``. That'd solve concurrency issues
   between different slaves.
