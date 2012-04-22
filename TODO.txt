@@ -9,10 +9,6 @@ Required for actual use
 Later improvements
 ------------------
 
-* EASY: automatically run buildouts with slave-level ``eggs-directory`` and
-  ``openerp-downloads-directory``. That'd solve concurrency issues
-  between different slaves.
-
 * MEDIUM: provide options in MANIFEST.cfg to limit buildouts to some
   PG versions, to ease the load due to useless cases (known
   incompatibilites don't have to be tried over and over; some PG

@@ -88,21 +88,16 @@ Have your slave registered to the master admin, specifying your
 version of PostgreSQL (e.g, 8.4, 9.0)
 
 If you happen to have several available versions of PostgreSQL on the
-same host, you *may* make one slave for each one *if* you can
-guarantee that buildouts don't share eggs nor downloads between them.
+same host, then make one slave for each one.
 
 Tweaks, optimization and traps
 ------------------------------
 
-* It is recommended to use shared eggs and OpenERP downloads to avoid
-  useless heavy traffic and long repeated compilations. A future version may
-  do that automatically to solve the problem below.
+* eggs and openerp downloads are shared on a per-slave basis. A lock
+  system prevents concurrency in buildout runs.
 
-* *Don't* use shared eggs nor OpenERP downloads settings that apply to
-  more than one slave.
-
-
-
+* Windows slaves are currently unsupported : some steps use '/'
+  separators in arguments.
 
 
 .. Emacs
