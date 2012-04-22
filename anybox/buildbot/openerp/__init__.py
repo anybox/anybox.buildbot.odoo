@@ -107,7 +107,7 @@ def make_factory(name, cfg_path):
     factory.addStep(ShellCommand(command=['python', 'bootstrap.py']))
     factory.addStep(ShellCommand(command=['bin/buildout'],
                                  timeout=3600*4,
-                                locks=[buildout_lock.access('exclusive')]))
+                                 locks=[buildout_lock.access('exclusive')]))
     factory.addStep(SetProperty(
             property='testing_db',
             command=WithProperties(
