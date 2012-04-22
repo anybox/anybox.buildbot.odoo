@@ -13,6 +13,12 @@ Later improvements
   ``openerp-downloads-directory``. That'd solve concurrency issues
   between different slaves.
 
+* MEDIUM: provide options in MANIFEST.cfg to limit buildouts to some
+  PG versions, to ease the load due to useless cases (known
+  incompatibilites don't have to be tried over and over; some PG
+  versions may be of interest in a few cases only). We need a global
+  setting, and per-buildout settings.
+
 * have the slaves retrieve ``build_utils`` directly from VCS. This
   will probably complicate the scheduling setup.
 
