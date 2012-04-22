@@ -69,6 +69,19 @@ libraries and headers.
 
 There is a package for debian-based system that installs them all.
 
+PostgreSQL requirements
+-----------------------
+
+* You must of course provide a working PostgreSQL installation
+* The name of the POSIX user running the slave must also be the name of a
+  PostgreSQL role with database creation rights.
+* The PostgreSQL role must have inconditional authentication over
+  TCP/IP sockets from localhost (``pg_hba.conf`` extract)::
+
+  # TYPE  DATABASE    USER        CIDR-ADDRESS          METHOD
+  host    all         buildslave  127.0.0.1/8           trust
+
+
 Registration
 ------------
 Have your slave registered to the master admin, specifying your

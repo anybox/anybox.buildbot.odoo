@@ -7,3 +7,7 @@
 
 * EASY: use (also) test log analyzer and test launching commands from
   openerp-runbot.
+
+* HARD: authenticate buildslave PG role over unix domain sockets
+  (last time I looked, openerp did not honor the PGCLUSTER environment
+  variable).
