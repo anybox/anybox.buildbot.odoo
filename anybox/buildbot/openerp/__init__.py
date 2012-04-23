@@ -128,7 +128,7 @@ def make_factory(name, cfg_path):
                 'bin/buildout',
                 'buildout:eggs-directory=' + eggs_cache,
                 'buildout:openerp-downloads-directory=' + openerp_cache,
-                WithProperties('openerp:db_port=%(pg_port:-5432)s'),
+                WithProperties('openerp:options.db_port=%(pg_port:-5432)s'),
                 ],
                                  name="buildout",
                                  description="buildout",
