@@ -99,8 +99,15 @@ Tweaks, optimization and traps
 * Windows slaves are currently unsupported : some steps use '/'
   separators in arguments.
 
+* If the home dir of your slave is also the virtualenv, some
+  distributions (Ubuntu) will put its bin/ on the PATH. Therefore, all builds
+  will happen in that virtualenv, and that can lead to buildout
+  failures (cannot locate babel and pychart).
+  The best then is either to put the virtualenv in a separate
+  directory or to edit ~/.bashrc and friends to avoid this PATH
+  setting. An alternative is to install babel and pychart in the
+  virtualenv manually (sigh).
 
-.. Emacs
 .. Local Variables:
 .. mode: rst
 .. End:
