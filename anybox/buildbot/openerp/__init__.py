@@ -1,5 +1,6 @@
 """Provides utilities to be imported from the master.cfg"""
 import os
+import logging
 
 from ConfigParser import ConfigParser
 from buildbot.buildslave import BuildSlave
@@ -19,6 +20,8 @@ BUILDSLAVE_KWARGS = ('max_builds',)
 BUILDSLAVE_REQUIRED = ('password', 'pg_version',)
 
 BUILD_FACTORIES = {} # registry of named build factories
+
+logger = logging.getLogger(__name__)
 
 # Running buildouts in parallel on one slave fails
 # if they used shared eggs or downloads area
