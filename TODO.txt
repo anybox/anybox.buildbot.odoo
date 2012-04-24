@@ -21,9 +21,11 @@ Later improvements
 * EASY: use (also) test log analyzer and test launching commands from
   openerp-runbot.
 
-* MEDIUM: authenticate buildslave PG role over unix domain sockets
-  (last time I looked, openerp did not honor the PGCLUSTER environment
-  variable). PGCLUSTER seems to be Debian specific. The proper way to initiate
+* MEDIUM: authenticate buildslave PG role over unix domain sockets (ident)
+  PGCLUSTER seems to be Debian specific. The proper way to initiate
   unix domain sockets is to indicate the directory in host parameter *and the
-  proper port* (naming of the socket is derived from the port). Tested w/
-  psycopg2, not yet in OpenERP context
+  proper port* (naming of the socket is derived from the port). Tested
+  in OpenERP.
+
+* MEDIUM: allow the mirrors to be outside of the master (will help
+  with bandwith and sharing between several masters)
