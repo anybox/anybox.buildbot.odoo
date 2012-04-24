@@ -1,5 +1,5 @@
 import os
-import sha
+import hashlib
 import subprocess
 
 def mkdirp(path):
@@ -13,7 +13,7 @@ def mkdirp(path):
 
 def ez_hash(url):
     """Return a uniform hash code meant for source URL."""
-    return sha.new(url).hexdigest()
+    return hashlib.sha1(url).hexdigest()
 
 def bzr_refuse_branch_specs(url, specs):
     for spec in specs:
