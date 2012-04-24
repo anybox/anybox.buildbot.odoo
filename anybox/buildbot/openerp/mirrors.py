@@ -68,7 +68,17 @@ class Updater(object):
                 specs = self.repos.setdefault(h, (vcs, url, set()))[-1]
                 specs.add(minor_spec)
 
-    def parse_branch_spec(self, full_spec):
+    @classmethod
+    def list_supported_vcs(cls):
+        return tuple(cls.vcses_branch_spec_length)
+
+    @classmethod
+    def assert_supported(cls, vcs):
+        if vcs not in cls.vcses_branch_spec_length:
+            raise ValueError("Sorry, %r VCS not supported." % vcs)
+
+    @classmethod
+    def parse_branch_spec(cls, full_spec):
         """Return vcs, url, and tuple of minor branch specification.
 
         Spec is either a line of whitespace separated tokens or an iterable
@@ -79,10 +89,9 @@ class Updater(object):
             full_spec = full_spec.split()
 
         vcs = full_spec[0]
-        nargs = self.vcses_branch_spec_length.get(vcs)
-        if nargs is None:
-            raise ValueError("Sorry, %r VCS not supported." % vcs)
 
+        cls.assert_supported(vcs)
+        nargs = cls.vcses_branch_spec_length[vcs]
         if len(full_spec) != 1 + nargs:
             raise ValueError("Wrong number of arguments for branch "
                              "specification in %r" % full_spec)
@@ -97,7 +106,7 @@ class Updater(object):
 
         For Bazaar, the whole mirror is a shared repository."""
 
-        for vcs in self.vcses_branch_spec_length.keys():
+        for vcs in self.list_supported_vcs():
             mirror_path = self.get_mirror(vcs)
             utils.mkdirp(mirror_path)
             if vcs == 'bzr':

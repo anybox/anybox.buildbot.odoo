@@ -13,6 +13,9 @@ from buildbot.steps.shell import SetProperty
 from buildbot.steps.transfer import FileDownload
 from buildbot.process.properties import WithProperties
 from buildbot.process.properties import Property
+from buildbot.schedulers.basic import SingleBranchScheduler
+
+from scheduler import MirrorChangeFilter
 
 BUILDMASTER_DIR = '' # monkey patched with actual value from master.cfg
 
@@ -20,6 +23,7 @@ BUILDSLAVE_KWARGS = ('max_builds',)
 BUILDSLAVE_REQUIRED = ('password', 'pg_version',)
 
 BUILD_FACTORIES = {} # registry of named build factories
+FACTORIES_TO_BUILDERS = {}
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +51,7 @@ def make_slaves(conf_path):
     parser = ConfigParser()
     parser.read(conf_path)
     slaves = []
+
     for slavename in parser.sections():
         kw = {}
         kw['properties'] = props = {}
@@ -175,10 +180,12 @@ def make_factory(name, cfg_path):
 
     return factory
 
-def make_builders(master_config=None, build_factories=BUILD_FACTORIES):
+def make_builders(master_config=None, build_factories=BUILD_FACTORIES,
+                  fact_to_builders=FACTORIES_TO_BUILDERS):
     """Create builders from build factories using the whole buildmaster config.
 
     build_factories is a dict names -> build_factories
+    the fact_to_builders dict is updated in the process.
 
     The idea is notably to sort slaves according to capabilities (for specific
     requirements, such as ability to build a tricky python package) and
@@ -197,9 +204,29 @@ def make_builders(master_config=None, build_factories=BUILD_FACTORIES):
         pg = slave.properties['pg_version']
         slaves_by_pg.setdefault(pg, []).append(slave.slavename)
 
-    return [BuilderConfig(name='%s-postgresql-%s' % (factory_name, pg_version),
+    all_builders = []
+    for factory_name, factory in build_factories.items():
+        builders = [
+            BuilderConfig(name='%s-postgresql-%s' % (factory_name, pg_version),
                           factory=factory, slavenames=slavenames)
             for pg_version, slavenames in slaves_by_pg.items()
-            for factory_name, factory in build_factories.items()]
+            ]
+        fact_to_builders[factory_name] = [b.name for b in builders]
+        all_builders.extend(builders)
+    return all_builders
 
+def make_schedulers(fact_to_builders=FACTORIES_TO_BUILDERS,
+                    bm_dir=BUILDMASTER_DIR):
+    """We make one scheduler per build factory (ie per buildout).
+
+    Indeed, a scheduler must be tied to a list of builders to run.
+    TODO at some point check if a big dedicated, single schedulers would not
+    be preferable for buildmaster performance.
+    """
+    return [SingleBranchScheduler(name=factory_name,
+                                  change_filter=MirrorChangeFilter(
+                bm_dir, factory_name),
+                                  treeStableTimer=None, # TODO
+                                  builderNames=builders)
+            for factory_name, builders in fact_to_builders.items()]
 
