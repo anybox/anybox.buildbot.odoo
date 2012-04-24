@@ -27,12 +27,12 @@ def bzr_init_branch(path, url, specs):
     bzr_refuse_branch_specs(url, specs)
     subprocess.call(['bzr', 'branch', url, path])
 
-def bzr_update_branch(path, source, specs):
+def bzr_update_branch(path, url, specs):
     """Update a branch from source to path."""
-    bzr_refuse_branch_spec(url, specs)
+    bzr_refuse_branch_specs(url, specs)
     before = os.getcwd()
     os.chdir(path)
-    subprocess.call(['bzr', 'pull', source])
+    subprocess.call(['bzr', 'pull', url])
     os.chdir(before)
 
 def hg_init_pull(path, source, specs):

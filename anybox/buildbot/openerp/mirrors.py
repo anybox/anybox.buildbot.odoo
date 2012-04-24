@@ -60,24 +60,34 @@ class Updater(object):
             except NoOptionError:
                 continue
             for watched in all_watched.split(os.linesep):
-                watched = watched.split()
+                vcs, url, minor_spec = self.parse_branch_spec(watched)
 
-                vcs = watched[0]
-                nargs = self.vcses_branch_spec_length.get(vcs)
-                if nargs is None:
-                    raise ValueError("Sorry, %r VCS not supported.")
-
-
-                if len(watched) != 1 + nargs:
-                    raise ValueError("Wrong number of arguments for branch "
-                                     "specification in %r" % watched)
-
-                url = watched[1]
                 h = utils.ez_hash(url)
 
                 self.hashes[vcs, url] = h
                 specs = self.repos.setdefault(h, (vcs, url, set()))[-1]
-                specs.add(tuple(watched[2:]))
+                specs.add(minor_spec)
+
+    def parse_branch_spec(self, full_spec):
+        """Return vcs, url, and tuple of minor branch specification.
+
+        Spec is either a line of whitespace separated tokens or an iterable
+        of strings
+        Does all the necessary checkings.
+        """
+        if isinstance(full_spec, basestring):
+            full_spec = full_spec.split()
+
+        vcs = full_spec[0]
+        nargs = self.vcses_branch_spec_length.get(vcs)
+        if nargs is None:
+            raise ValueError("Sorry, %r VCS not supported." % vcs)
+
+        if len(full_spec) != 1 + nargs:
+            raise ValueError("Wrong number of arguments for branch "
+                             "specification in %r" % full_spec)
+
+        return vcs, full_spec[1], tuple(full_spec[2:])
 
     def get_mirror(self, vcs):
         return os.path.join(self.bm_dir, 'mirrors', vcs)
