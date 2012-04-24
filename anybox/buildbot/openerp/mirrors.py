@@ -6,11 +6,10 @@ TODO enforce global lock to run safely in cron with no assumption on run time.
 import os
 import subprocess
 import optparse
-from ConfigParser import ConfigParser
 from ConfigParser import NoOptionError
-from sha import sha
 
 from anybox.buildbot.openerp import utils
+from anybox.buildbot.openerp.buildouts import parse_manifest
 
 class Updater(object):
     """This class is the main mirrors maintainer.
@@ -23,11 +22,14 @@ class Updater(object):
        bzr URL
        hg PULL-URL BRANCH-NAME
 
-    Branches are stored in the 'mirrors' subdirectory of the buildmaster.
+    in all cases, that'll be:
+       VCS SOURCE_URL [[BRANCH MINOR SPECS]]
+
+    Repositories are stored in the 'mirrors' subdirectory of the buildmaster.
     Each VCS has its own subdirectory of that one (a mirror).
 
-    In a given VCS mirror, branches storage is flat, with directory names
-    being SHAs of their full specification.
+    In a given VCS mirror, repositories storage is flat, with directory names
+    being SHAs of their remote URLs.
     This is not human-friendly, but is a simple way of avoiding naming
     conflicts while not needing to record a correspondence between the
     directory name and the specification to be usable : a scheduler can
@@ -37,21 +39,20 @@ class Updater(object):
     vcses_branch_spec_length = dict(bzr=1, hg=2)
 
     branch_init_methods = dict(bzr=utils.bzr_init_branch,
-                               hg=utils.hg_clone_update)
+                               hg=utils.hg_init_pull)
 
     branch_update_methods = dict(bzr=utils.bzr_update_branch,
-                                 hg=utils.hg_pull_update)
+                                 hg=utils.hg_pull)
 
     def __init__(self, buildmaster_dir):
         self.bm_dir = buildmaster_dir
-        self.branches = set()
+        self.hashes = {} #  (vcs, url) -> hash
+        self.repos = {} # hash -> (vcs, url, branch minor specs)
 
     def read_branches(self):
         """Read the branch to watch from buildouts manifest."""
 
-        parser = ConfigParser()
-        # GR TODO stop this harcoding at some point
-        parser.read(os.path.join(self.bm_dir, 'buildouts', 'MANIFEST.cfg'))
+        parser = parse_manifest(self.bm_dir)
 
         for buildout in parser.sections():
             try:
@@ -60,16 +61,23 @@ class Updater(object):
                 continue
             for watched in all_watched.split(os.linesep):
                 watched = watched.split()
-                vcs = watched[0]
 
+                vcs = watched[0]
                 nargs = self.vcses_branch_spec_length.get(vcs)
                 if nargs is None:
                     raise ValueError("Sorry, %r VCS not supported.")
 
+
                 if len(watched) != 1 + nargs:
                     raise ValueError("Wrong number of arguments for branch "
                                      "specification in %r" % watched)
-                self.branches.add(tuple(watched))
+
+                url = watched[1]
+                h = utils.ez_hash(url)
+
+                self.hashes[vcs, url] = h
+                specs = self.repos.setdefault(h, (vcs, url, set()))[-1]
+                specs.add(tuple(watched[2:]))
 
     def get_mirror(self, vcs):
         return os.path.join(self.bm_dir, 'mirrors', vcs)
@@ -86,25 +94,21 @@ class Updater(object):
                 if not os.path.isdir(os.path.join(mirror_path, '.bzr')):
                     subprocess.call(['bzr', 'init-repo', mirror_path])
 
-    def update_branches(self):
-        """Update all watched branches. Create them if needed."""
+    def update_all(self):
+        """Update all watched repos for needed branches. Create if needed."""
 
-        for watched in self.branches:
-            vcs = watched[0]
+        for h, (vcs, url, branch_specs) in self.repos.items():
             base_dir = os.path.join(self.bm_dir, 'mirrors', vcs)
             utils.mkdirp(base_dir)
-            spec = watched[1:]
+            path = os.path.join(base_dir, h)
 
-            h = sha()
-            for part in spec:
-                h.update(part)
-
-            name = h.hexdigest()
-            path = os.path.join(base_dir, name)
-            if not os.path.isdir(path):
-                self.branch_init_methods[vcs](path, *spec)
+            if os.path.isdir(path):
+                methods = self.branch_update_methods
             else:
-                self.branch_update_methods[vcs](path, *spec)
+                methods = self.branch_init_methods
+
+            methods[vcs](path, url, branch_specs)
+
 
 def update():
     """Entry point for console script."""
@@ -121,4 +125,4 @@ def update():
     updater = Updater(options.buildmaster_dir)
     updater.read_branches()
     updater.prepare_mirrors()
-    updater.update_branches()
+    updater.update_all()

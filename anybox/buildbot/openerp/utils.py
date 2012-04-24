@@ -1,4 +1,5 @@
 import os
+import sha
 import subprocess
 
 def mkdirp(path):
@@ -10,35 +11,48 @@ def mkdirp(path):
         mkdirp(parent)
     os.mkdir(path)
 
-def bzr_init_branch(path, source):
-    """Retrieve a branch from source to path."""
-    subprocess.call(['bzr', 'branch', source, path])
+def ez_hash(url):
+    """Return a uniform hash code meant for source URL."""
+    return sha.new(url).hexdigest()
 
-def bzr_update_branch(path, source):
+def bzr_refuse_branch_specs(url, specs):
+    for spec in specs:
+        if spec:
+            raise ValueError("Bazaar branches are defined by their URLs, "
+                             "should not get minor specifications %r for %r",
+                             spec, url)
+
+def bzr_init_branch(path, url, specs):
+    """Retrieve a branch from source to path."""
+    bzr_refuse_branch_specs(url, specs)
+    subprocess.call(['bzr', 'branch', url, path])
+
+def bzr_update_branch(path, source, specs):
     """Update a branch from source to path."""
+    bzr_refuse_branch_spec(url, specs)
     before = os.getcwd()
     os.chdir(path)
     subprocess.call(['bzr', 'pull', source])
     os.chdir(before)
 
-def hg_update(path, rev):
-    """Update hg clone at path to given rev."""
-    before = os.getcwd()
-    os.chdir(path)
-    subprocess.call(['hg', 'update', rev])
-    os.chdir(before)
+def hg_init_pull(path, source, specs):
+    """Init hg repo and pull only required branches."""
+    subprocess.call(['hg', 'init', path])
+    hg_pull(path, source, specs)
 
-def hg_clone_update(path, source, name):
-    """Retrieve a branch with given name from source to path."""
-    subprocess.call(['hg', 'clone', source, path])
-    hg_update(path, name)
-
-def hg_pull_update(path, source, name):
+def hg_pull(path, source, specs):
     """Pul from source to clone at path and update to named branch."""
     before = os.getcwd()
     os.chdir(path)
-    subprocess.call(['hg', 'pull', source])
+    cmd = ['hg', 'pull', source]
+    for spec in specs:
+        if len(spec) != 1:
+            raise ValueError("Invalid in-repo branch specification %r in "
+                             "hg repo at %r", spec, source)
+        cmd.append('-b')
+        cmd.append(spec[0])
+
+    subprocess.call(cmd)
     os.chdir(before)
-    hg_update(path, name)
 
 
