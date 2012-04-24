@@ -226,7 +226,7 @@ def make_schedulers(fact_to_builders=FACTORIES_TO_BUILDERS,
     return [SingleBranchScheduler(name=factory_name,
                                   change_filter=MirrorChangeFilter(
                 bm_dir, factory_name),
-                                  treeStableTimer=None, # TODO
+                                  treeStableTimer=600,
                                   builderNames=builders)
             for factory_name, builders in fact_to_builders.items()]
 
