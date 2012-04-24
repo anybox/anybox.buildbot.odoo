@@ -145,7 +145,7 @@ def update():
     if not os.path.isdir(options.buildmaster_dir):
         raise ValueError("No such directory %r" % bm_dir)
 
-    from anybox.buildbot.openerp import vcs_binaries
+    from anybox.buildbot.openerp.utils import vcs_binaries
     vcs_binaries['bzr'] = options.bzr
     vcs_binaries['hg'] = options.hg
 
