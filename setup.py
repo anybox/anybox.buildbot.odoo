@@ -22,7 +22,10 @@ setup(
       'Topic :: Software Development :: Build Tools',
       'Topic :: Software Development :: Libraries :: Python Modules',
       ],
-    entry_points = {},
+   entry_points="""
+    [console_scripts]
+    update-mirrors = anybox.buildbot.openerp.mirrors:update
+    """
     )
 
 

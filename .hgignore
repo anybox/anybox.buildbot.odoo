@@ -4,6 +4,7 @@ bin/*
 dist
 eggs
 parts
+mirrors/
 var/
 develop-eggs
 docs/_build/
