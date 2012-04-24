@@ -4,7 +4,7 @@ import subprocess
 
 # can be overridden from command line tools such as update-mirrors,
 # for the version that has the buildbot hooks.
-VCS_BINARIES = dict(bzr='bzr', hg='hg')
+vcs_binaries = dict(bzr='bzr', hg='hg')
 
 def mkdirp(path):
     """Python equivalent for mkdir -p"""
