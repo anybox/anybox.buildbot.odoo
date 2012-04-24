@@ -1,9 +1,9 @@
-"""This module takes care of mirrors.
-
-TODO enforce global lock to run safely in cron with no assumption on run time.
+"""This module takes care of creating, organizing and updating mirrors.
 """
 
 import os
+import sys
+import fcntl
 import subprocess
 import optparse
 from ConfigParser import NoOptionError
@@ -145,11 +145,23 @@ def update():
     if not os.path.isdir(options.buildmaster_dir):
         raise ValueError("No such directory %r" % bm_dir)
 
-    from anybox.buildbot.openerp.utils import vcs_binaries
-    vcs_binaries['bzr'] = options.bzr
-    vcs_binaries['hg'] = options.hg
+    # This way of locking should avoid deadlocks if there's a wild reboot
+    lock_file = open(os.path.join(
+            options.buildmaster_dir, 'update-mirrors.lock'), 'w')
+    try:
+        fcntl.lockf(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except IOError:
+        print("Another instance of update-mirrors is running for buildmaster "
+              "%r . Exiting now." % options.buildmaster_dir)
+        sys.exit(0)
+
+    utils.vcs_binaries['bzr'] = options.bzr
+    utils.vcs_binaries['hg'] = options.hg
 
     updater = Updater(options.buildmaster_dir)
     updater.read_branches()
     updater.prepare_mirrors()
     updater.update_all()
+
+    fcntl.lockf(lock_file, fcntl.LOCK_UN)
+
