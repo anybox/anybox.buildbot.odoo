@@ -25,7 +25,12 @@ class MirrorChangeFilter(ChangeFilter):
     def filter_change(self, change):
         """True if change's about an interesting repo w/correct branch.
         """
-        h = change.repository.rsplit('/', 1)[-1]
+        repo_prop = change.repository
+        if repo_prop: # hg
+            h = repo_prop.rsplit('/', 1)[-1]
+        else: # bzr
+            h = change.branch
+
         details = self.interesting.get(h)
         if details is None:
             return False
