@@ -2,6 +2,10 @@ import os
 import hashlib
 import subprocess
 
+# can be overridden from command line tools such as update-mirrors,
+# for the version that has the buildbot hooks.
+VCS_BINARIES = dict(bzr='bzr', hg='hg')
+
 def mkdirp(path):
     """Python equivalent for mkdir -p"""
     if os.path.isdir(path):
@@ -25,26 +29,26 @@ def bzr_refuse_branch_specs(url, specs):
 def bzr_init_branch(path, url, specs):
     """Retrieve a branch from source to path."""
     bzr_refuse_branch_specs(url, specs)
-    subprocess.call(['bzr', 'branch', url, path])
+    subprocess.call([vcs_binaries['bzr'], 'branch', url, path])
 
 def bzr_update_branch(path, url, specs):
     """Update a branch from source to path."""
     bzr_refuse_branch_specs(url, specs)
     before = os.getcwd()
     os.chdir(path)
-    subprocess.call(['bzr', 'pull', url])
+    subprocess.call([vcs_binaries['bzr'], 'pull', url])
     os.chdir(before)
 
 def hg_init_pull(path, source, specs):
     """Init hg repo and pull only required branches."""
-    subprocess.call(['hg', 'init', path])
+    subprocess.call([vcs_binaries['hg'], 'init', path])
     hg_pull(path, source, specs)
 
 def hg_pull(path, source, specs):
     """Pul from source to clone at path and update to named branch."""
     before = os.getcwd()
     os.chdir(path)
-    cmd = ['hg', 'pull', source]
+    cmd = [vcs_binaries['hg'], 'pull', source]
     for spec in specs:
         if len(spec) != 1:
             raise ValueError("Invalid in-repo branch specification %r in "

@@ -136,10 +136,18 @@ def update():
                       default='.',
                       help="Specify buildmaster directory in which to update "
                       "mirrors")
+    parser.add_option('--bzr-executable', dest='bzr', default='bzr',
+                      help="Specify the bzr executable to use")
+    parser.add_option('--hg-executable', dest='hg', default='hg',
+                      help="Specify the bzr executable to use")
     options, args = parser.parse_args()
 
     if not os.path.isdir(options.buildmaster_dir):
         raise ValueError("No such directory %r" % bm_dir)
+
+    from anybox.buildbot.openerp import vcs_binaries
+    vcs_binaries['bzr'] = options.bzr
+    vcs_binaries['hg'] = options.hg
 
     updater = Updater(options.buildmaster_dir)
     updater.read_branches()
