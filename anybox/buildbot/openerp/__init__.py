@@ -101,7 +101,7 @@ def make_factory(name, cfg_path):
     """
 
     factory = BuildFactory()
-    factory.addStep(ShellCommand(command=['bzr', 'init-repo', '..'],
+    factory.addStep(ShellCommand(command=['bzr', 'init-repo', '../..'],
                                  name="bzr repo",
                                  description="init bzr repo",
                                  flunkOnFailure=False,
