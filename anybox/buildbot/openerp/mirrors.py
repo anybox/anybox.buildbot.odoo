@@ -12,10 +12,29 @@ from sha import sha
 
 from anybox.buildbot.openerp import utils
 
-# name -> number of arguments to describe a branch
-SUPPORTED_VCS = dict(bzr=1, hg=2)
-
 class Updater(object):
+    """This class is the main mirrors maintainer.
+
+    It supports several VCS systems.
+
+    It works for a set of watched branches, currently described in the
+    buildouts manifest (buildouts/MANIFEST.cfg). Branch specification vary
+    according to the given VCS. Currently:
+       bzr URL
+       hg PULL-URL BRANCH-NAME
+
+    Branches are stored in the 'mirrors' subdirectory of the buildmaster.
+    Each VCS has its own subdirectory of that one (a mirror).
+
+    In a given VCS mirror, branches storage is flat, with directory names
+    being SHAs of their full specification.
+    This is not human-friendly, but is a simple way of avoiding naming
+    conflicts while not needing to record a correspondence between the
+    directory name and the specification to be usable : a scheduler can
+    also read the watched branches and store the inverse mapping.
+    """
+
+    vcses_branch_spec_length = dict(bzr=1, hg=2)
 
     branch_init_methods = dict(bzr=utils.bzr_init_branch,
                                hg=utils.hg_clone_update)
@@ -43,7 +62,7 @@ class Updater(object):
                 watched = watched.split()
                 vcs = watched[0]
 
-                nargs = SUPPORTED_VCS.get(vcs)
+                nargs = self.vcses_branch_spec_length.get(vcs)
                 if nargs is None:
                     raise ValueError("Sorry, %r VCS not supported.")
 
@@ -60,7 +79,7 @@ class Updater(object):
 
         For Bazaar, the whole mirror is a shared repository."""
 
-        for vcs in SUPPORTED_VCS.keys():
+        for vcs in self.vcses_branch_spec_length.keys():
             mirror_path = self.get_mirror(vcs)
             utils.mkdirp(mirror_path)
             if vcs == 'bzr':
@@ -68,7 +87,8 @@ class Updater(object):
                     subprocess.call(['bzr', 'init-repo', mirror_path])
 
     def update_branches(self):
-        """Update all branches."""
+        """Update all watched branches. Create them if needed."""
+
         for watched in self.branches:
             vcs = watched[0]
             base_dir = os.path.join(self.bm_dir, 'mirrors', vcs)
