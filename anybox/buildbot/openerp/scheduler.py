@@ -39,5 +39,7 @@ class MirrorChangeFilter(ChangeFilter):
         if vcs == 'hg': # TODO less hardcoding
             # in hg, a minor spec is a singleton holding branch name
             assert(len(minor_spec) == 1)
-            if minor_spec[0] == change.branch:
-                return True
+            if minor_spec[0] != change.branch:
+                return False
+
+        return True
