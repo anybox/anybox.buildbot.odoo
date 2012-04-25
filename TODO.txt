@@ -1,13 +1,8 @@
-Required for actual use
------------------------
+* EASY/NOW: reduce the setup to one import & call, so that buildbot's
+  master.cfg don't really have to be linked/copied any more and can
+  really differ in password, ports, custom builds etc.
 
-* Scheduler to watch VCS systems according to conf in buildouts
-  MANIFEST or maybe the buildout themselves (check if openerp-runbot
-  does indeed launchpad polling).
-
-
-Later improvements
-------------------
+* HARD (lots of boring work): provide unit tests
 
 * MEDIUM: provide options in MANIFEST.cfg to limit buildouts to some
   PG versions, to ease the load due to useless cases (known
@@ -15,13 +10,14 @@ Later improvements
   versions may be of interest in a few cases only). We need a global
   setting, and per-buildout settings.
 
-* have the slaves retrieve ``build_utils`` directly from VCS. This
+* MEDIUM: have the slaves retrieve ``build_utils`` directly from VCS. This
   will probably complicate the scheduling setup.
 
 * EASY: use (also) test log analyzer and test launching commands from
   openerp-runbot.
 
-* MEDIUM: authenticate buildslave PG role over unix domain sockets (ident)
+* EASY (special case of new slave parameter for pg_host):
+  authenticate buildslave PG role over unix domain sockets (ident)
   PGCLUSTER seems to be Debian specific. The proper way to initiate
   unix domain sockets is to indicate the directory in host parameter *and the
   proper port* (naming of the socket is derived from the port). Tested
@@ -29,3 +25,17 @@ Later improvements
 
 * MEDIUM: allow the mirrors to be outside of the master (will help
   with bandwith and sharing between several masters)
+
+* MEDIUM: add a build property for human readability of branches being
+  tested. Ideally, do that on the Change object if that works.
+
+* MEDIUM/HARD (lots of work): change conf (slaves.cfg) so that one
+  slave per host is enough. Will spare lots of disk and bw thanks to sharing of
+  branches, eggs and downloads at slave level, and work for slave
+  admins, too.
+
+* EASY: make setup.py install work. Publish on Pypi ?
+
+* HARD: true reproduceability and better blame list through setting of
+  revs in build properties together with new options in buildout
+  recipe to apply them.
