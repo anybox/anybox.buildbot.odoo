@@ -1,7 +1,3 @@
-* EASY/NOW: reduce the setup to one import & call, so that buildbot's
-  master.cfg don't really have to be linked/copied any more and can
-  really differ in password, ports, custom builds etc.
-
 * HARD (lots of boring work): provide unit tests
 
 * MEDIUM: provide options in MANIFEST.cfg to limit buildouts to some

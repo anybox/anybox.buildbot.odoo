@@ -187,6 +187,10 @@ def make_builders(master_config=None, build_factories=BUILD_FACTORIES,
     build_factories is a dict names -> build_factories
     the fact_to_builders dict is updated in the process.
 
+    Builders join factories and slaves. A builder is a column in the waterfall
+    it is therefore recommended to make different builders for significant
+    environment differences (e.g., postgresql version).
+
     The idea is notably to sort slaves according to capabilities (for specific
     requirements, such as ability to build a tricky python package) and
     environmental parameters (postgresql version etc.)
@@ -230,3 +234,11 @@ def make_schedulers(fact_to_builders=FACTORIES_TO_BUILDERS,
                                   builderNames=builders)
             for factory_name, builders in fact_to_builders.items()]
 
+
+def configure_from_buildouts(config):
+    """Load the configuration with what's needed for the buildouts."""
+
+    config.setdefault('slaves', []).extend(make_slaves('slaves.cfg'))
+    register_build_factories('buildouts/MANIFEST.cfg')
+    config['builders'] = make_builders(master_config=config)
+    config.setdefault('schedulers', []).extend(make_schedulers())
