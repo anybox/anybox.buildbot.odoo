@@ -34,7 +34,7 @@ def bzr_init_branch(path, url, specs):
 def bzr_update_branch(path, url, specs):
     """Update a branch from source to path."""
     bzr_refuse_branch_specs(url, specs)
-    subprocess.call([vcs_binaries['bzr'], 'pull', '--quiet', '-d', url])
+    subprocess.call([vcs_binaries['bzr'], 'pull', '--quiet', '-d', path, url])
 
 def hg_init_pull(path, source, specs):
     """Init hg repo and pull only required branches."""
