@@ -43,9 +43,7 @@ def hg_init_pull(path, source, specs):
 
 def hg_pull(path, source, specs):
     """Pul from source to clone at path and update to named branch."""
-    before = os.getcwd()
-    os.chdir(path)
-    cmd = [vcs_binaries['hg'], 'pull', source]
+    cmd = [vcs_binaries['hg'], '-q', '--cwd', path, 'pull', source]
     for spec in specs:
         if len(spec) != 1:
             raise ValueError("Invalid in-repo branch specification %r in "
@@ -54,6 +52,5 @@ def hg_pull(path, source, specs):
         cmd.append(spec[0])
 
     subprocess.call(cmd)
-    os.chdir(before)
 
 
