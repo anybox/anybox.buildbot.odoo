@@ -111,7 +111,8 @@ class BuildoutsConfigurator(object):
                                      slavedest='bootstrap.py'))
         factory.addStep(FileDownload(mastersrc=cfg_path,
                                      slavedest='buildout.cfg'))
-        factory.addStep(FileDownload(mastersrc='build_utils/analyze_oerp_tests.py',
+        factory.addStep(FileDownload(mastersrc='build_utils/'
+                                     'analyze_oerp_tests.py',
                                      slavedest='analyze_oerp_tests.py'))
         factory.addStep(ShellCommand(command=['python', 'bootstrap.py'],
                                      haltOnFailure=True,
@@ -144,10 +145,12 @@ class BuildoutsConfigurator(object):
 
         factory.addStep(ShellCommand(command=["dropdb", Property('testing_db')],
                                      name='dropdb',
-                                     description=["dropdb", Property('testing_db')],
+                                     description=["dropdb",
+                                                  Property('testing_db')],
                                      env=dict(PGCLUSTER=PGCLUSTER),
                                      flunkOnFailure=False))
-        factory.addStep(ShellCommand(command=["createdb", Property('testing_db')],
+        factory.addStep(ShellCommand(command=["createdb",
+                                              Property('testing_db')],
                                      name='createdb',
                                      description=["createdb",
                                                   Property('testing_db')],
@@ -199,7 +202,8 @@ class BuildoutsConfigurator(object):
             registry[name] = self.make_factory(name, buildout[1])
 
 
-    def make_builders(self, master_config=None, build_factories=BUILD_FACTORIES,
+    def make_builders(self, master_config=None,
+                      build_factories=BUILD_FACTORIES,
                       fact_to_builders=FACTORIES_TO_BUILDERS):
         """Spawn builders from build factories.
 
@@ -242,8 +246,8 @@ class BuildoutsConfigurator(object):
         """We make one scheduler per build factory (ie per buildout).
 
         Indeed, a scheduler must be tied to a list of builders to run.
-        TODO at some point check if a big dedicated, single schedulers would not
-        be preferable for buildmaster performance.
+        TODO at some point check if a big dedicated, single schedulers would
+        not be preferable for buildmaster performance.
         """
         return [SingleBranchScheduler(name=factory_name,
                                       change_filter=MirrorChangeFilter(
