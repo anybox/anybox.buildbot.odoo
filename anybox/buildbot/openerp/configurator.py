@@ -140,7 +140,7 @@ class BuildoutsConfigurator(object):
         factory.addStep(SetProperty(
                 property='testing_db',
                 command=WithProperties(
-                    "echo %(db_prefix:-openerb-buildbot)s-" + name)))
+                    "echo %(db_prefix:-openerp-buildbot)s-" + name)))
 
         factory.addStep(ShellCommand(command=["dropdb", Property('testing_db')],
                                      name='dropdb',
