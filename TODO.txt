@@ -19,9 +19,6 @@
   proper port* (naming of the socket is derived from the port). Tested
   in OpenERP.
 
-* MEDIUM: allow the mirrors to be outside of the master (will help
-  with bandwith and sharing between several masters)
-
 * MEDIUM: add a build property for human readability of branches being
   tested. Ideally, do that on the Change object if that works.
 

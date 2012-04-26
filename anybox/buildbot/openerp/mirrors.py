@@ -44,29 +44,35 @@ class Updater(object):
     branch_update_methods = dict(bzr=utils.bzr_update_branch,
                                  hg=utils.hg_pull)
 
-    def __init__(self, buildmaster_dir):
-        self.bm_dir = buildmaster_dir
+    def __init__(self, mirrors_dir, buildmaster_dirs):
+        for path in tuple(buildmaster_dirs) + (mirrors_dir,):
+            if not os.path.isdir(path):
+                raise ValueError("No such directory %r" % path)
+
+        self.mirrors_dir = mirrors_dir
+        self.bm_dirs = buildmaster_dirs
         self.hashes = {} #  (vcs, url) -> hash
         self.repos = {} # hash -> (vcs, url, branch minor specs)
 
     def read_branches(self):
         """Read the branch to watch from buildouts manifest."""
 
-        parser = parse_manifest(self.bm_dir)
+        for bm_dir in self.bm_dirs:
+            parser = parse_manifest(bm_dir)
 
-        for buildout in parser.sections():
-            try:
-                all_watched = parser.get(buildout, 'watch')
-            except NoOptionError:
-                continue
-            for watched in all_watched.split(os.linesep):
-                vcs, url, minor_spec = self.parse_branch_spec(watched)
+            for buildout in parser.sections():
+                try:
+                    all_watched = parser.get(buildout, 'watch')
+                except NoOptionError:
+                    continue
+                for watched in all_watched.split(os.linesep):
+                    vcs, url, minor_spec = self.parse_branch_spec(watched)
 
-                h = utils.ez_hash(url)
+                    h = utils.ez_hash(url)
 
-                self.hashes[vcs, url] = h
-                specs = self.repos.setdefault(h, (vcs, url, set()))[-1]
-                specs.add(minor_spec)
+                    self.hashes[vcs, url] = h
+                    specs = self.repos.setdefault(h, (vcs, url, set()))[-1]
+                    specs.add(minor_spec)
 
     @classmethod
     def list_supported_vcs(cls):
@@ -99,7 +105,7 @@ class Updater(object):
         return vcs, full_spec[1], tuple(full_spec[2:])
 
     def get_mirror(self, vcs):
-        return os.path.join(self.bm_dir, 'mirrors', vcs)
+        return os.path.join(self.mirrors_dir, vcs)
 
     def prepare_mirrors(self):
         """Ensure that mirror exist for each VCS and do further preparations.
@@ -117,7 +123,7 @@ class Updater(object):
         """Update all watched repos for needed branches. Create if needed."""
 
         for h, (vcs, url, branch_specs) in self.repos.items():
-            base_dir = os.path.join(self.bm_dir, 'mirrors', vcs)
+            base_dir = self.get_mirror(vcs)
             utils.mkdirp(base_dir)
             path = os.path.join(base_dir, h)
 
@@ -131,23 +137,25 @@ class Updater(object):
 
 def update():
     """Entry point for console script."""
-    parser = optparse.OptionParser()
-    parser.add_option('--buildmaster-directory', '-b', dest='buildmaster_dir',
-                      default='.',
-                      help="Specify buildmaster directory in which to update "
-                      "mirrors")
+    parser = optparse.OptionParser(
+        usage="%prod [options] MIRRORS")
+    parser.add_option('--buildmaster-directories', '-b', default='.',
+                      help="Specify buildmaster directories for which to "
+                      "update mirrors (comma-separated list, defaults to .")
     parser.add_option('--bzr-executable', dest='bzr', default='bzr',
                       help="Specify the bzr executable to use")
     parser.add_option('--hg-executable', dest='hg', default='hg',
                       help="Specify the bzr executable to use")
     options, args = parser.parse_args()
 
-    if not os.path.isdir(options.buildmaster_dir):
-        raise ValueError("No such directory %r" % bm_dir)
+    if len(args) != 1:
+        parser.error("Please provide the path to mirrors")
+        sys.exit(1)
+
+    mirrors_dir = args[0]
 
     # This way of locking should avoid deadlocks if there's a wild reboot
-    lock_file = open(os.path.join(
-            options.buildmaster_dir, 'update-mirrors.lock'), 'w')
+    lock_file = open(os.path.join(mirrors_dir, 'update.lock'), 'w')
     try:
         fcntl.lockf(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except IOError:
@@ -158,7 +166,7 @@ def update():
     utils.vcs_binaries['bzr'] = options.bzr
     utils.vcs_binaries['hg'] = options.hg
 
-    updater = Updater(options.buildmaster_dir)
+    updater = Updater(mirrors_dir, options.buildmaster_directories.split(','))
     updater.read_branches()
     updater.prepare_mirrors()
     updater.update_all()

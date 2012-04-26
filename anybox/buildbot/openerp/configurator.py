@@ -34,7 +34,8 @@ class BuildoutsConfigurator(object):
     """Populate buildmaster configs from buildouts and external slaves.cfg"""
 
     def __init__(self, master_cfg_file):
-        """Attach to buildmaster in which master_cfg_file path sits."""
+        """Attach to buildmaster in which master_cfg_file path sits.
+        """
         self.buildmaster_dir = os.path.split(master_cfg_file)[0]
 
     def populate(self, config):
