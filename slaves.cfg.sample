@@ -13,4 +13,5 @@ notify_on_missing = 'joe@example.com'
 
 # optional build properties
 pg_port = 5433
-db_prefix = oebb # builder name will be appended to it
+# builder name will be appended to it
+db_prefix = oebb
