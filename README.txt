@@ -73,18 +73,38 @@ PostgreSQL requirements
 -----------------------
 
 You must of course provide a working PostgreSQL installation (cluster).
-The default configuration is intended for a standard cluster on the
-same system as the slave, with a PostgreSQL user with name identical
-to that of the POSIX user running the slave, having database creation rights.
 
-You can provide host, user and port (see ``slaves.cfg`` file to see
-how express in the master configuration file).
+The default configuration assumes a standard PostgreSQL cluster on the
+same system as the slave, with a PostgreSQL user having the same name
+as the POSIX user running the slave, having database creation rights.
 
-The default value for host will make the slave connect to the
-PostgreSQL cluster through a Unix-domain socket, ie, the
+You can provide host,  port, and password (see ``slaves.cfg`` file to see
+how to express in the master configuration file).
+
+The default value for host on Debian-based distributions will make the
+slave connect to the PostgreSQL cluster through a Unix-domain socket, ie, the
 user name is the same as the POSIX user running the slave. Default
 PostgreSQL configurations allow such connections without a password (``ident``
 authentication method in ``pg_hba.conf``).
+
+To use ``ident`` authentication on secondary or custom compiled
+clusters, set the value of ``pg_host`` to the
+value of ``unix_socket_directory`` seen in ``postgresql.conf`` or to
+``/tmp`` if missing or commented in there *AND* indicate the port
+(socket name is based on the port)
+
+Examples:
+
+  # Default cluster of a secondary PostgreSQL from Debian & Ubuntu
+  pg_host = /var/run/postgresql
+  pg_port = 5433
+
+  # A fresh cluster made by a compiled PostgreSQL
+  # OR a fresh cluster made by Debian's pg_createcluster, not owned by
+  # ``postgres``
+
+  pg_host = /tmp
+  pg_port = 5000
 
 Registration
 ------------

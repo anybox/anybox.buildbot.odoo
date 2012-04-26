@@ -13,11 +13,10 @@ pg_version = 9.1
 # optional build properties, showing default values
 #
 
-# local directory means unix domain socket, w/ file name derived from port
-# this default value works for Debian-based linux distros
-pg_host = /var/run/postgresql/
+pg_host = False
 pg_port = 5432
-# OpenERP idiom not to pass a user name (``ident`` authentication method)
+# OpenERP idioms not to pass a user name (``ident`` authentication method)
+pg_host = False
 pg_user = False
 pg_passwd = False
 
