@@ -129,7 +129,15 @@ class BuildoutsConfigurator(object):
                     'bin/buildout',
                     'buildout:eggs-directory=' + eggs_cache,
                     'buildout:openerp-downloads-directory=' + openerp_cache,
-                    WithProperties('openerp:options.db_port=%(pg_port:-5432)s'),
+                    WithProperties(
+                        'openerp:options.db_port=%(pg_port:-5432)s'),
+                    WithProperties(
+                        'openerp:options.db_host=%('
+                        'pg_host:-/var/run/posgresql/)s'),
+                    WithProperties(
+                        'openerp:options.db_user=%(pg_user:-False)s'),
+                    WithProperties(
+                        'openerp:options.db_password=%(pg_passwd:-False)s'),
                     ],
                                      name="buildout",
                                      description="buildout",

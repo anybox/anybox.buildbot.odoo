@@ -1,17 +1,31 @@
 # Each section is a slave name
-# A closed list of options turns into slaves parameters
+# A closed list of options turns into parameters for that slave,
 # the others go in build properties
 
-[purity.anybox.eu]
+[my-slave]
+#
 # required
-password = purity
+#
+password = secret
 pg_version = 9.1
 
-# optional parameters
-max_builds = 2
-notify_on_missing = 'joe@example.com'
+#
+# optional build properties, showing default values
+#
 
-# optional build properties
-pg_port = 5433
-# builder name will be appended to it
-db_prefix = oebb
+# local directory means unix domain socket, w/ file name derived from port
+# this default value works for Debian-based linux distros
+pg_host = /var/run/postgresql/
+pg_port = 5432
+# OpenERP idiom not to pass a user name (``ident`` authentication method)
+pg_user = False
+pg_passwd = False
+
+# builder's testing db is concatenation of db_prefix and builder name
+db_prefix = openerp-buildbot
+
+#
+# optional parameters (no default values for these)
+#
+max_builds = 2
+notify_on_missing = joe@example.com

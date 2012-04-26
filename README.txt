@@ -72,15 +72,19 @@ There is a package for debian-based system that installs them all.
 PostgreSQL requirements
 -----------------------
 
-* You must of course provide a working PostgreSQL installation
-* The name of the POSIX user running the slave must also be the name of a
-  PostgreSQL role with database creation rights.
-* The PostgreSQL role must have inconditional authentication over
-  TCP/IP sockets from localhost (``pg_hba.conf`` extract)::
+You must of course provide a working PostgreSQL installation (cluster).
+The default configuration is intended for a standard cluster on the
+same system as the slave, with a PostgreSQL user with name identical
+to that of the POSIX user running the slave, having database creation rights.
 
-  # TYPE  DATABASE    USER        CIDR-ADDRESS          METHOD
-  host    all         buildslave  127.0.0.1/8           trust
+You can provide host, user and port (see ``slaves.cfg`` file to see
+how express in the master configuration file).
 
+The default value for host will make the slave connect to the
+PostgreSQL cluster through a Unix-domain socket, ie, the
+user name is the same as the POSIX user running the slave. Default
+PostgreSQL configurations allow such connections without a password (``ident``
+authentication method in ``pg_hba.conf``).
 
 Registration
 ------------
