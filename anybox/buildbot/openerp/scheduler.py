@@ -1,6 +1,7 @@
 import os
 from buildbot.changes.filter import ChangeFilter
 from anybox.buildbot.openerp import utils
+from anybox.buildbot.openerp.mirrors import Updater
 from anybox.buildbot.openerp.buildouts import parse_manifest
 
 class MirrorChangeFilter(ChangeFilter):
