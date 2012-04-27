@@ -134,7 +134,7 @@ class BuildoutsConfigurator(object):
                         'openerp:options.db_port=%(pg_port:-5432)s'),
                     WithProperties(
                         'openerp:options.db_host=%('
-                        'pg_host:-/var/run/posgresql/)s'),
+                        'pg_host:-False)s'),
                     WithProperties(
                         'openerp:options.db_user=%(pg_user:-False)s'),
                     WithProperties(
