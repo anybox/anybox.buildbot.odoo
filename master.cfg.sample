@@ -27,9 +27,10 @@ configure_from_buildouts(__file__, BuildmasterConfig)
 c['slavePortnum'] = 9989
 
 ####### CHANGESOURCES
-from buildbot.changes import pb
+from anybox.buildbot.openerp.changes import SharedPBChangeSource
 
-c['change_source'] = pb.PBChangeSource(port=9989, user='local', passwd='local')
+c['change_source'] = SharedPBChangeSource(port=9989, user='local',
+                                          passwd='local')
 
 ####### SCHEDULERS
 
