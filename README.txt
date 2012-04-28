@@ -108,6 +108,17 @@ Tweaks, optimization and traps
   setting. An alternative is to install babel and pychart in the
   virtualenv manually (sigh).
 
+Unit tests
+----------
+
+To run unit tests for this package::
+
+  pip install nose
+  python setup.py nosetests
+
+Currently, ``python setup.py test`` tries and install nose and run the
+``nose.collector`` test suite but fails in tearDown.
+
 .. Local Variables:
 .. mode: rst
 .. End:

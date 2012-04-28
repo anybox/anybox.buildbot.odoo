@@ -16,6 +16,8 @@ setup(
     include_package_data=True,
     namespace_packages=['anybox', 'anybox.buildbot'],
     install_requires=['buildbot'],
+    tests_require=['nose'],
+    test_suite='nose.collector',
     classifiers=[
       'Framework :: Buildbot',
       'Intended Audience :: Developers',
