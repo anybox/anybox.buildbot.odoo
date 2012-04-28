@@ -12,20 +12,14 @@
 * EASY: use (also) test log analyzer and test launching commands from
   openerp-runbot.
 
-* EASY (special case of new slave parameter for pg_host):
-  authenticate buildslave PG role over unix domain sockets (ident)
-  PGCLUSTER seems to be Debian specific. The proper way to initiate
-  unix domain sockets is to indicate the directory in host parameter *and the
-  proper port* (naming of the socket is derived from the port). Tested
-  in OpenERP.
-
 * MEDIUM: add a build property for human readability of branches being
   tested. Ideally, do that on the Change object if that works.
 
-* MEDIUM/HARD (lots of work): change conf (slaves.cfg) so that one
+* HARD: change conf (slaves.cfg) so that one
   slave per host is enough. Will spare lots of disk and bw thanks to sharing of
   branches, eggs and downloads at slave level, and work for slave
-  admins, too.
+  admins, too. This is tricky, since we can't use the pg_port
+  etc. properties directly.
 
 * EASY: make setup.py install work. Publish on Pypi ?
 
