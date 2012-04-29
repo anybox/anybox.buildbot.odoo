@@ -2,6 +2,7 @@ import os
 import logging
 
 from ConfigParser import ConfigParser
+from ConfigParser import NoOptionError
 from buildbot.buildslave import BuildSlave
 from buildbot.config import BuilderConfig
 
@@ -202,7 +203,12 @@ class BuildoutsConfigurator(object):
         parser.read(self.path_from_buildmaster(manifest_path))
 
         for name in parser.sections():
-            buildout = parser.get(name, 'buildout').split()
+            try:
+                buildout = parser.get(name, 'buildout').split()
+            except NoSuchOptionError:
+                # not buildout-oriented
+                continue
+
             btype = buildout[0]
             if btype != 'standalone':
                 raise ValueError("Buildout type %r in %r not supported" % (
