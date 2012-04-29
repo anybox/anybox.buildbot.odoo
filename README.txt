@@ -7,10 +7,15 @@ anybox.buildbot.openerp
 Introduction
 ============
 
-``anybox.buildbot.openerp`` aims to be a turnkey buildbot setup for a bunch of
-buildout-based OpenERP installations (see ``anybox.recipe.openerp``).
+``anybox.buildbot.openerp`` aims to be a turnkey buildbot master setup
+for a bunch of buildout-based OpenERP installations (see
+``anybox.recipe.openerp``).
 
-Having a new setup buildbotted against all the slaves attached to the
+It is able to run buildouts against the several postgreSQL versions
+that can be found in attached slaves.
+
+Having a new OpenERP generic or custom installation buildbotted
+against all the slaves attached to the 
 master is just a matter of copying the corresponding buildout in the
 ``buildouts`` subdirectory of the master and referencing it in
 ``buildouts/MANIFEST.cfg``.
