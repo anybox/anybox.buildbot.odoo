@@ -1,4 +1,5 @@
 import os
+from ConfigParser import NoOptionError
 from buildbot.changes.filter import ChangeFilter
 from anybox.buildbot.openerp import utils
 from anybox.buildbot.openerp.mirrors import Updater
