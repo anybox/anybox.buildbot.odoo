@@ -205,7 +205,7 @@ class BuildoutsConfigurator(object):
         for name in parser.sections():
             try:
                 buildout = parser.get(name, 'buildout').split()
-            except NoSuchOptionError:
+            except NoOptionError:
                 # not buildout-oriented
                 continue
 
