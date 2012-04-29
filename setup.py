@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.3'
+version = '0.4'
 
 setup(
     name = "anybox.buildbot.openerp",
@@ -14,6 +14,7 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
+    data_files=[('build_utils', ['build_utils/analyze_oerp_tests.py'])],
     namespace_packages=['anybox', 'anybox.buildbot'],
     install_requires=['buildbot'],
     tests_require=['nose'],
