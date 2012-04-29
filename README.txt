@@ -4,25 +4,50 @@ anybox.buildbot.openerp
 
 .. contents::
 
-This is a set of utilities to help creating buildbots for buildout based
-openerp setups.
+Introduction
+============
 
-Setting up a master
-===================
+``anybox.buildbot.openerp`` aims to be a turnkey buildbot setup for a bunch of
+buildout-based OpenERP installations (see ``anybox.recipe.openerp``).
+
+Having a new setup buildbotted against all the slaves attached to the
+master is just a matter of copying the corresponding buildout in the
+``buildouts`` subdirectory of the master and referencing it in
+``buildouts/MANIFEST.cfg``.
+
+An interesting practice for buildbotting of in-house custom projects
+is to put this subdirectory itself under verstion control with your
+preferred VCS, and let the developpers push on it.
+
+It is designed not to be to intrusive to buildbot itself, so that
+buildbot users can tweak their configuration in the normal buildbot
+way, and even add more builds, possibly not even related to
+OpenERP.
+
+The real-time scheduling works by keeping a local mirror in sync, with
+hooks to call the master (currently for Bazaar and Mercurial only).
+
+Master setup
+============
 
 1. Develop this package in a virtualenv. This will install buildbot as
    well. If you want a precise version of buildbot, you may install it first.
-2. Create a master in the standard way
+2. Create a master in the standard way (see ``buildbot create-master --help``).
 3. Ignore the master's ``master.cfg.sample``, copy instead this
-   package's as ``master.cfg``
+   package's as ``master.cfg``. Our sample actually differs by only
+   two lines (import and call of our configurator).
 4. Copy or symlink ``build_utils`` from this package to the master.
-
 5. Copy the provided ``buildouts`` directory into the master  or make
    your own (check buildouts/MANIFEST.cfg for an example on how to do
    that).
 6. Put a ``slaves.cfg`` file in the master directory. See the included
    ``slaves.cfg.sample`` for instructions. This file should not be
    versionned with the utilities.
+7. Install the Bzr and Mercurial hooks so that they apply to all
+   incoming changesets in the mirror
+8. Put the ``update-mirrors`` console script in a cron job (see
+   ``update-mirrors --help`` for invocation details).
+
 
 Slave setup
 ===========
@@ -69,23 +94,24 @@ value of ``unix_socket_directory`` seen in ``postgresql.conf`` or to
 ``/tmp`` if missing or commented in there *AND* indicate the port
 (socket name is based on the port)
 
-Examples:
+Examples::
 
   # Default cluster of a secondary PostgreSQL from Debian & Ubuntu
   pg_host = /var/run/postgresql
   pg_port = 5433
 
   # A fresh cluster made by a compiled PostgreSQL
-  # OR a fresh cluster made by Debian's pg_createcluster, not owned by
+  # OR a fresh cluster made by Debian's pg_createcluster, if not owned by
   # ``postgres``
 
   pg_host = /tmp
-  pg_port = 5000
+  # pg_port = PORT_NUMBER # if not the default 5432
 
 Registration
 ------------
 Have your slave registered to the master admin, specifying your
-version of PostgreSQL (e.g, 8.4, 9.0)
+version of PostgreSQL (e.g, 8.4, 9.0). The best is to provide a
+``slaves.cfg`` fragment (see ``slaves.cfg.sample`` for syntax).
 
 If you happen to have several available versions of PostgreSQL on the
 same host, then make one slave for each one.
@@ -109,7 +135,7 @@ Tweaks, optimization and traps
   virtualenv manually (sigh).
 
 Unit tests
-----------
+==========
 
 To run unit tests for this package::
 
@@ -118,6 +144,10 @@ To run unit tests for this package::
 
 Currently, ``python setup.py test`` tries and install nose and run the
 ``nose.collector`` test suite but fails in tearDown.
+
+Improvements
+============
+See the included ``TODO.txt`` file.
 
 .. Local Variables:
 .. mode: rst
