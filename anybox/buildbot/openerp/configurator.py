@@ -153,14 +153,19 @@ class BuildoutsConfigurator(object):
                 command=WithProperties(
                     "echo %(db_prefix:-openerp-buildbot)s-" + name)))
 
-        factory.addStep(ShellCommand(command=["dropdb", Property('testing_db')],
+        factory.addStep(ShellCommand(command=[
+                    "psql", 'postgres', '-c',
+                    WithProperties('DROP DATABASE IF EXISTS "%(testing_db)s"'),
+                    ],
                                      name='dropdb',
                                      description=["dropdb",
                                                   Property('testing_db')],
                                      env=dict(PGCLUSTER=PGCLUSTER),
-                                     flunkOnFailure=False))
-        factory.addStep(ShellCommand(command=["createdb",
-                                              Property('testing_db')],
+                                     haltOnFailure=True))
+        factory.addStep(ShellCommand(command=[
+                    "psql", 'postgres', '-c',
+                    WithProperties('CREATE DATABASE "%(testing_db)s"'),
+                    ],
                                      name='createdb',
                                      description=["createdb",
                                                   Property('testing_db')],
