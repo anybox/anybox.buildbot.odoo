@@ -9,6 +9,8 @@ import re
 FAILURE_REGEXPS = {
     'Failure in Python block': re.compile(r'WARNING:tests[.].*AssertionError'),
     'Errors during tests': re.compile(r'ERROR:tests[.]'),
+    'Errors loading addons': re.compile(r'ERROR.*openerp: Failed to load'),
+    'Critical logs': re.compile(r'CRITICAL'),
 }
 
 test_log = open(sys.argv[1], 'r')
