@@ -85,7 +85,10 @@ same system as the slave, with a PostgreSQL user having the same name
 as the POSIX user running the slave, having database creation rights.
 
 You can provide host,  port, and password (see ``slaves.cfg`` file to see
-how to express in the master configuration file).
+how to express in the master configuration).
+
+WARNING: currently, setting user/password is not
+supported. Only Unix-socket domains will work (see below).
 
 The default value for host on Debian-based distributions will make the
 slave connect to the PostgreSQL cluster through a Unix-domain socket, ie, the
@@ -93,11 +96,17 @@ user name is the same as the POSIX user running the slave. Default
 PostgreSQL configurations allow such connections without a password (``ident``
 authentication method in ``pg_hba.conf``).
 
+For custom compiled installations, you should provide the path to the
+``psql`` executable in the ``pg_psql`` optional property. ``psql``
+usually knows where to look if ``PGHOST`` is empty.
+
 To use ``ident`` authentication on secondary or custom compiled
 clusters, set the value of ``pg_host`` to the
 value of ``unix_socket_directory`` seen in ``postgresql.conf`` or to
 ``/tmp`` if missing or commented in there *AND* indicate the port
-(socket name is based on the port)
+(socket name is based on the port). This chase for the default
+Unix-domain socket directory is necessary for OpenERP itself. We are
+working on making it simpler.
 
 Examples::
 

@@ -29,8 +29,6 @@ logger = logging.getLogger(__name__)
 # if they used shared eggs or downloads area
 buildout_lock = locks.SlaveLock("buildout")
 
-PGCLUSTER = WithProperties('%(pg_version)s/%(pg_cluster:-main)s')
-
 class BuildoutsConfigurator(object):
     """Populate buildmaster configs from buildouts and external slaves.cfg"""
 
@@ -148,28 +146,34 @@ class BuildoutsConfigurator(object):
                                      locks=[buildout_lock.access('exclusive')]
                                      ))
 
+        # psql command and its environmental variables
+        psql = Property('pg_psql', default='psql')
+        psql_env = dict(PGHOST=WithProperties('%(pg_host:-)s'),
+                        PGPORT=WithProperties('%(pg_port:-)s'),
+                        )
+
         factory.addStep(SetProperty(
                 property='testing_db',
                 command=WithProperties(
                     "echo %(db_prefix:-openerp-buildbot)s-" + name)))
 
         factory.addStep(ShellCommand(command=[
-                    "psql", 'postgres', '-c',
+                    psql, 'postgres', '-c',
                     WithProperties('DROP DATABASE IF EXISTS "%(testing_db)s"'),
                     ],
                                      name='dropdb',
                                      description=["dropdb",
                                                   Property('testing_db')],
-                                     env=dict(PGCLUSTER=PGCLUSTER),
+                                     env=psql_env,
                                      haltOnFailure=True))
         factory.addStep(ShellCommand(command=[
-                    "psql", 'postgres', '-c',
+                    psql, 'postgres', '-c',
                     WithProperties('CREATE DATABASE "%(testing_db)s"'),
                     ],
                                      name='createdb',
                                      description=["createdb",
                                                   Property('testing_db')],
-                                     env=dict(PGCLUSTER=PGCLUSTER),
+                                     env=psql_env,
                                      haltOnFailure=True,
                                      ))
 
