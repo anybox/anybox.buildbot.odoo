@@ -21,8 +21,6 @@
   admins, too. This is tricky, since we can't use the pg_port
   etc. properties directly.
 
-* EASY: make setup.py install work. Publish on Pypi ?
-
 * HARD: true reproduceability and better blame list through setting of
   revs in build properties together with new options in buildout
-  recipe to apply them.
+  recipe to apply them. NB: it seems that property values can be dicts

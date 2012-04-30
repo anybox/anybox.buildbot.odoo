@@ -15,7 +15,7 @@ It is able to run buildouts against the several postgreSQL versions
 that can be found in attached slaves.
 
 Having a new OpenERP generic or custom installation buildbotted
-against all the slaves attached to the 
+against all the slaves attached to the
 master is just a matter of copying the corresponding buildout in the
 ``buildouts`` subdirectory of the master and referencing it in
 ``buildouts/MANIFEST.cfg``.
