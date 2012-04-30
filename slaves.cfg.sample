@@ -13,10 +13,14 @@ pg_version = 9.1
 # optional build properties, showing default values
 #
 
-pg_host = False
 pg_port = 5432
-# OpenERP idioms not to pass a user name (``ident`` authentication method)
-pg_host = False
+pg_psql = psql
+pg_bin =
+pg_lib =
+# OpenERP idioms not to pass a user name (``ident`` authentication method):
+# pg_host defaults to False for OpenERP configuration and is set as PGHOST
+# environment variable for psql
+pg_host =
 pg_user = False
 pg_passwd = False
 

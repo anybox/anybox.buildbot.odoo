@@ -125,6 +125,11 @@ class BuildoutsConfigurator(object):
                                               eggs_cache, openerp_cache],
                                      name="cachedirs",
                                      description="prepare cache dirs"))
+
+        psycopg2_env=dict(PATH=[WithProperties('%(pg_bin:-)s'),
+                                '${PATH}'],
+                          LD_LIBRARY_PATH=WithProperties('%(pg_lib:-)s'),
+                          )
         factory.addStep(ShellCommand(command=[
                     'bin/buildout',
                     'buildout:eggs-directory=' + eggs_cache,
@@ -143,13 +148,16 @@ class BuildoutsConfigurator(object):
                                      description="buildout",
                                      timeout=3600*4,
                                      haltOnFailure=True,
-                                     locks=[buildout_lock.access('exclusive')]
+                                     locks=[buildout_lock.access('exclusive')],
+                                     env=psycopg2_env,
                                      ))
 
         # psql command and its environmental variables
         psql = Property('pg_psql', default='psql')
         psql_env = dict(PGHOST=WithProperties('%(pg_host:-)s'),
                         PGPORT=WithProperties('%(pg_port:-)s'),
+                        PATH=[WithProperties('%(pg_bin:-)s'),
+                              '${PATH}'],
                         )
 
         factory.addStep(SetProperty(
@@ -187,7 +195,8 @@ class BuildoutsConfigurator(object):
                                      description='ran tests',
                                      logfiles=dict(test='test.log'),
                                      haltOnFailure=True,
-                                     ))
+                                     env=psycopg2_env,
+                                     )),
 
         factory.addStep(ShellCommand(
                 command=["python", "analyze_oerp_tests.py", "test.log"],

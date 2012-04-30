@@ -90,36 +90,39 @@ how to express in the master configuration).
 WARNING: currently, setting user/password is not
 supported. Only Unix-socket domains will work (see below).
 
-The default value for host on Debian-based distributions will make the
+The default blank value for host on Debian-based distributions will make the
 slave connect to the PostgreSQL cluster through a Unix-domain socket, ie, the
 user name is the same as the POSIX user running the slave. Default
 PostgreSQL configurations allow such connections without a password (``ident``
 authentication method in ``pg_hba.conf``).
 
-For custom compiled installations, you should provide the path to the
-``psql`` executable in the ``pg_psql`` optional property. ``psql``
-usually knows where to look if ``PGHOST`` is empty.
-
 To use ``ident`` authentication on secondary or custom compiled
-clusters, set the value of ``pg_host`` to the
-value of ``unix_socket_directory`` seen in ``postgresql.conf`` or to
-``/tmp`` if missing or commented in there *AND* indicate the port
-(socket name is based on the port). This chase for the default
-Unix-domain socket directory is necessary for OpenERP itself. We are
-working on making it simpler.
+clusters:
+
+* set the value of ``pg_host`` to the
+  value of ``unix_socket_directory`` seen in ``postgresql.conf`` or
+  leave it blank if missing or commented. The ``psql`` executable and
+  the client libraries use the same defaults as the server.
+* you *must* provide the port number if not the default 5432, because
+  the port identifies the cluster uniquely, even for Unix-domain sockets
+
+For custom compiled installations, you must also provide the path to the
+binaries and libraries directories in the ``pg_bin`` and ``pg_lib``
+optional properties.
 
 Examples::
 
   # Default cluster of a secondary PostgreSQL from Debian & Ubuntu
-  pg_host = /var/run/postgresql
   pg_port = 5433
 
-  # A fresh cluster made by a compiled PostgreSQL
-  # OR a fresh cluster made by Debian's pg_createcluster, if not owned by
-  # ``postgres``
+  # Compiled PostgreSQL with --prefix=/opt/postgresql,
+  # port set to 5434 and unix_socket_directory unset in postgresql.conf
+  pg_bin = /opt/postgresql/bin
+  pg_lib = /opt/postgresql/lib
+  pg_port = 5434
 
-  pg_host = /tmp
-  # pg_port = PORT_NUMBER # if not the default 5432
+  # If unix_socket_directory is set to /opt/postgresql/run, add this:
+  pg_host = /opt/postgresql/run
 
 Registration
 ------------
