@@ -184,6 +184,10 @@ class BuildoutsConfigurator(object):
                                      env=psql_env,
                                      haltOnFailure=True,
                                      ))
+        factory.addStep(ShellCommand(command=['rm', 'test.log'],
+                                     name="Log cleanup",
+                                     descriptionDone=['Cleaned', 'logs'],
+                                     ))
 
         factory.addStep(ShellCommand(command=[
                     'bin/start_openerp', '-i', 'all',
@@ -192,7 +196,8 @@ class BuildoutsConfigurator(object):
                     # openerp --logfile does not work with relative paths !
                     WithProperties('--logfile=%(workdir)s/build/test.log')],
                                      name='testing',
-                                     description='ran tests',
+                                     description='testing',
+                                     description='tests',
                                      logfiles=dict(test='test.log'),
                                      haltOnFailure=True,
                                      env=psycopg2_env,
