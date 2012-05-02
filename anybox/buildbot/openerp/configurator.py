@@ -184,7 +184,7 @@ class BuildoutsConfigurator(object):
                                      env=psql_env,
                                      haltOnFailure=True,
                                      ))
-        factory.addStep(ShellCommand(command=['rm', 'test.log'],
+        factory.addStep(ShellCommand(command=['rm', '-f', 'test.log'],
                                      name="Log cleanup",
                                      descriptionDone=['Cleaned', 'logs'],
                                      ))
