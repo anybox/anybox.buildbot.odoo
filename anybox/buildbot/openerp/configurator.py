@@ -197,7 +197,7 @@ class BuildoutsConfigurator(object):
                     WithProperties('--logfile=%(workdir)s/build/test.log')],
                                      name='testing',
                                      description='testing',
-                                     description='tests',
+                                     descriptionDone='tests',
                                      logfiles=dict(test='test.log'),
                                      haltOnFailure=True,
                                      env=psycopg2_env,
