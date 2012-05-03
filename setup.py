@@ -14,7 +14,10 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
-    data_files=[('build_utils', ['build_utils/analyze_oerp_tests.py'])],
+    data_files=[('build_utils', ['build_utils/analyze_oerp_tests.py']),
+                ('anybox/buildbot/openerp/tests/data', [
+                   'anybox/buildbot/openerp/tests/data/manifest_1.cfg',
+                 ])],
     namespace_packages=['anybox', 'anybox.buildbot'],
     install_requires=['buildbot > 0.8.5'],
     tests_require=['nose'],

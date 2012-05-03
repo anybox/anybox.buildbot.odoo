@@ -53,4 +53,9 @@ def hg_pull(path, source, specs):
 
     subprocess.call(cmd)
 
+def comma_list_sanitize(comma_list):
+    """Sanitize a list given as a comma separated string.
 
+    Will remove all internal whitespace
+    """
+    return ','.join([i.strip() for i in comma_list.split(',')])

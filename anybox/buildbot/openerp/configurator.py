@@ -16,6 +16,7 @@ from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
 from scheduler import MirrorChangeFilter
+from utils import comma_list_sanitize
 
 BUILDSLAVE_KWARGS = ('max_builds',)
 BUILDSLAVE_REQUIRED = ('password', 'pg_version',)
@@ -93,13 +94,13 @@ class BuildoutsConfigurator(object):
 
         return slaves
 
-    def make_factory(self, name, cfg_path):
+    def make_factory(self, name, cfg_path, options):
         """Return a build factory using name and buildout config at cfg_path.
 
         cfg_path is relative to the master directory.
         the factory name is also used as testing database suffix
+        options is the config part for this factory, seen as a dict
         """
-
         factory = BuildFactory()
         factory.addStep(ShellCommand(command=['bzr', 'init-repo', '../..'],
                                      name="bzr repo",
@@ -190,7 +191,8 @@ class BuildoutsConfigurator(object):
                                      ))
 
         factory.addStep(ShellCommand(command=[
-                    'bin/start_openerp', '-i', 'all',
+                    'bin/start_openerp', '-i',
+                    comma_list_sanitize(options.get('openerp-addons', 'all')),
                     '--stop-after-init',
                     '--log-level=test', '-d', Property('testing_db'),
                     # openerp --logfile does not work with relative paths !
@@ -237,7 +239,8 @@ class BuildoutsConfigurator(object):
                 raise ValueError("Buildout type %r in %r not supported" % (
                         btype, name))
 
-            registry[name] = self.make_factory(name, buildout[1])
+            registry[name] = self.make_factory(name, buildout[1],
+                                               dict(parser.items(name)))
 
 
     def make_builders(self, master_config=None,
