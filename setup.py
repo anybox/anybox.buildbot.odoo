@@ -16,7 +16,7 @@ setup(
     include_package_data=True,
     data_files=[('build_utils', ['build_utils/analyze_oerp_tests.py'])],
     namespace_packages=['anybox', 'anybox.buildbot'],
-    install_requires=['buildbot'],
+    install_requires=['buildbot > 0.8.5'],
     tests_require=['nose'],
     test_suite='nose.collector',
     classifiers=[

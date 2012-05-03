@@ -35,8 +35,8 @@ hooks to call the master (currently for Bazaar and Mercurial only).
 Master setup
 ============
 
-1. Develop this package in a virtualenv. This will install buildbot as
-   well. If you want a precise version of buildbot, you may install it first.
+1. Install this package in a virtualenv. This will install buildbot as
+   well.
 2. Create a master in the standard way (see ``buildbot create-master --help``).
 3. Ignore the master's ``master.cfg.sample``, copy instead this
    package's as ``master.cfg``. Our sample actually differs by only
@@ -142,14 +142,11 @@ Tweaks, optimization and traps
 * Windows slaves are currently unsupported : some steps use '/'
   separators in arguments.
 
-* If the home dir of your slave is also the virtualenv, some
-  distributions (Ubuntu) will put its bin/ on the PATH. Therefore, all builds
-  will happen in that virtualenv, and that can lead to buildout
-  failures (cannot locate babel and pychart).
-  The best then is either to put the virtualenv in a separate
-  directory or to edit ~/.bashrc and friends to avoid this PATH
-  setting. An alternative is to install babel and pychart in the
-  virtualenv manually (sigh).
+* Do *not* start the slave while its virtualenv is "activated"; also take
+  care that the bin/ directory of the virtualenv *must not* be on the
+  POSIX user default PATH. Many build steps are not designed for that,
+  and would miss some dependencies. This is notably the case for the
+  buildout step.
 
 Unit tests
 ==========
