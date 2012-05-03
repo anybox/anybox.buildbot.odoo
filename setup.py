@@ -20,10 +20,14 @@ setup(
     tests_require=['nose'],
     test_suite='nose.collector',
     classifiers=[
-      'Framework :: Buildbot',
       'Intended Audience :: Developers',
+      'Intended Audience :: System Administrators',
       'Topic :: Software Development :: Build Tools',
+      'Topic :: Software Development :: Testing',
+      'Topic :: Software Development :: Quality Assurance',
       'Topic :: Software Development :: Libraries :: Python Modules',
+      'License :: OSI Approved :: GNU Affero General Public License v3 '
+      'or later (AGPLv3+)',
       ],
    entry_points="""
     [console_scripts]

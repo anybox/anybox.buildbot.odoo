@@ -1,11 +1,10 @@
-=======================
 anybox.buildbot.openerp
 =======================
 
 .. contents::
 
 Introduction
-============
+~~~~~~~~~~~~
 
 ``anybox.buildbot.openerp`` aims to be a turnkey buildbot master setup
 for a bunch of buildout-based OpenERP installations (see
@@ -33,7 +32,7 @@ The real-time scheduling works by keeping a local mirror in sync, with
 hooks to call the master (currently for Bazaar and Mercurial only).
 
 Master setup
-============
+~~~~~~~~~~~~
 
 1. Install this package in a virtualenv. This will install buildbot as
    well.
@@ -55,7 +54,7 @@ Master setup
 
 
 Slave setup
-===========
+~~~~~~~~~~~
 
 Buildbot slave software
 -----------------------
@@ -149,7 +148,7 @@ Tweaks, optimization and traps
   buildout step.
 
 Unit tests
-==========
+~~~~~~~~~~
 
 To run unit tests for this package::
 
@@ -160,15 +159,8 @@ Currently, ``python setup.py test`` tries and install nose and run the
 ``nose.collector`` test suite but fails in tearDown.
 
 Improvements
-============
+~~~~~~~~~~~~
 See the included ``TODO.txt`` file.
-
-.. Local Variables:
-.. mode: rst
-.. End:
-.. Vim
-.. vim: set filetype=rst:
-
 
 
 
