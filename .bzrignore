@@ -1,4 +1,3 @@
-syntax: glob
 build/
 bin/*
 dist
