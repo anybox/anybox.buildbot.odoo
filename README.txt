@@ -147,7 +147,24 @@ Tweaks, optimization and traps
   and would miss some dependencies. This is notably the case for the
   buildout step.
 
+Contribute
+~~~~~~~~~~
+Author and contributors:
+
+ * Georges Racinet
+
+The primary branch is on the launchpad:
+
+ * Code repository and bug tracker:
+   https://launchpad.net/anybox.buildbot.openerp
+ * PyPI page: http://pypi.python.org/pypi/anybox.buildbot.openerp
+
+Please branch on the launchpad or contact the authors to report any bug or ask
+for a new feature.
+
+
 Unit tests
+antended Audience :: System Administrators
 ~~~~~~~~~~
 
 To run unit tests for this package::
