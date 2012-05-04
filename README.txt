@@ -56,6 +56,16 @@ Master setup
 Slave setup
 ~~~~~~~~~~~
 
+We strongly recommend that you install and run the buildslave with its
+own dedicated POSIX user, e.g.::
+
+  sudo adduser --system buildslave
+  sudo -su buildslave
+  cd
+
+(the ``--system`` option forbids direct logins by setting the default
+shell to ``/bin/false``, see ``man adduser``)
+
 Buildbot slave software
 -----------------------
 For slave software itself, just follow the official buildbot way of doing::
@@ -82,9 +92,13 @@ You must of course provide a working PostgreSQL installation (cluster).
 The default configuration assumes a standard PostgreSQL cluster on the
 same system as the slave, with a PostgreSQL user having the same name
 as the POSIX user running the slave, having database creation rights.
+Assuming the slave POSIX user is ``buildslave``, just do::
 
-You can provide host,  port, and password (see ``slaves.cfg`` file to see
-how to express in the master configuration).
+  sudo -u postgres createuser --createdb --no-createrole \
+       --no-superuser
+
+Alternatively, you can provide host,  port, and password (see
+``slaves.cfg`` file to see how to express in the master configuration).
 
 WARNING: currently, setting user/password is not
 supported. Only Unix-socket domains will work (see below).
