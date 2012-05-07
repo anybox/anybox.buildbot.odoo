@@ -19,7 +19,7 @@ from scheduler import MirrorChangeFilter
 from utils import comma_list_sanitize
 
 BUILDSLAVE_KWARGS = ('max_builds',)
-BUILDSLAVE_REQUIRED = ('password',)
+BUILDSLAVE_REQUIRED = ('password', 'pg_version',)
 
 BUILD_FACTORIES = {} # registry of named build factories
 FACTORIES_TO_BUILDERS = {}
@@ -74,23 +74,11 @@ class BuildoutsConfigurator(object):
         for slavename in parser.sections():
             kw = {}
             kw['properties'] = props = {}
-            props['capability'] = caps = {} # name -> versions
             seen = set()
             for key, value in parser.items(slavename):
                 seen.add(key)
                 if key in ('passwd', 'password'):
                     pwd = value
-                elif key == 'capability':
-                    for cap_line in value.split(os.linesep):
-                        split = cap_line.split()
-                        name = split[0]
-                        version = split[1]
-                        this_cap = caps.setdefault(name, {})
-                        cap_opts = this_cap.setdefault(version, {})
-                        for option in split[2:]:
-                            opt_name, opt_val = option.split('=')
-                            cap_opts[opt_name] = opt_val
-
                 elif key in BUILDSLAVE_KWARGS:
                     kw[key] = value
                 else:
@@ -102,8 +90,7 @@ class BuildoutsConfigurator(object):
                                  slavename, option)
                     break
             else:
-                slave = BuildSlave(slavename, pwd, **kw)
-                slaves.append(slave)
+                slaves.append(BuildSlave(slavename, pwd, **kw))
 
         return slaves
 
@@ -282,8 +269,7 @@ class BuildoutsConfigurator(object):
 
         slaves_by_pg = {} # pg version -> list of slave names
         for slave in slaves:
-            for pg in slave.properties['capability'].get('postgresql', []):
-                pg = slave.properties['pg_version']
+            pg = slave.properties['pg_version']
             slaves_by_pg.setdefault(pg, []).append(slave.slavename)
 
         all_builders = []

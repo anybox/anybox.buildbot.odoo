@@ -7,8 +7,22 @@
 # required
 #
 password = secret
-capability = postgresql 8.4 port=5432 psql=psql bin= lib=
-             postgresql 9.1 port=5433 psql=psql bin= lib=
+pg_version = 9.1
+
+#
+# optional build properties, showing default values
+#
+
+pg_port = 5432
+pg_psql = psql
+pg_bin =
+pg_lib =
+# OpenERP idioms not to pass a user name (``ident`` authentication method):
+# pg_host defaults to False for OpenERP configuration and is set as PGHOST
+# environment variable for psql
+pg_host =
+pg_user = False
+pg_passwd = False
 
 # builder's testing db is concatenation of db_prefix and builder name
 db_prefix = openerp-buildbot
