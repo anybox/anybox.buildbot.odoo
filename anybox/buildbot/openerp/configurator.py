@@ -22,8 +22,6 @@ from version import VersionFilter
 BUILDSLAVE_KWARGS = ('max_builds',)
 BUILDSLAVE_REQUIRED = ('password', 'pg_version',)
 
-FACTORIES_TO_BUILDERS = {}
-
 logger = logging.getLogger(__name__)
 
 # Running buildouts in parallel on one slave fails
@@ -37,7 +35,8 @@ class BuildoutsConfigurator(object):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
         self.buildmaster_dir = os.path.split(master_cfg_file)[0]
-        self.build_factories = {}
+        self.build_factories = {} # build factories by name
+        self.factories_to_builders = {} # factory name -> builders playing it
 
     def populate(self, config):
         config.setdefault('slaves', []).extend(self.make_slaves('slaves.cfg'))
@@ -252,8 +251,7 @@ class BuildoutsConfigurator(object):
                                                dict(parser.items(name)))
 
 
-    def make_builders(self, master_config=None,
-                      fact_to_builders=FACTORIES_TO_BUILDERS):
+    def make_builders(self, master_config=None):
         """Spawn builders from build factories.
 
         build_factories is a dict names -> build_factories
@@ -281,6 +279,7 @@ class BuildoutsConfigurator(object):
             slaves_by_pg.setdefault(pg, []).append(slave.slavename)
 
         all_builders = []
+        fact_to_builders = self.factories_to_builders
         for factory_name, factory in self.build_factories.items():
             pgvf = factory.build_for.get('postgresql')
             builders = [
@@ -294,13 +293,14 @@ class BuildoutsConfigurator(object):
             all_builders.extend(builders)
         return all_builders
 
-    def make_schedulers(self, fact_to_builders=FACTORIES_TO_BUILDERS):
+    def make_schedulers(self):
         """We make one scheduler per build factory (ie per buildout).
 
         Indeed, a scheduler must be tied to a list of builders to run.
         TODO at some point check if a big dedicated, single schedulers would
         not be preferable for buildmaster performance.
         """
+        fact_to_builders = self.factories_to_builders
         return [SingleBranchScheduler(name=factory_name,
                                       change_filter=MirrorChangeFilter(
                     self.buildmaster_dir, factory_name),
