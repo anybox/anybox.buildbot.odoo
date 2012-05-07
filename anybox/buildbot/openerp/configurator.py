@@ -17,6 +17,7 @@ from buildbot.schedulers.basic import SingleBranchScheduler
 
 from scheduler import MirrorChangeFilter
 from utils import comma_list_sanitize
+from version import Version
 from version import VersionFilter
 
 BUILDSLAVE_KWARGS = ('max_builds',)
@@ -215,8 +216,8 @@ class BuildoutsConfigurator(object):
         factory.build_for = {}
         if build_for is not None:
             for line in build_for.split(os.linesep):
-                vf = VersionFilter(line)
-                factory.build_for[vf.name] = vf
+                vf = VersionFilter.parse(line)
+                factory.build_for[vf.cap] = vf
 
         return factory
 

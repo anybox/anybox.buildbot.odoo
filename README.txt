@@ -52,6 +52,29 @@ Master setup
 8. Put the ``update-mirrors`` console script in a cron job (see
    ``update-mirrors --help`` for invocation details).
 
+Buildouts
+~~~~~~~~~
+
+The buildouts to install and test are stored in the ``buildouts``
+directory; they must be declared with appropriated options in the
+``buildouts/MANIFEST.cfg``. The one included with this package
+is for http://buildbot.anybox.fr.
+
+In this manifest file, each section corresponds to a buildout (or at
+least a ``BuildFactory`` object).
+Options are:
+
+ * buildout = TYPE PATH: to indicate that this is indeed an OpenERP
+   buildout. TYPE must be equal to ``standalone`` for now. PATH is
+   interpreted from the buildmaster directory
+ * watch = LINES: a list of VCS locations to watch for changes (all
+   occurrences of this buildout will be rebuilt/retested if any change
+   in them)
+ * build-for = LINES: a list of software combinations that this
+   buildout should be run against. Takes the form of a software name
+   (currently "postgresql" only) and a version requirement (see
+   included example and docstrings in
+   ``anybox.buildout.openerp.version`` for format)
 
 Slave setup
 ~~~~~~~~~~~
