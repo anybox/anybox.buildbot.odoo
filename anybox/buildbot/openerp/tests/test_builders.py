@@ -11,12 +11,12 @@ class TestBuilders(BaseTestCase):
 
     def test_register_openerp_addons(self):
         """The ``addons-list`` builder factory installs given addons."""
-        registry = {}
         self.configurator.register_build_factories(
-            self.data_join('manifest_1.cfg'), registry=registry)
+            self.data_join('manifest_1.cfg'))
 
-        self.assertTrue('addons-list' in registry)
-        factory = registry['addons-list']
+        factories = self.configurator.build_factories
+        self.assertTrue('addons-list' in factories)
+        factory = factories['addons-list']
 
         for step in factory.steps:
             if step[1].get('name') == 'testing':

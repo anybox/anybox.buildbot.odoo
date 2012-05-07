@@ -17,11 +17,11 @@ from buildbot.schedulers.basic import SingleBranchScheduler
 
 from scheduler import MirrorChangeFilter
 from utils import comma_list_sanitize
+from version import VersionFilter
 
 BUILDSLAVE_KWARGS = ('max_builds',)
 BUILDSLAVE_REQUIRED = ('password', 'pg_version',)
 
-BUILD_FACTORIES = {} # registry of named build factories
 FACTORIES_TO_BUILDERS = {}
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,7 @@ class BuildoutsConfigurator(object):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
         self.buildmaster_dir = os.path.split(master_cfg_file)[0]
+        self.build_factories = {}
 
     def populate(self, config):
         config.setdefault('slaves', []).extend(self.make_slaves('slaves.cfg'))
@@ -211,9 +212,16 @@ class BuildoutsConfigurator(object):
                 description="analyze",
                 ))
 
+        build_for = options.get('build-for')
+        factory.build_for = {}
+        if build_for is not None:
+            for line in build_for.split(os.linesep):
+                vf = VersionFilter(line)
+                factory.build_for[vf.name] = vf
+
         return factory
 
-    def register_build_factories(self, manifest_path, registry=BUILD_FACTORIES):
+    def register_build_factories(self, manifest_path):
         """Register a build factory per buildout from file at manifest_path.
 
         manifest_path is interpreted relative to the buildmaster dir.
@@ -226,6 +234,7 @@ class BuildoutsConfigurator(object):
         """
         parser = ConfigParser()
         parser.read(self.path_from_buildmaster(manifest_path))
+        registry = self.build_factories
 
         for name in parser.sections():
             try:
@@ -244,7 +253,6 @@ class BuildoutsConfigurator(object):
 
 
     def make_builders(self, master_config=None,
-                      build_factories=BUILD_FACTORIES,
                       fact_to_builders=FACTORIES_TO_BUILDERS):
         """Spawn builders from build factories.
 
@@ -273,11 +281,14 @@ class BuildoutsConfigurator(object):
             slaves_by_pg.setdefault(pg, []).append(slave.slavename)
 
         all_builders = []
-        for factory_name, factory in build_factories.items():
-            builders = [BuilderConfig(name='%s-postgresql-%s' % (factory_name,
-                                                                 pg_version),
-                                      factory=factory, slavenames=slavenames)
-                        for pg_version, slavenames in slaves_by_pg.items()
+        for factory_name, factory in self.build_factories.items():
+            pgvf = factory.build_for.get('postgresql')
+            builders = [
+                BuilderConfig(name='%s-postgresql-%s' % (factory_name,
+                                                         pg_version),
+                              factory=factory, slavenames=slavenames)
+                for pg_version, slavenames in slaves_by_pg.items()
+                if pgvf is None or pgvf.match(Version.parse(pg_version))
                 ]
             fact_to_builders[factory_name] = [b.name for b in builders]
             all_builders.extend(builders)
