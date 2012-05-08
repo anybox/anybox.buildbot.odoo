@@ -7,9 +7,12 @@ import fcntl
 import subprocess
 import optparse
 from ConfigParser import NoOptionError
+import logging
 
 from anybox.buildbot.openerp import utils
 from anybox.buildbot.openerp.buildouts import parse_manifest
+
+logger = logging.getLogger(__name__)
 
 class Updater(object):
     """This class is the main mirrors maintainer.
@@ -129,10 +132,35 @@ class Updater(object):
 
             if os.path.isdir(path):
                 methods = self.branch_update_methods
+                msg = "Updating"
             else:
                 methods = self.branch_init_methods
+                msg = "Creating"
 
+            logger.info("[%s] %s %r from %r", vcs, msg, path, url)
             methods[vcs](path, url, branch_specs)
+
+def configure_logging(logging_level):
+    """Configure logging for the given logging level (upper-case)."""
+
+    level = getattr(logging, logging_level, None)
+    if not isinstance(level, int):
+        level = None
+
+    if level is None:
+        msg = 'The required logging level %r does not exist' % logging_level
+        msg += os.linesep
+        sys.stderr.write(msg)
+        sys.exit(1)
+
+    logger = logging.getLogger()
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(
+        logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s'))
+    console_handler.setLevel(level)
+
+    logger.addHandler(console_handler)
+    logger.setLevel(level)
 
 
 def update():
@@ -146,6 +174,8 @@ def update():
                       help="Specify the bzr executable to use")
     parser.add_option('--hg-executable', dest='hg', default='hg',
                       help="Specify the bzr executable to use")
+    parser.add_option('--log-level', default='INFO',
+                      help="Standard logging level")
     options, args = parser.parse_args()
 
     if len(args) != 1:
@@ -153,6 +183,8 @@ def update():
         sys.exit(1)
 
     mirrors_dir = args[0]
+
+    configure_logging(options.log_level.upper())
 
     # This way of locking should avoid deadlocks if there's a wild reboot
     lock_file = open(os.path.join(mirrors_dir, 'update.lock'), 'w')
