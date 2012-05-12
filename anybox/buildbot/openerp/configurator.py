@@ -136,6 +136,7 @@ class BuildoutsConfigurator(object):
                     'bin/buildout',
                     'buildout:eggs-directory=' + eggs_cache,
                     'buildout:openerp-downloads-directory=' + openerp_cache,
+                    'openerp:vcs-clear-locks=True',
                     WithProperties(
                         'openerp:options.db_port=%(pg_port:-5432)s'),
                     WithProperties(
