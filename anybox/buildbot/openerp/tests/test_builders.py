@@ -34,6 +34,20 @@ class TestBuilders(BaseTestCase):
 
         self.assertEquals(addons, 'stock,crm')
 
+    def test_build_category(self):
+        """The ``build_category`` option becomes builders categories."""
+        master = {}
+        conf = self.configurator
+        master['slaves'] = conf.make_slaves(self.data_join('one_slave.cfg'))
+        conf.register_build_factories(self.data_join('manifest_category.cfg'))
+        builders = self.configurator.make_builders(master_config=master)
+        self.assertEquals(len(builders), 2)
+        expected = {'ready-postgresql-8.4': 'mature',
+                    'wip-postgresql-8.4': 'unstable'}
+        for b in builders:
+            self.assertEquals(b.category, expected[b.name])
+
+
     def test_pg_version_filtering(self):
         master = {}
         conf = self.configurator

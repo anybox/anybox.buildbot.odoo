@@ -220,6 +220,9 @@ class BuildoutsConfigurator(object):
                 vf = VersionFilter.parse(line)
                 factory.build_for[vf.cap] = vf
 
+        build_category = options.get('build-category')
+        if build_category:
+            factory.build_category = build_category.strip()
         return factory
 
     def register_build_factories(self, manifest_path):
@@ -287,6 +290,7 @@ class BuildoutsConfigurator(object):
             builders = [
                 BuilderConfig(name='%s-postgresql-%s' % (factory_name,
                                                          pg_version),
+                              category=getattr(factory, 'build_category', None),
                               factory=factory, slavenames=slavenames)
                 for pg_version, slavenames in slaves_by_pg.items()
                 if pgvf is None or pgvf.match(Version.parse(pg_version))

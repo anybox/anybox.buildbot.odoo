@@ -19,6 +19,8 @@ setup(
                    'anybox/buildbot/openerp/tests/data/manifest_1.cfg',
                    'anybox/buildbot/openerp/tests/data/manifest_build_for.cfg',
                    'anybox/buildbot/openerp/tests/data/slaves_build_for.cfg',
+                   'anybox/buildbot/openerp/tests/data/manifest_category.cfg',
+                   'anybox/buildbot/openerp/tests/data/one_slave.cfg',
                  ])],
     namespace_packages=['anybox', 'anybox.buildbot'],
     install_requires=['buildbot > 0.8.5'],
