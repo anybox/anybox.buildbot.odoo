@@ -3,11 +3,14 @@ Changes
 
 0.5
 ---
+ - launchpad ##994524: Configuration option "build-for" allows to
+   specify PosgreSQL version ranges
  - launchpad #998829: New build-category option in MANIFEST.cfg
 
 0.4.4
 -----
  - List of addons to install now can be specified per build factory
+
 0.4.3
 -----
  - Documentation improvements
