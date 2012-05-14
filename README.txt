@@ -184,6 +184,19 @@ Tweaks, optimization and traps
   and would miss some dependencies. This is notably the case for the
   buildout step.
 
+* If you want to add virtualenv based build factories, such as the
+  ones found in http://buildbot.anybox.fr (notably this distribution),
+  make sure that the default system python has virtualenv >=1.5. Prior
+  versions have hardcoded file names in /tmp, that lead to permission
+  errors in case virtualenv is run again with a different system user
+  (meaning that any invocation of virtualenv outside the slave will
+  break subsequent builds in the slave that need it). In particular,
+  note that in Debian 6.0 (Squeeze), python-virtualenv is currently
+  1.4.9, and is absent from squeeze-backports. You'll have to set it
+  up manually (install python-pip first).
+
+
+
 Contribute
 ~~~~~~~~~~
 Author and contributors:
