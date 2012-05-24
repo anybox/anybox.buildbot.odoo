@@ -3,7 +3,8 @@ Changes
 
 0.5
 ---
- - launchpad ##994524: Configuration option "build-for" allows to
+ - using vcs-clear-retry option of OpenERP recipe
+ - launchpad #994524: Configuration option "build-for" allows to
    specify PosgreSQL version ranges
  - launchpad #998829: New build-category option in MANIFEST.cfg
 
