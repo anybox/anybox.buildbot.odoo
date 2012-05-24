@@ -1,6 +1,9 @@
 Changes
 ~~~~~~~
 
+0.6
+---
+
 0.5
 ---
  - using vcs-clear-retry option of OpenERP recipe
