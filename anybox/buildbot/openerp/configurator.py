@@ -133,6 +133,18 @@ class BuildoutsConfigurator(object):
         factory.addStep(FileDownload(mastersrc='build_utils/'
                                      'analyze_oerp_tests.py',
                                      slavedest='analyze_oerp_tests.py'))
+        def props_pre(step):
+            """Here being very lazing, using a side effect on doStepIf."""
+            pg_version = step.getProperty('pg_version')
+            pg_props = step.getProperty('capability')['postgresql'][pg_version]
+            for k, v in pg_props.items():
+                step.setProperty('pg_%s' % k, v)
+
+        factory.addStep(ShellCommand(command=[
+            '/bin/echo',
+            WithProperties('capability: %(capability)s')],
+                                     doStepIf=props_pre))
+
         factory.addStep(ShellCommand(command=['python', 'bootstrap.py'],
                                      haltOnFailure=True,
                                      ))
@@ -180,18 +192,6 @@ class BuildoutsConfigurator(object):
                         PATH=[WithProperties('%(pg_bin:-)s'),
                               '${PATH}'],
                         )
-
-        def props_pre(step):
-            """Here being very lazing, using a side effect on doStepIf."""
-            pg_version = step.getProperty('pg_version')
-            pg_props = step.getProperty('capability')['postgresql'][pg_version]
-            for k, v in pg_props.items():
-                step.setProperty('pg_%s' % k, v)
-
-        factory.addStep(ShellCommand(command=[
-            '/bin/echo',
-            WithProperties('capability: %(capability)s')],
-                                     doStepIf=props_pre))
 
         factory.addStep(SetProperty(
                 property='testing_db',
@@ -310,7 +310,7 @@ class BuildoutsConfigurator(object):
 
         slaves_by_pg = {} # pg version -> list of slave names
         for slave in slaves:
-            for pg in slave.properties['capability'].get('postgresql', []):
+            for pg in slave.properties['capability'].get('postgresql', {}).keys():
                 slaves_by_pg.setdefault(pg, []).append(slave.slavename)
 
         all_builders = []
