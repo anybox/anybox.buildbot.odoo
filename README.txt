@@ -52,9 +52,42 @@ Master setup
 8. Put the ``update-mirrors`` console script in a cron job (see
    ``update-mirrors --help`` for invocation details).
 
+Buildouts
+~~~~~~~~~
+
+The buildouts to install and test are stored in the ``buildouts``
+directory; they must be declared with appropriated options in the
+``buildouts/MANIFEST.cfg``. The one included with this package
+is for http://buildbot.anybox.fr.
+
+In this manifest file, each section corresponds to a buildout (or at
+least a ``BuildFactory`` object).
+Options are:
+
+ * buildout = TYPE PATH: to indicate that this is indeed an OpenERP
+   buildout. TYPE must be equal to ``standalone`` for now. PATH is
+   interpreted from the buildmaster directory
+ * watch = LINES: a list of VCS locations to watch for changes (all
+   occurrences of this buildout will be rebuilt/retested if any change
+   in them)
+ * build-for = LINES: a list of software combinations that this
+   buildout should be run against. Takes the form of a software name
+   (currently "postgresql" only) and a version requirement (see
+   included example and docstrings in
+   ``anybox.buildout.openerp.version`` for format)
 
 Slave setup
 ~~~~~~~~~~~
+
+We strongly recommend that you install and run the buildslave with its
+own dedicated POSIX user, e.g.::
+
+  sudo adduser --system buildslave
+  sudo -su buildslave
+  cd
+
+(the ``--system`` option forbids direct logins by setting the default
+shell to ``/bin/false``, see ``man adduser``)
 
 Buildbot slave software
 -----------------------
@@ -82,9 +115,13 @@ You must of course provide a working PostgreSQL installation (cluster).
 The default configuration assumes a standard PostgreSQL cluster on the
 same system as the slave, with a PostgreSQL user having the same name
 as the POSIX user running the slave, having database creation rights.
+Assuming the slave POSIX user is ``buildslave``, just do::
 
-You can provide host,  port, and password (see ``slaves.cfg`` file to see
-how to express in the master configuration).
+  sudo -u postgres createuser --createdb --no-createrole \
+       --no-superuser
+
+Alternatively, you can provide host,  port, and password (see
+``slaves.cfg`` file to see how to express in the master configuration).
 
 WARNING: currently, setting user/password is not
 supported. Only Unix-socket domains will work (see below).
@@ -146,6 +183,19 @@ Tweaks, optimization and traps
   POSIX user default PATH. Many build steps are not designed for that,
   and would miss some dependencies. This is notably the case for the
   buildout step.
+
+* If you want to add virtualenv based build factories, such as the
+  ones found in http://buildbot.anybox.fr (notably this distribution),
+  make sure that the default system python has virtualenv >=1.5. Prior
+  versions have hardcoded file names in /tmp, that lead to permission
+  errors in case virtualenv is run again with a different system user
+  (meaning that any invocation of virtualenv outside the slave will
+  break subsequent builds in the slave that need it). In particular,
+  note that in Debian 6.0 (Squeeze), python-virtualenv is currently
+  1.4.9, and is absent from squeeze-backports. You'll have to set it
+  up manually (install python-pip first).
+
+
 
 Contribute
 ~~~~~~~~~~

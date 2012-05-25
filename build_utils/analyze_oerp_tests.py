@@ -11,6 +11,7 @@ FAILURE_REGEXPS = {
     'Errors during tests': re.compile(r'ERROR:tests[.]'),
     'Errors loading addons': re.compile(r'ERROR.*openerp: Failed to load'),
     'Critical logs': re.compile(r'CRITICAL'),
+    'Error init db': re.compile(r'Failed to initialize database'),
 }
 
 test_log = open(sys.argv[1], 'r')

@@ -17,12 +17,11 @@ from buildbot.schedulers.basic import SingleBranchScheduler
 
 from scheduler import MirrorChangeFilter
 from utils import comma_list_sanitize
+from version import Version
+from version import VersionFilter
 
 BUILDSLAVE_KWARGS = ('max_builds',)
 BUILDSLAVE_REQUIRED = ('password',)
-
-BUILD_FACTORIES = {} # registry of named build factories
-FACTORIES_TO_BUILDERS = {}
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +36,8 @@ class BuildoutsConfigurator(object):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
         self.buildmaster_dir = os.path.split(master_cfg_file)[0]
+        self.build_factories = {} # build factories by name
+        self.factories_to_builders = {} # factory name -> builders playing it
 
     def populate(self, config):
         config.setdefault('slaves', []).extend(self.make_slaves('slaves.cfg'))
@@ -148,6 +149,8 @@ class BuildoutsConfigurator(object):
                     'bin/buildout',
                     'buildout:eggs-directory=' + eggs_cache,
                     'buildout:openerp-downloads-directory=' + openerp_cache,
+                    'openerp:vcs-clear-locks=True',
+                    'openerp:vcs-clear-retry=True',
                     WithProperties(
                         'openerp:options.db_port=%(pg_port:-5432)s'),
                     WithProperties(
@@ -224,9 +227,19 @@ class BuildoutsConfigurator(object):
                 description="analyze",
                 ))
 
+        build_for = options.get('build-for')
+        factory.build_for = {}
+        if build_for is not None:
+            for line in build_for.split(os.linesep):
+                vf = VersionFilter.parse(line)
+                factory.build_for[vf.cap] = vf
+
+        build_category = options.get('build-category')
+        if build_category:
+            factory.build_category = build_category.strip()
         return factory
 
-    def register_build_factories(self, manifest_path, registry=BUILD_FACTORIES):
+    def register_build_factories(self, manifest_path):
         """Register a build factory per buildout from file at manifest_path.
 
         manifest_path is interpreted relative to the buildmaster dir.
@@ -239,6 +252,7 @@ class BuildoutsConfigurator(object):
         """
         parser = ConfigParser()
         parser.read(self.path_from_buildmaster(manifest_path))
+        registry = self.build_factories
 
         for name in parser.sections():
             try:
@@ -256,9 +270,7 @@ class BuildoutsConfigurator(object):
                                                dict(parser.items(name)))
 
 
-    def make_builders(self, master_config=None,
-                      build_factories=BUILD_FACTORIES,
-                      fact_to_builders=FACTORIES_TO_BUILDERS):
+    def make_builders(self, master_config=None):
         """Spawn builders from build factories.
 
         build_factories is a dict names -> build_factories
@@ -287,23 +299,29 @@ class BuildoutsConfigurator(object):
             slaves_by_pg.setdefault(pg, []).append(slave.slavename)
 
         all_builders = []
-        for factory_name, factory in build_factories.items():
-            builders = [BuilderConfig(name='%s-postgresql-%s' % (factory_name,
-                                                                 pg_version),
-                                      factory=factory, slavenames=slavenames)
-                        for pg_version, slavenames in slaves_by_pg.items()
+        fact_to_builders = self.factories_to_builders
+        for factory_name, factory in self.build_factories.items():
+            pgvf = factory.build_for.get('postgresql')
+            builders = [
+                BuilderConfig(name='%s-postgresql-%s' % (factory_name,
+                                                         pg_version),
+                              category=getattr(factory, 'build_category', None),
+                              factory=factory, slavenames=slavenames)
+                for pg_version, slavenames in slaves_by_pg.items()
+                if pgvf is None or pgvf.match(Version.parse(pg_version))
                 ]
             fact_to_builders[factory_name] = [b.name for b in builders]
             all_builders.extend(builders)
         return all_builders
 
-    def make_schedulers(self, fact_to_builders=FACTORIES_TO_BUILDERS):
+    def make_schedulers(self):
         """We make one scheduler per build factory (ie per buildout).
 
         Indeed, a scheduler must be tied to a list of builders to run.
         TODO at some point check if a big dedicated, single schedulers would
         not be preferable for buildmaster performance.
         """
+        fact_to_builders = self.factories_to_builders
         return [SingleBranchScheduler(name=factory_name,
                                       change_filter=MirrorChangeFilter(
                     self.buildmaster_dir, factory_name),

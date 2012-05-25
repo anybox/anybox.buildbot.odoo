@@ -11,12 +11,12 @@ class TestBuilders(BaseTestCase):
 
     def test_register_openerp_addons(self):
         """The ``addons-list`` builder factory installs given addons."""
-        registry = {}
         self.configurator.register_build_factories(
-            self.data_join('manifest_1.cfg'), registry=registry)
+            self.data_join('manifest_1.cfg'))
 
-        self.assertTrue('addons-list' in registry)
-        factory = registry['addons-list']
+        factories = self.configurator.build_factories
+        self.assertTrue('addons-list' in factories)
+        factory = factories['addons-list']
 
         for step in factory.steps:
             if step[1].get('name') == 'testing':
@@ -33,3 +33,33 @@ class TestBuilders(BaseTestCase):
             self.fail("Addons list not found in OpenERP command: %r" % commands)
 
         self.assertEquals(addons, 'stock,crm')
+
+    def test_build_category(self):
+        """The ``build_category`` option becomes builders categories."""
+        master = {}
+        conf = self.configurator
+        master['slaves'] = conf.make_slaves(self.data_join('one_slave.cfg'))
+        conf.register_build_factories(self.data_join('manifest_category.cfg'))
+        builders = self.configurator.make_builders(master_config=master)
+        self.assertEquals(len(builders), 2)
+        expected = {'ready-postgresql-8.4': 'mature',
+                    'wip-postgresql-8.4': 'unstable'}
+        for b in builders:
+            self.assertEquals(b.category, expected[b.name])
+
+
+    def test_pg_version_filtering(self):
+        master = {}
+        conf = self.configurator
+
+        master['slaves'] = conf.make_slaves(self.data_join(
+                'slaves_build_for.cfg'))
+        conf.register_build_factories(self.data_join('manifest_build_for.cfg'))
+        builders = self.configurator.make_builders(master_config=master)
+        names = set(builder.name for builder in builders)
+        self.assertEquals(names, set(('sup90-postgresql-9.1-devel',
+                                      'range-postgresql-9.1-devel',
+                                      'range-postgresql-9.0',
+                                      'range-postgresql-8.4',
+                                      'or-statement-postgresql-9.1-devel',
+                                      'or-statement-postgresql-8.4')))
