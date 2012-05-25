@@ -13,6 +13,7 @@ class TestSlaves(BaseTestCase):
         slaves = self.conf.make_slaves(self.data_join('slaves_capability.cfg'))
         cap = slaves[0].properties['capability']
         self.assertEquals(cap['python'], {'2.6': dict(bin='python2.6')})
+        self.assertEquals(cap['selenium'], {None: dict()})
         self.assertEquals(cap['postgresql'], {'9.1': dict(port='5432'),
                                               '9.2': dict(port='5433')})
 

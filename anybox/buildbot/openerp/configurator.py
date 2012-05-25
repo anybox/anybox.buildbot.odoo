@@ -84,8 +84,12 @@ class BuildoutsConfigurator(object):
                 elif key == 'capability':
                     for cap_line in value.split(os.linesep):
                         split = cap_line.split()
-                        name = split[0]
-                        version = split[1]
+                        if len(split) == 1:
+                            name = split[0]
+                            version = None
+                        else:
+                            name = split[0]
+                            version = split[1]
                         this_cap = caps.setdefault(name, {})
                         cap_opts = this_cap.setdefault(version, {})
                         for option in split[2:]:
@@ -176,6 +180,18 @@ class BuildoutsConfigurator(object):
                         PATH=[WithProperties('%(pg_bin:-)s'),
                               '${PATH}'],
                         )
+
+        def props_pre(step):
+            """Here being very lazing, using a side effect on doStepIf."""
+            pg_version = step.getProperty('pg_version')
+            pg_props = step.getProperty('capability')['postgresql'][pg_version]
+            for k, v in pg_props.items():
+                step.setProperty('pg_%s' % k, v)
+
+        factory.addStep(ShellCommand(command=[
+            '/bin/echo',
+            WithProperties('capability: %(capability)s')],
+                                     doStepIf=props_pre))
 
         factory.addStep(SetProperty(
                 property='testing_db',
@@ -295,8 +311,7 @@ class BuildoutsConfigurator(object):
         slaves_by_pg = {} # pg version -> list of slave names
         for slave in slaves:
             for pg in slave.properties['capability'].get('postgresql', []):
-                pg = slave.properties['pg_version']
-            slaves_by_pg.setdefault(pg, []).append(slave.slavename)
+                slaves_by_pg.setdefault(pg, []).append(slave.slavename)
 
         all_builders = []
         fact_to_builders = self.factories_to_builders
@@ -305,6 +320,7 @@ class BuildoutsConfigurator(object):
             builders = [
                 BuilderConfig(name='%s-postgresql-%s' % (factory_name,
                                                          pg_version),
+                              properties=dict(pg_version=pg_version),
                               category=getattr(factory, 'build_category', None),
                               factory=factory, slavenames=slavenames)
                 for pg_version, slavenames in slaves_by_pg.items()
