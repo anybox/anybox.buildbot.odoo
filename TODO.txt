@@ -21,12 +21,6 @@
 * MEDIUM: add a build property for human readability of branches being
   tested. Ideally, do that on the Change object if that works.
 
-* HARD: change conf (slaves.cfg) so that one
-  slave per host is enough. Will spare lots of disk and bw thanks to sharing of
-  branches, eggs and downloads at slave level, and work for slave
-  admins, too. This is tricky, since we can't use the pg_port
-  etc. properties directly.
-
 * HARD: true reproduceability and better blame list through setting of
   revs in build properties together with new options in buildout
   recipe to apply them. NB: it seems that property values can be dicts
