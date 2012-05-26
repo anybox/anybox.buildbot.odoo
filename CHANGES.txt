@@ -6,6 +6,8 @@ Changes
  - launchpad #1004844: dispatching of PostgreSQL versions by
    capability allows to build within a single slave against several of
    them.
+ - launchpad #999116: filtering of slaves for a given build factory
+   (buildout) by capability.
 
 0.5
 ---
