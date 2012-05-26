@@ -133,17 +133,33 @@ class BuildoutsConfigurator(object):
         factory.addStep(FileDownload(mastersrc='build_utils/'
                                      'analyze_oerp_tests.py',
                                      slavedest='analyze_oerp_tests.py'))
-        def props_pre(step):
-            """Here being very lazing, using a side effect on doStepIf."""
+        def set_pg_cluster_props(step):
+            """Set postgresql cluster properties
+
+            All properties defined in the slave capability line for the
+            builder-level ``pg_version`` property are applied to the build,
+            with pg_prefix.
+
+            Example: port=5434 gives pg_port=5434
+
+            GR XXX Of course it is quite hacky to rely on side effect of a
+            doStepIf option. This is the quickest working solution I could come
+            with. Better to hook this in the build definition stage itself.
+            """
             pg_version = step.getProperty('pg_version')
             pg_props = step.getProperty('capability')['postgresql'][pg_version]
             for k, v in pg_props.items():
                 step.setProperty('pg_%s' % k, v)
+            return True
 
-        factory.addStep(ShellCommand(command=[
-            '/bin/echo',
-            WithProperties('capability: %(capability)s')],
-                                     doStepIf=props_pre))
+        factory.addStep(ShellCommand(
+            command=['/bin/echo',
+                     WithProperties('capability: %(capability)s')],
+            doStepIf=set_pg_cluster_props,
+            description=["Setting", "pg cluster", "properties"],
+            decriptionDone=["Set", "pg cluster", "properties"],
+            name="pg_cluster_props",
+            ))
 
         factory.addStep(ShellCommand(command=['python', 'bootstrap.py'],
                                      haltOnFailure=True,
