@@ -20,7 +20,11 @@ from utils import comma_list_sanitize
 from version import Version
 from version import VersionFilter
 
-BUILDSLAVE_KWARGS = ('max_builds',)
+BUILDSLAVE_KWARGS = { # name -> validating callable
+    'max_builds' : int,
+    'notify_on_missing': str,
+    }
+
 BUILDSLAVE_REQUIRED = ('password',)
 
 logger = logging.getLogger(__name__)
@@ -97,7 +101,7 @@ class BuildoutsConfigurator(object):
                             cap_opts[opt_name] = opt_val
 
                 elif key in BUILDSLAVE_KWARGS:
-                    kw[key] = value
+                    kw[key] = BUILDSLAVE_KWARGS[key](value)
                 else:
                     props[key] = value
 
