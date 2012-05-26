@@ -48,7 +48,7 @@ class TestBuilders(BaseTestCase):
             self.assertEquals(b.category, expected[b.name])
 
 
-    def test_pg_version_filtering(self):
+    def test_build_for(self):
         master = {}
         conf = self.configurator
 
@@ -63,3 +63,39 @@ class TestBuilders(BaseTestCase):
                                       'range-postgresql-8.4',
                                       'or-statement-postgresql-9.1-devel',
                                       'or-statement-postgresql-8.4')))
+
+    def test_build_requires(self):
+        master = {}
+        conf = self.configurator
+
+        master['slaves'] = conf.make_slaves(
+            self.data_join('slaves_build_requires.cfg'))
+        conf.register_build_factories(
+            self.data_join('manifest_build_requires.cfg'))
+        builders = self.configurator.make_builders(master_config=master)
+        builders = dict((b.name, b) for b in builders)
+
+        # note how there is no slave for pg 9.0 that meets the requirements
+        # hence no builder (buildbot would otherwise throw an error)
+        self.assertEquals(
+            set(name for name in builders.keys()
+                if name.startswith('priv-pgall')),
+            set(('priv-pgall-postgresql-8.4',
+                 'priv-pgall-postgresql-9.1-devel',)))
+
+        self.assertEquals(builders['priv-pgall-postgresql-8.4'].slavenames,
+                          ['privcode', 'privcode-84'])
+        self.assertEquals(
+            builders['priv-pgall-postgresql-9.1-devel'].slavenames,
+            ['privcode', 'privcode-91'])
+
+        # now build-for and build-requires together
+        self.assertEquals(
+            set(name for name in builders.keys()
+                if name.startswith('priv-sup90')),
+            set(('priv-sup90-postgresql-9.1-devel',)))
+
+        self.assertEquals(
+            builders['priv-sup90-postgresql-9.1-devel'].slavenames,
+            ['privcode', 'privcode-91'])
+

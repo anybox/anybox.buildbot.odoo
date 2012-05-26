@@ -267,6 +267,13 @@ class BuildoutsConfigurator(object):
                 vf = VersionFilter.parse(line)
                 factory.build_for[vf.cap] = vf
 
+        requires = options.get('build-requires')
+        if requires is None:
+            factory.build_requires = []
+        else:
+            factory.build_requires = [r.strip()
+                                      for r in requires.split(os.linesep)]
+
         build_category = options.get('build-category')
         if build_category:
             factory.build_category = build_category.strip()
@@ -316,8 +323,6 @@ class BuildoutsConfigurator(object):
         The idea is notably to sort slaves according to capabilities (for
         specific requirements, such as ability to build a tricky python
         package) and environmental parameters (postgresql version etc.)
-
-        To demonstrate, for now, we iterate on pg_version
         """
 
         # this parameter is passed as kwarg for the sake of expliciteness
@@ -325,22 +330,31 @@ class BuildoutsConfigurator(object):
 
         slaves = master_config['slaves']
 
-        slaves_by_pg = {} # pg version -> list of slave names
+        slaves_by_pg = {} # pg version -> list of slaves
         for slave in slaves:
             for pg in slave.properties['capability'].get('postgresql', {}).keys():
-                slaves_by_pg.setdefault(pg, []).append(slave.slavename)
+                slaves_by_pg.setdefault(pg, []).append(slave)
 
         all_builders = []
         fact_to_builders = self.factories_to_builders
         for factory_name, factory in self.build_factories.items():
             pgvf = factory.build_for.get('postgresql')
+            requires = set(factory.build_requires)
+
+            meet_requires = {} # pg version -> list of slave names
+            for pg, slaves in slaves_by_pg.items():
+                meet = [slave.slavename for slave in slaves
+                        if requires.issubset(slave.properties['capability'])]
+                if meet:
+                    meet_requires[pg] = meet
+
             builders = [
                 BuilderConfig(name='%s-postgresql-%s' % (factory_name,
                                                          pg_version),
                               properties=dict(pg_version=pg_version),
                               category=getattr(factory, 'build_category', None),
                               factory=factory, slavenames=slavenames)
-                for pg_version, slavenames in slaves_by_pg.items()
+                for pg_version, slavenames in meet_requires.items()
                 if pgvf is None or pgvf.match(Version.parse(pg_version))
                 ]
             fact_to_builders[factory_name] = [b.name for b in builders]
