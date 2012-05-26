@@ -21,7 +21,7 @@ from version import Version
 from version import VersionFilter
 
 BUILDSLAVE_KWARGS = ('max_builds',)
-BUILDSLAVE_REQUIRED = ('password', 'pg_version',)
+BUILDSLAVE_REQUIRED = ('password',)
 
 logger = logging.getLogger(__name__)
 
@@ -75,11 +75,27 @@ class BuildoutsConfigurator(object):
         for slavename in parser.sections():
             kw = {}
             kw['properties'] = props = {}
+            props['capability'] = caps = {} # name -> versions
             seen = set()
             for key, value in parser.items(slavename):
                 seen.add(key)
                 if key in ('passwd', 'password'):
                     pwd = value
+                elif key == 'capability':
+                    for cap_line in value.split(os.linesep):
+                        split = cap_line.split()
+                        if len(split) == 1:
+                            name = split[0]
+                            version = None
+                        else:
+                            name = split[0]
+                            version = split[1]
+                        this_cap = caps.setdefault(name, {})
+                        cap_opts = this_cap.setdefault(version, {})
+                        for option in split[2:]:
+                            opt_name, opt_val = option.split('=')
+                            cap_opts[opt_name] = opt_val
+
                 elif key in BUILDSLAVE_KWARGS:
                     kw[key] = value
                 else:
@@ -91,7 +107,8 @@ class BuildoutsConfigurator(object):
                                  slavename, option)
                     break
             else:
-                slaves.append(BuildSlave(slavename, pwd, **kw))
+                slave = BuildSlave(slavename, pwd, **kw)
+                slaves.append(slave)
 
         return slaves
 
@@ -116,6 +133,35 @@ class BuildoutsConfigurator(object):
         factory.addStep(FileDownload(mastersrc='build_utils/'
                                      'analyze_oerp_tests.py',
                                      slavedest='analyze_oerp_tests.py'))
+
+        def set_pg_cluster_props(step):
+            """Set postgresql cluster properties
+
+            All properties defined in the slave capability line for the
+            builder-level ``pg_version`` property are applied to the build,
+            with pg_prefix.
+
+            Example: port=5434 gives pg_port=5434
+
+            GR XXX Of course it is quite hacky to rely on side effect of a
+            doStepIf option. This is the quickest working solution I could come
+            with. Better to hook this in the build definition stage itself.
+            """
+            pg_version = step.getProperty('pg_version')
+            pg_props = step.getProperty('capability')['postgresql'][pg_version]
+            for k, v in pg_props.items():
+                step.setProperty('pg_%s' % k, v)
+            return True
+
+        factory.addStep(ShellCommand(
+            command=['/bin/echo',
+                     WithProperties('capability: %(capability)s')],
+            doStepIf=set_pg_cluster_props,
+            description=["Setting", "pg cluster", "properties"],
+            descriptionDone=["Set", "pg cluster", "properties"],
+            name="pg_cluster_props",
+            ))
+
         factory.addStep(ShellCommand(command=['python', 'bootstrap.py'],
                                      haltOnFailure=True,
                                      ))
@@ -281,8 +327,8 @@ class BuildoutsConfigurator(object):
 
         slaves_by_pg = {} # pg version -> list of slave names
         for slave in slaves:
-            pg = slave.properties['pg_version']
-            slaves_by_pg.setdefault(pg, []).append(slave.slavename)
+            for pg in slave.properties['capability'].get('postgresql', {}).keys():
+                slaves_by_pg.setdefault(pg, []).append(slave.slavename)
 
         all_builders = []
         fact_to_builders = self.factories_to_builders
@@ -291,6 +337,7 @@ class BuildoutsConfigurator(object):
             builders = [
                 BuilderConfig(name='%s-postgresql-%s' % (factory_name,
                                                          pg_version),
+                              properties=dict(pg_version=pg_version),
                               category=getattr(factory, 'build_category', None),
                               factory=factory, slavenames=slavenames)
                 for pg_version, slavenames in slaves_by_pg.items()

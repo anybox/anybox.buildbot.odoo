@@ -107,20 +107,52 @@ libraries and headers.
 
 There is a package for debian-based system that installs them all.
 
-PostgreSQL requirements
------------------------
+Registration and slave capabilities
+-----------------------------------
+Have your slave registered to the master admin, specifying the
+available versions of PostgreSQL (e.g, 8.4, 9.0), and other
+capabilities if there are special builds that make use of them.
+See "PostgreSQL requirements" below for details about Postgresql
+capability properties.
 
-You must of course provide a working PostgreSQL installation (cluster).
+The best is to provide a
+``slaves.cfg`` fragment (see ``slaves.cfg.sample`` for syntax and
+supported options).
 
-The default configuration assumes a standard PostgreSQL cluster on the
+Capabilities are defined as a ``slaves.cfg`` option, with one line per
+capability and version pair. Each line ends with additional
+*capability properties*::
+
+ [my-slave]
+ capability = postgresql 8.4
+              postgresql 9.1 port=5433
+	      private-bzr+ssh-access
+	      selenium-server
+
+For now, only the postgresql capability has a special meaning to this generic
+configurator, but any can be used as a convention for specialized
+builds. The example demonstrates how to use that to indicate access to
+some private repositories, relying implicitely that the master's
+``MANIFEST.cfg`` refers to the same capability to dispatch builds only
+to those slaves that can run them.
+
+PostgreSQL requirements and capability declaration
+--------------------------------------------------
+
+You must of course provide one or several working PostgreSQL
+installation (clusters). These are described as *capabilities* in the
+configuration file that makes the master know about your slave and how
+to run builds on it.
+
+The default values assumes a standard PostgreSQL cluster on the
 same system as the slave, with a PostgreSQL user having the same name
 as the POSIX user running the slave, having database creation rights.
 Assuming the slave POSIX user is ``buildslave``, just do::
 
   sudo -u postgres createuser --createdb --no-createrole \
-       --no-superuser
+       --no-superuser buildslave
 
-Alternatively, you can provide host,  port, and password (see
+Alternatively, you can provide host, port, and password (see
 ``slaves.cfg`` file to see how to express in the master configuration).
 
 WARNING: currently, setting user/password is not
@@ -133,41 +165,29 @@ PostgreSQL configurations allow such connections without a password (``ident``
 authentication method in ``pg_hba.conf``).
 
 To use ``ident`` authentication on secondary or custom compiled
-clusters:
+clusters, we provide additional capability properties:
 
-* set the value of ``pg_host`` to the
-  value of ``unix_socket_directory`` seen in ``postgresql.conf`` or
-  leave it blank if missing or commented. The ``psql`` executable and
-  the client libraries use the same defaults as the server.
+* The ``bin`` and ``lib`` should point to the executable and library
+  directories of the cluster. Otherwise, the build could be run with a
+  wrong version of the client libraries.
+* If ``unix_socket_directory`` is set in ``postgresql.conf``, then
+  provide it as the ``host`` capability property. Otherwise, the
+  ``psql`` executable and the client libraries use the same defaults
+  as the server, provided ``bin`` and ``lib`` are correct (see above).
 * you *must* provide the port number if not the default 5432, because
   the port identifies the cluster uniquely, even for Unix-domain sockets
-
-For custom compiled installations, you must also provide the path to the
-binaries and libraries directories in the ``pg_bin`` and ``pg_lib``
-optional properties.
 
 Examples::
 
   # Default cluster of a secondary PostgreSQL from Debian & Ubuntu
-  pg_port = 5433
+  capability postgresql 9.1 port=5433
 
   # Compiled PostgreSQL with --prefix=/opt/postgresql,
   # port set to 5434 and unix_socket_directory unset in postgresql.conf
-  pg_bin = /opt/postgresql/bin
-  pg_lib = /opt/postgresql/lib
-  pg_port = 5434
+  capability postgresql 9.2devel bin=/opt/postgresql/bin lib=/opt/postgresql/lib port=5434
 
   # If unix_socket_directory is set to /opt/postgresql/run, add this:
-  pg_host = /opt/postgresql/run
-
-Registration
-------------
-Have your slave registered to the master admin, specifying your
-version of PostgreSQL (e.g, 8.4, 9.0). The best is to provide a
-``slaves.cfg`` fragment (see ``slaves.cfg.sample`` for syntax).
-
-If you happen to have several available versions of PostgreSQL on the
-same host, then make one slave for each one.
+  # ... host=/opt/postgresql/run
 
 Tweaks, optimization and traps
 ------------------------------
@@ -195,8 +215,6 @@ Tweaks, optimization and traps
   1.4.9, and is absent from squeeze-backports. You'll have to set it
   up manually (install python-pip first).
 
-
-
 Contribute
 ~~~~~~~~~~
 Author and contributors:
@@ -214,7 +232,6 @@ for a new feature.
 
 
 Unit tests
-antended Audience :: System Administrators
 ~~~~~~~~~~
 
 To run unit tests for this package::
@@ -227,7 +244,8 @@ Currently, ``python setup.py test`` tries and install nose and run the
 
 Improvements
 ~~~~~~~~~~~~
-See the included ``TODO.txt`` file.
+See the included ``TODO.txt`` file and the project on launchpad:
+http://launchpad.net/anybox.buildbot.openerp
 
 
 
