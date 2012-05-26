@@ -18,6 +18,8 @@ setup(
                 ('anybox/buildbot/openerp/tests/data', [
                    'anybox/buildbot/openerp/tests/data/manifest_1.cfg',
                    'anybox/buildbot/openerp/tests/data/manifest_build_for.cfg',
+                   'anybox/buildbot/openerp/tests/data/slaves_build_requires.cfg',
+                   'anybox/buildbot/openerp/tests/data/manifest_build_requires.cfg',
                    'anybox/buildbot/openerp/tests/data/slaves_build_for.cfg',
                    'anybox/buildbot/openerp/tests/data/manifest_category.cfg',
                    'anybox/buildbot/openerp/tests/data/one_slave.cfg',
