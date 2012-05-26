@@ -133,6 +133,7 @@ class BuildoutsConfigurator(object):
         factory.addStep(FileDownload(mastersrc='build_utils/'
                                      'analyze_oerp_tests.py',
                                      slavedest='analyze_oerp_tests.py'))
+
         def set_pg_cluster_props(step):
             """Set postgresql cluster properties
 
@@ -157,7 +158,7 @@ class BuildoutsConfigurator(object):
                      WithProperties('capability: %(capability)s')],
             doStepIf=set_pg_cluster_props,
             description=["Setting", "pg cluster", "properties"],
-            decriptionDone=["Set", "pg cluster", "properties"],
+            descriptionDone=["Set", "pg cluster", "properties"],
             name="pg_cluster_props",
             ))
 
