@@ -191,8 +191,8 @@ def update():
     try:
         fcntl.lockf(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except IOError:
-        print("Another instance of update-mirrors is running for buildmaster "
-              "%r . Exiting now." % options.buildmaster_dir)
+        print("Another instance of update-mirrors is running for buildmasters "
+              "%r . Exiting now." % options.buildmaster_directories)
         sys.exit(0)
 
     utils.vcs_binaries['bzr'] = options.bzr
