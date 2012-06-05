@@ -1,3 +1,13 @@
+class VersionParseError(ValueError):
+    """Dedicated exception for version and version filter parsing errors.
+
+    Arguments should be
+     - string that can't be parsed
+     - reason
+
+    >>> VersionParseError('asds', 'not a number')
+    VersionParseError('asds', 'not a number')
+    """
 
 class Version(object):
     """Enhanced version tuple, understanding some suffixes.
@@ -72,7 +82,9 @@ class Version(object):
         """
         split = as_string.split('-')
         if len(split) > 2:
-            raise ValueError("More than one suffix in %r" % as_string)
+            raise VersionParseError(as_string,
+                                    "Not enough tokens for a version filter. "
+                                    "Missing operator?")
         elif len(split) == 2:
             vstring, suffix = split
         else:
@@ -108,6 +120,10 @@ class VersionFilter(object):
       >>> vf.match(Version.parse('8.4-special'))
       True
 
+    With errors:
+      >>> try: vf = VersionFilter.parse('pg 8.4')
+      ... except VersionParseError, exc: exc.args[0]
+      '8.4'
     """
 
     def __init__(self, capability, criteria):
@@ -132,6 +148,9 @@ class VersionFilter(object):
                     cls.boolean_parse(ors[1].strip()))
 
         split = reqline.split(' ', 2)
+        if len(split) < 2:
+            raise VersionParseError(reqline,
+                                    'Not enough tokens. Missing operator?')
         vreq = (split[0], Version.parse(split[1]))
         if len(split) == 2:
             return vreq
