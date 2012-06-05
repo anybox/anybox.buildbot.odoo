@@ -156,7 +156,8 @@ def configure_logging(logging_level):
     logger = logging.getLogger()
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(
-        logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s'))
+        logging.Formatter(
+            '%(asctime)-15s %(name)-12s %(levelname)-8s: %(message)s'))
     console_handler.setLevel(level)
 
     logger.addHandler(console_handler)
