@@ -129,6 +129,7 @@ class BuildoutsConfigurator(object):
                                      description="init bzr repo",
                                      flunkOnFailure=False,
                                      warnOnFailure=False,
+                                     hideStepIf=True,
                                      ))
         factory.addStep(FileDownload(mastersrc='buildouts/bootstrap.py',
                                      slavedest='bootstrap.py'))
