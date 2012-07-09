@@ -64,12 +64,22 @@ In this manifest file, each section corresponds to a buildout (or at
 least a ``BuildFactory`` object).
 Options are:
 
- * buildout = TYPE PATH: to indicate that this is indeed an OpenERP
-   buildout. TYPE must be equal to ``standalone`` for now. PATH is
-   interpreted from the buildmaster directory
+ * buildout = TYPE SPECIFICATION,
+   where TYPE can be ``standalone`` or indicate a VCS (currently
+   ``hg`` only is supported).
+   For standalone buildouts, SPECIFICATION is a path from the buildmaster
+   directory.
+   For VCSes, SPECIFICATION takes the form URL BRANCH PATH,
+   where PATH is the path from a clone of URL on branch BRANCH to the
+   wished buildout configuration. This allows to use configuration
+   files with ``extends`` and to track the buildout configuration
+   itself, and to reduce duplication. Buildouts from VCSes are always
+   updated to the head of the prescribed branch, independently of the
+   changes detected by the buildmaster.
  * watch = LINES: a list of VCS locations to watch for changes (all
    occurrences of this buildout will be rebuilt/retested if any change
-   in them)
+   in them). If you use a VCS buildout type, you need to register here
+   to build if the buildout itself has changed in the remote VCS.
  * build-for = LINES: a list of software combinations that this
    buildout should be run against. Takes the form of a software name
    (currently "postgresql" only) and a version requirement (see

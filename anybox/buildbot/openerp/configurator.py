@@ -135,6 +135,30 @@ class BuildoutsConfigurator(object):
                                         slavedest=conf_name),
                            )
 
+    def buildout_hg_dl_steps(self, cfg_tokens):
+        """Return slave side path and steps about the buildout.
+
+        The first returned value is the expected path from build directory
+        The second is an iterable of steps to get the buildout config file
+        and the related needed files (extended cfgs, bootstrap.py).
+        """
+        if len(cfg_tokens) != 3:
+            raise ValueError(
+                "Wrong standalong buildout specification: %r" % tokens)
+
+        url, branch, conf_path = cfg_tokens
+        return conf_path, (
+            FileDownload(
+                mastersrc='build_utils/buildout_hg_dl.py',
+                slavedest='buildout_hg_dl.py',
+                haltOnFailure=True),
+            ShellCommand(
+                command=['python', 'buildout_hg_dl.py', url, branch],
+                description=("Retrieve buildout", "from hg",),
+                haltOnFailure=True,
+                )
+            )
+
     def make_factory(self, name, buildout_slave_path, buildout_dl_steps,
                      options):
         """Return a build factory using name and buildout config at cfg_path.
@@ -343,7 +367,8 @@ class BuildoutsConfigurator(object):
             registry[name] = self.make_factory(name, conf_slave_path, dl_steps,
                                                dict(parser.items(name)))
 
-    buildout_dl_steps = dict(standalone=buildout_standalone_dl_steps)
+    buildout_dl_steps = dict(standalone=buildout_standalone_dl_steps,
+                             hg=buildout_hg_dl_steps)
 
     def make_builders(self, master_config=None):
         """Spawn builders from build factories.
