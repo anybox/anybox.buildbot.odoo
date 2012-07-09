@@ -116,10 +116,35 @@ class BuildoutsConfigurator(object):
 
         return slaves
 
-    def make_factory(self, name, cfg_path, options):
+    def buildout_standalone_dl_steps(self, cfg_tokens):
+        """Return slave side path and steps about the buildout.
+
+        The first returned value is the expected path from build directory
+        The second is an iterable of steps to get the buildout config file
+        and the related needed files (extended cfgs, bootstrap.py).
+        """
+        if len(cfg_tokens) != 1:
+            raise ValueError(
+                "Wrong standalong buildout specification: %r" % tokens)
+
+        conf_path = cfg_tokens[0]
+        conf_name = os.path.split(conf_path)[-1]
+        return conf_name, (FileDownload(mastersrc='buildouts/bootstrap.py',
+                                        slavedest='bootstrap.py'),
+                           FileDownload(mastersrc=conf_path,
+                                        slavedest=conf_name),
+                           )
+
+    def make_factory(self, name, buildout_slave_path, buildout_dl_steps,
+                     options):
         """Return a build factory using name and buildout config at cfg_path.
 
-        cfg_path is relative to the master directory.
+        buildout_path is the slave-side path from build directory to the
+          buildout configuration file.
+        buildout_dl_steps is an iterable of BuildSteps to retrieve slave-side
+          the buildout configuration file and its dependencies (bootstrap,
+          extended conf files)
+
         the factory name is also used as testing database suffix
         options is the config part for this factory, seen as a dict
         """
@@ -131,10 +156,10 @@ class BuildoutsConfigurator(object):
                                      warnOnFailure=False,
                                      hideStepIf=True,
                                      ))
-        factory.addStep(FileDownload(mastersrc='buildouts/bootstrap.py',
-                                     slavedest='bootstrap.py'))
-        factory.addStep(FileDownload(mastersrc=cfg_path,
-                                     slavedest='buildout.cfg'))
+
+        for dl_step in buildout_dl_steps:
+            factory.addStep(dl_step)
+
         factory.addStep(FileDownload(mastersrc='build_utils/'
                                      'analyze_oerp_tests.py',
                                      slavedest='analyze_oerp_tests.py'))
@@ -167,7 +192,8 @@ class BuildoutsConfigurator(object):
             name="pg_cluster_props",
             ))
 
-        factory.addStep(ShellCommand(command=['python', 'bootstrap.py'],
+        factory.addStep(ShellCommand(command=['python', 'bootstrap.py',
+                                              '-c', buildout_slave_path],
                                      haltOnFailure=True,
                                      ))
 
@@ -185,6 +211,7 @@ class BuildoutsConfigurator(object):
                           )
         factory.addStep(ShellCommand(command=[
                     'bin/buildout',
+                    '-c', buildout_slave_path,
                     'buildout:eggs-directory=' + eggs_cache,
                     'buildout:openerp-downloads-directory=' + openerp_cache,
                     'openerp:vcs-clear-locks=True',
@@ -307,13 +334,16 @@ class BuildoutsConfigurator(object):
                 continue
 
             btype = buildout[0]
-            if btype != 'standalone':
+            buildout_downloader = self.buildout_dl_steps.get(btype)
+            if buildout_downloader is None:
                 raise ValueError("Buildout type %r in %r not supported" % (
                         btype, name))
 
-            registry[name] = self.make_factory(name, buildout[1],
+            conf_slave_path, dl_steps = buildout_downloader(self, buildout[1:])
+            registry[name] = self.make_factory(name, conf_slave_path, dl_steps,
                                                dict(parser.items(name)))
 
+    buildout_dl_steps = dict(standalone=buildout_standalone_dl_steps)
 
     def make_builders(self, master_config=None):
         """Spawn builders from build factories.
