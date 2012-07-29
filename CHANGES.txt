@@ -1,9 +1,13 @@
 Changes
 ~~~~~~~
 
+0.7
+--
+ - launchpad #999069: Test run parts of build factories are now customizable.
+
 0.6
 ---
- - launchpad #1008985: now buildouts can be retrieved directly from
+ - launchpad #1008985: Now buildouts can be retrieved directly from
    VCSes (currently Mercurial only).
  - launchpad #1004844: dispatching of PostgreSQL versions by
    capability allows to build within a single slave against several of
