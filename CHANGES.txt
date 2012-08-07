@@ -4,6 +4,7 @@ Changes
 0.7
 --
  - launchpad #999069: Test run parts of build factories are now customizable.
+ - launchpad #999066: Utility script to find a free port in a range
 
 0.6
 ---
