@@ -5,6 +5,7 @@ Changes
 --
  - launchpad #999069: Test run parts of build factories are now customizable.
  - launchpad #999066: Utility script to find a free port in a range
+ - ignore divergences bzr branch pulls (notably for mirrors)
 
 0.6
 ---
