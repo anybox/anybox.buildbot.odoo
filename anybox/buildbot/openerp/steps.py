@@ -22,17 +22,18 @@ class PgSetProperties(BuildStep):
         factory_name is the name used in the environing registered
         factory. It's been used at least as a base for testing databases.
         """
-        if factory_name is None:
-            raise ValueError("Missing factory_name kwarg")
-
         BuildStep.__init__(self, **kw)
         self.pg_version_prop = pg_version_prop
         self.capability_prop = capability_prop
 
+        if not factory_name:
+            raise ValueError("Missing keyword argument: factory_name")
+        self.factory_name = factory_name
+
         # GR: taken from master, apparently not handled by base class
         if description:
             self.description = description
-        if isinstance(self.description, str):
+        if isinstance(description, str):
             self.description = [self.description]
         if descriptionDone:
             self.descriptionDone = descriptionDone
@@ -44,10 +45,10 @@ class PgSetProperties(BuildStep):
             self.descriptionSuffix = [self.descriptionSuffix]
 
     def start(self):
-        pg_cap = step.getProperty(self_capability_prop)['postgresql']
+        pg_cap = self.getProperty(self.capability_prop)['postgresql']
         for k, v in pg_cap[self.getProperty('pg_version')].items():
-            step.setProperty('pg_%s' % k, v, 'capability')
-        db_prefix = step.getProperty('db_prefix', 'openerp_buildbot')
-        self.setProperty('testingdb',
-                         '-'.join(('testingdb', self.factory_name)), '')
-
+            self.setProperty('pg_%s' % k, v, 'capability')
+        db_prefix = self.getProperty('db_prefix', 'openerp_buildbot')
+        self.setProperty('testing_db',
+                         '-'.join((db_prefix, self.factory_name)), '')
+        self.finished(SUCCESS)

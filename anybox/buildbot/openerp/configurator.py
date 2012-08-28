@@ -188,7 +188,6 @@ class BuildoutsConfigurator(object):
         factory.addStep(FileDownload(mastersrc='build_utils/'
                                      'analyze_oerp_tests.py',
                                      slavedest='analyze_oerp_tests.py'))
-
         factory.addStep(PgSetProperties(
             description=["Setting", "PG cluster", "properties"],
             descriptionDone=["Set", "PG cluster", "properties"],
