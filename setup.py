@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.6'
+version = '0.7'
 
 setup(
     name = "anybox.buildbot.openerp",
@@ -14,7 +14,8 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
-    data_files=[('build_utils', ['build_utils/analyze_oerp_tests.py']),
+    data_files=[('build_utils', ['build_utils/analyze_oerp_tests.py',
+                                 'build_utils/buildout_hg_dl.py']),
                 ('anybox/buildbot/openerp/tests/data', [
                    'anybox/buildbot/openerp/tests/data/manifest_1.cfg',
                    'anybox/buildbot/openerp/tests/data/manifest_build_for.cfg',

@@ -199,6 +199,33 @@ Examples::
   # If unix_socket_directory is set to /opt/postgresql/run, add this:
   # ... host=/opt/postgresql/run
 
+Custom builds
+-------------
+There is a hook to replace the steps that run after the buildout (test
+run, then log analysis) by custom ones. This is an advanced option, meant
+for users that are aware of the internals of
+``anybox.buildbot.openerp``, and notably of the properties that it
+sets and uses.
+
+In the master configuration file, register a callable that
+returns a list of buildbot steps. Instead of calling
+``configure_from_buildouts``, follow this example::
+
+  configurator = BuildoutsConfigurator(__file__)
+  configurator.post_buildout_steps['mycase'] = mycase_callable
+  configurator.populate(BuildmasterConfig)
+
+where ``mycase_callable`` is typically a function having the same
+signature as the
+``post_buildout_steps_standard`` method of ``BuildoutsConfigurator``.
+
+Then, report the ``mycase`` name in ``MANIFEST.cfg``, in the sections
+for the relevant buildouts::
+
+  [mybuildout]
+  post-buildout-steps = mycase
+  ...
+
 Tweaks, optimization and traps
 ------------------------------
 
