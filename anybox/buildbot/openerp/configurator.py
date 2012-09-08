@@ -21,6 +21,7 @@ from scheduler import PollerChangeFilter
 from utils import comma_list_sanitize
 from version import Version
 from version import VersionFilter
+from bzr_buildbot import BzrPoller
 
 BUILDSLAVE_KWARGS = { # name -> validating callable
     'max_builds' : int,
@@ -78,7 +79,7 @@ class BuildoutsConfigurator(object):
         mirrors_dir = self.buildmaster_dir
         upd = mirrors.Updater(mirrors_dir, [self.buildmaster_dir])
         upd.read_branches()
-        return upd.make_pollers()
+        return [u for u in upd.make_pollers() if not isinstance(u, BzrPoller)]
 
     def make_slaves(self, conf_path='slaves.cfg'):
         """Create the slave objects from the file at conf_path.
