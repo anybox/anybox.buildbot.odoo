@@ -50,5 +50,5 @@ class PgSetProperties(BuildStep):
             self.setProperty('pg_%s' % k, v, 'capability')
         db_prefix = self.getProperty('db_prefix', 'openerp_buildbot')
         self.setProperty('testing_db',
-                         '-'.join(('testingdb', self.factory_name)), '')
+                         '-'.join((db_prefix, self.factory_name)), '')
         self.finished(SUCCESS)

@@ -35,7 +35,15 @@ logger = logging.getLogger(__name__)
 buildout_lock = locks.SlaveLock("buildout")
 
 class BuildoutsConfigurator(object):
-    """Populate buildmaster configs from buildouts and external slaves.cfg"""
+    """Populate buildmaster configs from buildouts and external slaves.cfg.
+
+    There are two dictionnaries of methods:
+       post_buildout_steps : name -> method returning a list of steps to be
+                             added after buildout has run and testing db is
+                             done
+       buildout_dl_steps : name -> method returning a list of steps to
+                           construct the buildout configuration slave-side.
+    """
 
     def __init__(self, buildmaster_dir):
         """Attach to buildmaster in which master_cfg_file path sits.
@@ -188,18 +196,12 @@ class BuildoutsConfigurator(object):
         factory.addStep(FileDownload(mastersrc='build_utils/'
                                      'analyze_oerp_tests.py',
                                      slavedest='analyze_oerp_tests.py'))
-
         factory.addStep(PgSetProperties(
             description=["Setting", "PG cluster", "properties"],
             descriptionDone=["Set", "PG cluster", "properties"],
             name="pg_cluster_props",
             factory_name=name,
             ))
-
-        factory.addStep(ShellCommand(command=['python', 'bootstrap.py',
-                                              '-c', buildout_slave_path],
-                                     haltOnFailure=True,
-                                     ))
 
         cache = '../../buildout-caches'
         eggs_cache = cache + '/eggs'
@@ -208,6 +210,11 @@ class BuildoutsConfigurator(object):
                                               eggs_cache, openerp_cache],
                                      name="cachedirs",
                                      description="prepare cache dirs"))
+
+        factory.addStep(ShellCommand(command=['python', 'bootstrap.py',
+                                              '-c', buildout_slave_path],
+                                     haltOnFailure=True,
+                                     ))
 
         psycopg2_env=dict(PATH=[WithProperties('%(pg_bin:-)s'),
                                 '${PATH}'],
@@ -265,31 +272,12 @@ class BuildoutsConfigurator(object):
                                      env=psql_env,
                                      haltOnFailure=True,
                                      ))
-        factory.addStep(ShellCommand(command=['rm', '-f', 'test.log'],
-                                     name="Log cleanup",
-                                     descriptionDone=['Cleaned', 'logs'],
-                                     ))
 
-        factory.addStep(ShellCommand(command=[
-                    'bin/start_openerp', '-i',
-                    comma_list_sanitize(options.get('openerp-addons', 'all')),
-                    '--stop-after-init',
-                    '--log-level=test', '-d', Property('testing_db'),
-                    # openerp --logfile does not work with relative paths !
-                    WithProperties('--logfile=%(workdir)s/build/test.log')],
-                                     name='testing',
-                                     description='testing',
-                                     descriptionDone='tests',
-                                     logfiles=dict(test='test.log'),
-                                     haltOnFailure=True,
-                                     env=psycopg2_env,
-                                     )),
-
-        factory.addStep(ShellCommand(
-                command=["python", "analyze_oerp_tests.py", "test.log"],
-                name='analyze',
-                description="analyze",
-                ))
+        post_buildout_steps = self.post_buildout_steps[
+            options.get('post-buildout-steps', 'standard')]
+        for step in post_buildout_steps(self, options, buildout_slave_path,
+                                        psycopg2_env=psycopg2_env):
+            factory.addStep(step)
 
         # TODO GR this is outside of the factory itself and get back
         # to the caller
@@ -311,6 +299,44 @@ class BuildoutsConfigurator(object):
         if build_category:
             factory.build_category = build_category.strip()
         return factory
+
+    def post_buildout_steps_standard(self, options, buildout_slave_path,
+                                     psycopg2_env=None):
+
+        if psycopg2_env is None:
+            psycopg2_env = {}
+
+        steps = []
+
+        steps.append(ShellCommand(command=['rm', '-f', 'test.log'],
+                                     name="Log cleanup",
+                                     descriptionDone=['Cleaned', 'logs'],
+                                     ))
+
+        steps.append(ShellCommand(command=[
+                    'bin/start_openerp', '-i',
+                    comma_list_sanitize(options.get('openerp-addons', 'all')),
+                    '--stop-after-init',
+                    '--log-level=test', '-d', Property('testing_db'),
+                    # openerp --logfile does not work with relative paths !
+                    WithProperties('--logfile=%(workdir)s/build/test.log')],
+                                     name='testing',
+                                     description='testing',
+                                     descriptionDone='tests',
+                                     logfiles=dict(test='test.log'),
+                                     haltOnFailure=True,
+                                     env=psycopg2_env,
+                                     )),
+
+        steps.append(ShellCommand(
+                command=["python", "analyze_oerp_tests.py", "test.log"],
+                name='analyze',
+                description="analyze",
+                ))
+
+        return steps
+
+    post_buildout_steps = dict(standard=post_buildout_steps_standard)
 
     def register_build_factories(self, manifest_path):
         """Register a build factory per buildout from file at manifest_path.
