@@ -134,7 +134,7 @@ class BuildoutsConfigurator(object):
         """
         if len(cfg_tokens) != 1:
             raise ValueError(
-                "Wrong standalong buildout specification: %r" % tokens)
+                "Wrong standalong buildout specification: %r" % cfg_tokens)
 
         conf_path = cfg_tokens[0]
         conf_name = os.path.split(conf_path)[-1]
@@ -153,7 +153,7 @@ class BuildoutsConfigurator(object):
         """
         if len(cfg_tokens) != 3:
             raise ValueError(
-                "Wrong standalong buildout specification: %r" % tokens)
+                "Wrong standalong buildout specification: %r" % cfg_tokens)
 
         url, branch, conf_path = cfg_tokens
         return conf_path, (

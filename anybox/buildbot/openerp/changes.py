@@ -9,6 +9,7 @@ from buildbot.changes.pb import ChangePerspective
 from anybox.buildbot.openerp.utils import ez_hash
 from anybox.buildbot.openerp.mirrors import Updater
 from anybox.buildbot.openerp.buildouts import parse_manifest
+from ConfigParser import NoOptionError
 
 class SharedChangePerspective(ChangePerspective):
 
