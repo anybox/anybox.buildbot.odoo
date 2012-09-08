@@ -407,7 +407,7 @@ class BuildoutsConfigurator(object):
         """
         fact_to_builders = self.factories_to_builders
         return [SingleBranchScheduler(name=factory_name,
-                                      change_filter=MirrorChangeFilter(
+                                      change_filter=PollerChangeFilter(
                     self.buildmaster_dir, factory_name),
                                       treeStableTimer=600,
                                       builderNames=builders)

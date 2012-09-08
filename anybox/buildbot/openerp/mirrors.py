@@ -9,6 +9,9 @@ import optparse
 from ConfigParser import NoOptionError
 import logging
 
+from buildbot.changes.hgpoller import HgPoller
+from anybox.buildbot.openerp.bzr_buildbot import BzrPoller
+
 from anybox.buildbot.openerp import utils
 from anybox.buildbot.openerp.buildouts import parse_manifest
 
@@ -57,6 +60,17 @@ class Updater(object):
         self.hashes = {} #  (vcs, url) -> hash
         self.repos = {} # hash -> (vcs, url, branch minor specs)
 
+    def make_pollers(self, poll_interval=10*60):
+        """Return an iterable of pollers for the watched repos."""
+        for h, (vcs, url, minor_specs) in self.repos.items():
+            if vcs == 'hg':
+                for ms in minor_specs:
+                    yield HgPoller(url, branch=ms,
+                                   workdir=os.path.join('hgpoller', h),
+                                   pollInterval=poll_interval)
+            elif vcs == 'bzr':
+                yield BzrPoller(url, poll_interval=poll_interval)
+
     def read_branches(self):
         """Read the branch to watch from buildouts manifest."""
 
@@ -76,6 +90,7 @@ class Updater(object):
                     self.hashes[vcs, url] = h
                     specs = self.repos.setdefault(h, (vcs, url, set()))[-1]
                     specs.add(minor_spec)
+
 
     @classmethod
     def list_supported_vcs(cls):
