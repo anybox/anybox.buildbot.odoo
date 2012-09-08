@@ -16,7 +16,8 @@ from buildbot.process.properties import WithProperties
 from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
-from scheduler import MirrorChangeFilter
+import mirrors
+from scheduler import PollerChangeFilter
 from utils import comma_list_sanitize
 from version import Version
 from version import VersionFilter
@@ -57,6 +58,7 @@ class BuildoutsConfigurator(object):
         self.register_build_factories('buildouts/MANIFEST.cfg')
         config.setdefault('builders', []).extend(
             self.make_builders(master_config=config))
+        config.setdefault('change_source', []).extend(self.make_pollers())
         config.setdefault('schedulers', []).extend(self.make_schedulers())
 
     def path_from_buildmaster(self, path):
@@ -65,6 +67,18 @@ class BuildoutsConfigurator(object):
         The path can still be absolute."""
 
         return os.path.join(self.buildmaster_dir, path)
+
+    def make_pollers(self):
+        """Return pollers for watched repositories.
+
+        Implementation for now relies on mirrors.Updater, but does not
+        actually perform any mirroring (TODO refactor)
+        """
+        # Updater only needs an existing dir
+        mirrors_dir = self.buildmaster_dir
+        upd = mirrors.Updater(mirrors_dir, [self.buildmaster_dir])
+        upd.read_branches()
+        return upd.make_pollers()
 
     def make_slaves(self, conf_path='slaves.cfg'):
         """Create the slave objects from the file at conf_path.
