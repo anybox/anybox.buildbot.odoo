@@ -28,7 +28,7 @@ setup(
     namespace_packages=['anybox', 'anybox.buildbot'],
     install_requires=['buildbot == latest', # future 0.8.7
                       'bzr',
-                      ]
+                      ],
     tests_require=['nose'],
     test_suite='nose.collector',
     classifiers=[

@@ -19,6 +19,7 @@ class TestMirrors(BaseTestCase):
         updater.read_branches()
         hg, bzr = updater.make_pollers()
         self.assertEquals(hg.repourl, 'http://mercurial.example/some/repo')
+        self.assertEquals(hg.branch, 'default')
         # BzrPoller does translation of lp: addresses
         self.assertEquals(bzr.url,'bzr+ssh://bazaar.launchpad.net/'
                           'openobject-server/6.1')

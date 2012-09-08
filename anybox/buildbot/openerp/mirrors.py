@@ -65,7 +65,7 @@ class Updater(object):
         for h, (vcs, url, minor_specs) in self.repos.items():
             if vcs == 'hg':
                 for ms in minor_specs:
-                    yield HgPoller(url, branch=ms,
+                    yield HgPoller(url, branch=ms[0],
                                    workdir=os.path.join('hgpoller', h),
                                    pollInterval=poll_interval)
             elif vcs == 'bzr':
