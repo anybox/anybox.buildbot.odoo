@@ -435,6 +435,6 @@ class BuildoutsConfigurator(object):
         return [SingleBranchScheduler(name=factory_name,
                                       change_filter=MirrorChangeFilter(
                     self.buildmaster_dir, factory_name),
-                                      treeStableTimer=600,
+                                      treeStableTimer=60,
                                       builderNames=builders)
                 for factory_name, builders in fact_to_builders.items()]
