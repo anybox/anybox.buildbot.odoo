@@ -143,7 +143,7 @@ class BuildoutsConfigurator(object):
         conf_path = cfg_tokens[0]
         conf_name = os.path.split(conf_path)[-1]
         conf_path = os.path.join(manifest_dir, conf_path)
-        bootstrap_path = os.path.join(manifest_dir, 'bootstrap.py'),
+        bootstrap_path = os.path.join(manifest_dir, 'bootstrap.py')
         return conf_name, (FileDownload(mastersrc=bootstrap_path,
                                         slavedest='bootstrap.py'),
                            FileDownload(mastersrc=conf_path,
@@ -379,8 +379,9 @@ class BuildoutsConfigurator(object):
 
             conf_slave_path, dl_steps = buildout_downloader(self, buildout[1:],
                                                             manifest_dir)
-            registry[name] = self.make_factory(name, conf_slave_path, dl_steps,
-                                               dict(parser.items(name)))
+            registry[name] = factory = self.make_factory(
+                name, conf_slave_path, dl_steps, dict(parser.items(name)))
+            factory.manifest_path = manifest_path # change filter will need it
 
     buildout_dl_steps = dict(standalone=buildout_standalone_dl_steps,
                              hg=buildout_hg_dl_steps)
@@ -436,6 +437,14 @@ class BuildoutsConfigurator(object):
             all_builders.extend(builders)
         return all_builders
 
+    def factory_to_manifest(self, fact_name, absolute=False):
+        """Return the path to manifest file where factory with given name arose.
+        """
+        path = self.build_factories[fact_name].manifest_path
+        if absolute:
+            path = self.path_from_buildmaster(path)
+        return path
+
     def make_schedulers(self):
         """We make one scheduler per build factory (ie per buildout).
 
@@ -444,9 +453,14 @@ class BuildoutsConfigurator(object):
         not be preferable for buildmaster performance.
         """
         fact_to_builders = self.factories_to_builders
+        def make_filter(factory_name):
+            """Make a Mirror Change Filter for factory with given name."""
+            return MirrorChangeFilter(
+                self.factory_to_manifest(factory_name, absolute=True),
+                factory_name)
+
         return [SingleBranchScheduler(name=factory_name,
-                                      change_filter=MirrorChangeFilter(
-                    self.buildmaster_dir, factory_name),
+                                      change_filter=make_filter(factory_name),
                                       treeStableTimer=60,
                                       builderNames=builders)
                 for factory_name, builders in fact_to_builders.items()]
