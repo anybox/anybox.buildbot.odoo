@@ -14,5 +14,5 @@ def configure_from_buildouts(buildmaster_path, config):
             "is deprecated and will disappear in the future. Please "
             "pass the buildmaster dir instead (``basedir`` in ``master.cfg`` "
             "local variables).", DeprecationWarning)
-        buildmasterpath = os.path.split(buildmaster_path)[0]
+        buildmaster_path = os.path.split(buildmaster_path)[0]
     BuildoutsConfigurator(buildmaster_path).populate(config)
