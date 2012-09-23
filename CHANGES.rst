@@ -4,10 +4,12 @@ Changes
 0.7
 ---
  - launchpad #999069: Test run parts of build factories are now customizable.
- - launchpad #1040070: can read several MANIFEST files
+ - launchpad #1040070: can read several manifest files
+ - launchpad #1050842: now standalone buildouts paths are relative to manifest
+   directory.
  - db_template buildout option.
  - launchpad #999066: Utility script to find a free port in a range
- - ignore divergences bzr branch pulls (notably for mirrors)
+ - ignore divergences in bzr branch pulls (notably for mirrors)
 
 0.6
 ---

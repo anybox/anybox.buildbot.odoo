@@ -10,7 +10,6 @@ from buildbot import locks
 from buildbot.process.factory import BuildFactory
 from steps import PgSetProperties
 from buildbot.steps.shell import ShellCommand
-from buildbot.steps.shell import SetProperty
 from buildbot.steps.transfer import FileDownload
 from buildbot.process.properties import WithProperties
 from buildbot.process.properties import Property
@@ -127,12 +126,15 @@ class BuildoutsConfigurator(object):
 
         return slaves
 
-    def buildout_standalone_dl_steps(self, cfg_tokens):
+    def buildout_standalone_dl_steps(self, cfg_tokens, manifest_dir):
         """Return slave side path and steps about the buildout.
 
         The first returned value is the expected path from build directory
         The second is an iterable of steps to get the buildout config file
         and the related needed files (extended cfgs, bootstrap.py).
+
+        manifest_dir is the path (interpreted from buildmaster dir) to the
+        directory in with the manifest file sits.
         """
         if len(cfg_tokens) != 1:
             raise ValueError(
@@ -140,18 +142,22 @@ class BuildoutsConfigurator(object):
 
         conf_path = cfg_tokens[0]
         conf_name = os.path.split(conf_path)[-1]
-        return conf_name, (FileDownload(mastersrc='buildouts/bootstrap.py',
+        conf_path = os.path.join(manifest_dir, conf_path)
+        bootstrap_path = os.path.join(manifest_dir, 'bootstrap.py'),
+        return conf_name, (FileDownload(mastersrc=bootstrap_path,
                                         slavedest='bootstrap.py'),
                            FileDownload(mastersrc=conf_path,
                                         slavedest=conf_name),
                            )
 
-    def buildout_hg_dl_steps(self, cfg_tokens):
+    def buildout_hg_dl_steps(self, cfg_tokens, manifest_dir):
         """Return slave side path and steps about the buildout.
 
         The first returned value is the expected path from build directory
         The second is an iterable of steps to get the buildout config file
         and the related needed files (extended cfgs, bootstrap.py).
+
+        manifest_dir is not used in this downloader.
         """
         if len(cfg_tokens) != 3:
             raise ValueError(
@@ -355,6 +361,7 @@ class BuildoutsConfigurator(object):
         """
         parser = ConfigParser()
         parser.read(self.path_from_buildmaster(manifest_path))
+        manifest_dir = os.path.split(manifest_path)[0]
         registry = self.build_factories
 
         for name in parser.sections():
@@ -370,7 +377,8 @@ class BuildoutsConfigurator(object):
                 raise ValueError("Buildout type %r in %r not supported" % (
                         btype, name))
 
-            conf_slave_path, dl_steps = buildout_downloader(self, buildout[1:])
+            conf_slave_path, dl_steps = buildout_downloader(self, buildout[1:],
+                                                            manifest_dir)
             registry[name] = self.make_factory(name, conf_slave_path, dl_steps,
                                                dict(parser.items(name)))
 
