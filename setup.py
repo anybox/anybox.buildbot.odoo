@@ -26,7 +26,7 @@ setup(
                    'anybox/buildbot/openerp/tests/data/one_slave.cfg',
                  ])],
     namespace_packages=['anybox', 'anybox.buildbot'],
-    install_requires=['buildbot > 0.8.5'],
+    install_requires=['buildbot >= 0.8.7'],
     tests_require=['nose'],
     test_suite='nose.collector',
     classifiers=[

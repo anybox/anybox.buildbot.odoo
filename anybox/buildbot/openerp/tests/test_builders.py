@@ -19,13 +19,13 @@ class TestBuilders(BaseTestCase):
         factory = factories['addons-list']
 
         for step in factory.steps:
-            if step[1].get('name') == 'testing':
+            if step.kwargs.get('name') == 'testing':
                 break
         else:
             self.fail(
                 "Step 'testing' not found in BuilderFactory 'addons-list'")
 
-        commands = step[1]['command']
+        commands = step.kwargs['command']
         try:
             i = commands.index('-i')
             addons = commands[i+1]

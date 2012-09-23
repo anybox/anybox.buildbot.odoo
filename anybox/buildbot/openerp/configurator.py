@@ -8,6 +8,7 @@ from buildbot.config import BuilderConfig
 
 from buildbot import locks
 from buildbot.process.factory import BuildFactory
+from steps import PgSetProperties
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.shell import SetProperty
 from buildbot.steps.transfer import FileDownload
@@ -44,10 +45,10 @@ class BuildoutsConfigurator(object):
                            construct the buildout configuration slave-side.
     """
 
-    def __init__(self, master_cfg_file):
+    def __init__(self, buildmaster_dir):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
-        self.buildmaster_dir = os.path.split(master_cfg_file)[0]
+        self.buildmaster_dir = buildmaster_dir
         self.build_factories = {} # build factories by name
         self.factories_to_builders = {} # factory name -> builders playing it
 
@@ -195,33 +196,11 @@ class BuildoutsConfigurator(object):
         factory.addStep(FileDownload(mastersrc='build_utils/'
                                      'analyze_oerp_tests.py',
                                      slavedest='analyze_oerp_tests.py'))
-
-        def set_pg_cluster_props(step):
-            """Set postgresql cluster properties
-
-            All properties defined in the slave capability line for the
-            builder-level ``pg_version`` property are applied to the build,
-            with pg_prefix.
-
-            Example: port=5434 gives pg_port=5434
-
-            GR XXX Of course it is quite hacky to rely on side effect of a
-            doStepIf option. This is the quickest working solution I could come
-            with. Better to hook this in the build definition stage itself.
-            """
-            pg_version = step.getProperty('pg_version')
-            pg_props = step.getProperty('capability')['postgresql'][pg_version]
-            for k, v in pg_props.items():
-                step.setProperty('pg_%s' % k, v)
-            return True
-
-        factory.addStep(ShellCommand(
-            command=['/bin/echo',
-                     WithProperties('capability: %(capability)s')],
-            doStepIf=set_pg_cluster_props,
-            description=["Setting", "pg cluster", "properties"],
-            descriptionDone=["Set", "pg cluster", "properties"],
+        factory.addStep(PgSetProperties(
+            description=["Setting", "PG cluster", "properties"],
+            descriptionDone=["Set", "PG cluster", "properties"],
             name="pg_cluster_props",
+            factory_name=name,
             ))
 
         cache = '../../buildout-caches'
@@ -274,11 +253,6 @@ class BuildoutsConfigurator(object):
                               '${PATH}'],
                         )
 
-        factory.addStep(SetProperty(
-                property='testing_db',
-                command=WithProperties(
-                    "echo %(db_prefix:-openerp-buildbot)s-" + name)))
-
         factory.addStep(ShellCommand(command=[
                     psql, 'postgres', '-c',
                     WithProperties('DROP DATABASE IF EXISTS "%(testing_db)s"'),
@@ -305,6 +279,8 @@ class BuildoutsConfigurator(object):
                                         psycopg2_env=psycopg2_env):
             factory.addStep(step)
 
+        # TODO GR this is outside of the factory itself and get back
+        # to the caller
         build_for = options.get('build-for')
         factory.build_for = {}
         if build_for is not None:
@@ -459,6 +435,6 @@ class BuildoutsConfigurator(object):
         return [SingleBranchScheduler(name=factory_name,
                                       change_filter=MirrorChangeFilter(
                     self.buildmaster_dir, factory_name),
-                                      treeStableTimer=600,
+                                      treeStableTimer=60,
                                       builderNames=builders)
                 for factory_name, builders in fact_to_builders.items()]
