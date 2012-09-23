@@ -19,8 +19,8 @@ class Updater(object):
 
     It supports several VCS systems.
 
-    It works for a set of watched branches, currently described in the
-    buildouts manifest (buildouts/MANIFEST.cfg). Branch specification vary
+    It works for a set of watched branches, currently described by manifest
+    files (usually at buildouts/MANIFEST.cfg). Branch specification vary
     according to the given VCS. Currently:
        bzr URL
        hg PULL-URL BRANCH-NAME
@@ -47,21 +47,23 @@ class Updater(object):
     branch_update_methods = dict(bzr=utils.bzr_update_branch,
                                  hg=utils.hg_pull)
 
-    def __init__(self, mirrors_dir, buildmaster_dirs):
-        for path in tuple(buildmaster_dirs) + (mirrors_dir,):
-            if not os.path.isdir(path):
-                raise ValueError("No such directory %r" % path)
-
+    def __init__(self, mirrors_dir, manifest_paths):
         self.mirrors_dir = mirrors_dir
-        self.bm_dirs = buildmaster_dirs
+        self.manifest_paths = self.check_paths(manifest_paths)
         self.hashes = {} #  (vcs, url) -> hash
         self.repos = {} # hash -> (vcs, url, branch minor specs)
+
+    def check_paths(self, paths):
+        missing = [path for path in paths if not os.path.isfile(path)]
+        if missing:
+            raise ValueError("Files not found: %r" % missing)
+        return paths
 
     def read_branches(self):
         """Read the branch to watch from buildouts manifest."""
 
-        for bm_dir in self.bm_dirs:
-            parser = parse_manifest(bm_dir)
+        for manifest_path in self.manifest_paths:
+            parser = parse_manifest(manifest_path)
 
             for buildout in parser.sections():
                 try:
@@ -168,9 +170,13 @@ def update():
     """Entry point for console script."""
     parser = optparse.OptionParser(
         usage="%prod [options] MIRRORS")
-    parser.add_option('--buildmaster-directories', '-b', default='.',
+    parser.add_option('--buildmaster-directories', '-b',
                       help="Specify buildmaster directories for which to "
-                      "update mirrors (comma-separated list, defaults to .")
+                      "update mirrors (comma-separated list) "
+                      "(DEPRECATED, please use --manifest-files)")
+    parser.add_option('--manifest-files', '-m',
+                      default="buildouts/MANIFEST.cfg",
+                      help="Manifest files to load")
     parser.add_option('--bzr-executable', dest='bzr', default='bzr',
                       help="Specify the bzr executable to use")
     parser.add_option('--hg-executable', dest='hg', default='hg',
@@ -198,6 +204,12 @@ def update():
 
     utils.vcs_binaries['bzr'] = options.bzr
     utils.vcs_binaries['hg'] = options.hg
+
+    # older API
+    manifests = [os.path.join(bm_dir, 'buildouts', 'MANIFEST.cfg')
+                 for bm_dir in options.buildmaster_directories]
+    if options.manifest_files:
+        manifests.extend(options.manifest_files)
 
     updater = Updater(mirrors_dir, options.buildmaster_directories.split(','))
     updater.read_branches()

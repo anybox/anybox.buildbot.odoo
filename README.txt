@@ -20,10 +20,10 @@ master is just a matter of copying the corresponding buildout in the
 ``buildouts/MANIFEST.cfg``.
 
 An interesting practice for buildbotting of in-house custom projects
-is to put this subdirectory itself under verstion control with your
+is to put this subdirectory itself under version control with your
 preferred VCS, and let the developpers push on it.
 
-It is designed not to be to intrusive to buildbot itself, so that
+It is designed not to be too intrusive to buildbot itself, so that
 buildbot users can tweak their configuration in the normal buildbot
 way, and even add more builds, possibly not even related to
 OpenERP.
@@ -85,6 +85,11 @@ Options are:
    (currently "postgresql" only) and a version requirement (see
    included example and docstrings in
    ``anybox.buildout.openerp.version`` for format)
+ * build_requires: build will happen only on slaves meeting the requirements.
+ * db_template: the template the database will be built with. Intended
+   for preload of PostgreSQL extensions, such as postgis, but can be
+   used for testing data as well. Should be paired with a conventional
+   requirement expressing that the template exists and can be used.
 
 Slave setup
 ~~~~~~~~~~~

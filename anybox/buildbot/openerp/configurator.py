@@ -45,16 +45,18 @@ class BuildoutsConfigurator(object):
                            construct the buildout configuration slave-side.
     """
 
-    def __init__(self, buildmaster_dir):
+    def __init__(self, buildmaster_dir,
+                 manifest_paths=('buildouts/MANIFEST.cfg',)):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
         self.buildmaster_dir = buildmaster_dir
         self.build_factories = {} # build factories by name
         self.factories_to_builders = {} # factory name -> builders playing it
+        self.manifest_paths = manifest_paths
 
     def populate(self, config):
         config.setdefault('slaves', []).extend(self.make_slaves('slaves.cfg'))
-        self.register_build_factories('buildouts/MANIFEST.cfg')
+        map(self.register_build_factories, self.manifest_paths)
         config.setdefault('builders', []).extend(
             self.make_builders(master_config=config))
         config.setdefault('schedulers', []).extend(self.make_schedulers())
@@ -264,7 +266,9 @@ class BuildoutsConfigurator(object):
                                      haltOnFailure=True))
         factory.addStep(ShellCommand(command=[
                     psql, 'postgres', '-c',
-                    WithProperties('CREATE DATABASE "%(testing_db)s"'),
+                    WithProperties(
+            'CREATE DATABASE "%%(testing_db)s" '
+            'TEMPLATE "%s"' % options.get('db_template', 'template1')),
                     ],
                                      name='createdb',
                                      description=["createdb",
