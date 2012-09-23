@@ -9,7 +9,7 @@ setup(
     author_email="gracinet@anybox.fr",
     description="Buildbot setup for buildout based openerp installations",
     license="Affero GPLv3",
-    long_description=open('README.txt').read() + open('CHANGES.txt').read(),
+    long_description=open('README.rst').read() + open('CHANGES.rst').read(),
     url="http://pypi.python.org/pypi/anybox.buildbot.openerp",
     packages=find_packages(),
     zip_safe=False,

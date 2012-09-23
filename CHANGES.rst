@@ -20,6 +20,7 @@ Changes
    (buildout) by capability.
  - launchpad #1004916: slaves max_builds and notify_on_missing
     parameters now taken into account
+
 0.5
 ---
  - using vcs-clear-retry option of OpenERP recipe
