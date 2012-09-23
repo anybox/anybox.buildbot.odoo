@@ -57,9 +57,18 @@ Buildouts
 
 The buildouts to install and test are stored in the ``buildouts``
 directory; they must be declared with appropriated options in the
-``buildouts/MANIFEST.cfg``. The one included with this package
-is for http://buildbot.anybox.fr.
+``buildouts/MANIFEST.cfg``. The ones included with this package
+are run by <http://buildbot.anybox.fr>_.
 
+Alternatively, one can specify several manifest files, to aggregate from
+several sources. http://buildbot.anybox.fr demonstrates this by running:
+
+* the buildouts included in this package
+* the buildouts shipping with `anybox.recipe.openerp <http://pypi.python.org/pypi/anybox.recipe.openerp>`_
+* other combinations of OpenERP versions and community addons that are of interest for Anybox.
+
+Manifest file format
+~~~~~~~~~~~~~~~~~~~~
 In this manifest file, each section corresponds to a buildout (or at
 least a ``BuildFactory`` object).
 Options are:
@@ -78,14 +87,22 @@ Options are:
    changes detected by the buildmaster.
  * watch = LINES: a list of VCS locations to watch for changes (all
    occurrences of this buildout will be rebuilt/retested if any change
-   in them). If you use a VCS buildout type, you need to register here
+   in them). If you use a VCS buildout type, you need to register it here also
    to build if the buildout itself has changed in the remote VCS.
  * build-for = LINES: a list of software combinations that this
    buildout should be run against. Takes the form of a software name
    (currently "postgresql" only) and a version requirement (see
    included example and docstrings in
-   ``anybox.buildout.openerp.version`` for format)
- * build_requires: build will happen only on slaves meeting the requirements.
+   ``anybox.buildout.openerp.version`` for format). See also "slave
+   capabilities" below.
+ * build_requires: build will happen only on slaves meeting the requirements
+   (see also "slaves capabilities" below)
+   Some known use-cases:
+
+   + dependencies on additional software or services (LibreOffice server, postgis, functional testing frameworks)
+   + access to private source code repositories
+   + network topology conditions, such as quick access to real-life database
+     dumps.
  * db_template: the template the database will be built with. Intended
    for preload of PostgreSQL extensions, such as postgis, but can be
    used for testing data as well. Should be paired with a conventional
@@ -120,7 +137,7 @@ to be installed from pypi, and this can trigger some compilations. In
 turn, these usually require build utilities (gcc, make, etc),
 libraries and headers.
 
-There is a package for debian-based system that installs them all.
+There are `packages for debian-based systems <http://anybox.fr/blog/debian-package-helpers-for-openerp-buildouts>`_ that install all needed dependencies for OpenERP buildouts.
 
 Registration and slave capabilities
 -----------------------------------
