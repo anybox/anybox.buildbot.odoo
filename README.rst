@@ -64,7 +64,7 @@ Alternatively, one can specify several manifest files, to aggregate from
 several sources. http://buildbot.anybox.fr demonstrates this by running:
 
 * the buildouts included in this package
-* the buildouts shipping with `anybox.recipe.openerp <http://pypi.python.org/pypi/anybox.recipe.openerp>`_
+* the buildouts shipping with `anybox.recipe.openerp <http://pypi.python.org/pypi/anybox.recipe.openerp>`_. These actually play the role of integration tests for the recipe itself.
 * other combinations of OpenERP versions and community addons that are of interest for Anybox.
 
 Manifest file format
