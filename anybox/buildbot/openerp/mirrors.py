@@ -175,7 +175,6 @@ def update():
                       "update mirrors (comma-separated list) "
                       "(DEPRECATED, please use --manifest-files)")
     parser.add_option('--manifest-files', '-m',
-                      default="buildouts/MANIFEST.cfg",
                       help="Manifest files to load")
     parser.add_option('--bzr-executable', dest='bzr', default='bzr',
                       help="Specify the bzr executable to use")
@@ -188,6 +187,10 @@ def update():
     if len(args) != 1:
         parser.error("Please provide the path to mirrors")
         sys.exit(1)
+
+    # keep legacy, but still have a default for new-style
+    if options.manifest_files is None and not options.buildmaster_directories:
+        options.manifest_files = 'buildouts/MANIFEST.cfg'
 
     mirrors_dir = args[0]
 
@@ -206,12 +209,12 @@ def update():
     utils.vcs_binaries['hg'] = options.hg
 
     # older API
-    manifests = [os.path.join(bm_dir, 'buildouts', 'MANIFEST.cfg')
-                 for bm_dir in options.buildmaster_directories]
+    manifests = [os.path.join(bm_dir.strip(), 'buildouts', 'MANIFEST.cfg')
+                 for bm_dir in options.buildmaster_directories.split(',')]
     if options.manifest_files:
-        manifests.extend(options.manifest_files)
+        manifests.extend(f.strip() for f in options.manifest_files.split(','))
 
-    updater = Updater(mirrors_dir, options.buildmaster_directories.split(','))
+    updater = Updater(mirrors_dir, manifests)
     updater.read_branches()
     updater.prepare_mirrors()
     updater.update_all()
