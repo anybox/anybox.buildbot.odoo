@@ -33,6 +33,8 @@ c['slavePortnum'] = 9989
 ####### CHANGESOURCES
 from anybox.buildbot.openerp.changes import SharedPBChangeSource
 
+# here repeating the manifest_paths in constructor is  mandatory if you
+# passed them to the configurator
 c['change_source'] = SharedPBChangeSource(port=9989, user='local',
                                           passwd='local')
 

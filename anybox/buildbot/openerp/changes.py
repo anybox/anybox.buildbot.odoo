@@ -31,21 +31,26 @@ class SharedChangePerspective(ChangePerspective):
 
 class SharedPBChangeSource(PBChangeSource):
 
+    def __init__(self, manifest_paths=('buildouts/MANIFEST.cfg',), **kw):
+        self.manifest_paths = manifest_paths
+        PBChangeSource.__init__(self, **kw)
+
     def listInterestingHashes(self):
         hashes = getattr(self, 'interesting_hashes', None)
         if hashes is not None:
             return hashes
 
         hashes = self.interesting_hashes = {}
-        parser = parse_manifest(self.master.basedir)
-        for buildout in parser.sections():
-            try:
-                b_watched = parser.get(buildout, 'watch')
-            except NoOptionError:
-                continue
-            for watched in b_watched.split(os.linesep):
-                vcs, url = Updater.parse_branch_spec(watched)[:2]
-                hashes[ez_hash(url)] = vcs
+        for manifest in self.manifest_paths:
+            parser = parse_manifest(manifest)
+            for buildout in parser.sections():
+                try:
+                    b_watched = parser.get(buildout, 'watch')
+                except NoOptionError:
+                    continue
+                for watched in b_watched.split(os.linesep):
+                    vcs, url = Updater.parse_branch_spec(watched)[:2]
+                    hashes[ez_hash(url)] = vcs
 
         return hashes
 
