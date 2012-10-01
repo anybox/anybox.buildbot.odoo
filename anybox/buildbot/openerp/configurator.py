@@ -27,6 +27,8 @@ BUILDSLAVE_KWARGS = { # name -> validating callable
 
 BUILDSLAVE_REQUIRED = ('password',)
 
+BUILD_UTILS_PATH = os.path.join(os.path.split(__name__)[0], 'build_utils')
+
 logger = logging.getLogger(__name__)
 
 # Running buildouts in parallel on one slave fails
@@ -166,7 +168,7 @@ class BuildoutsConfigurator(object):
         url, branch, conf_path = cfg_tokens
         return conf_path, (
             FileDownload(
-                mastersrc='build_utils/buildout_hg_dl.py',
+                mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_hg_dl.py'),
                 slavedest='buildout_hg_dl.py',
                 haltOnFailure=True),
             ShellCommand(
@@ -201,9 +203,10 @@ class BuildoutsConfigurator(object):
         for dl_step in buildout_dl_steps:
             factory.addStep(dl_step)
 
-        factory.addStep(FileDownload(mastersrc='build_utils/'
-                                     'analyze_oerp_tests.py',
-                                     slavedest='analyze_oerp_tests.py'))
+        factory.addStep(FileDownload(
+                mastersrc=os.path.join(
+                    BUILD_UTILS_PATH, 'analyze_oerp_tests.py'),
+                slavedest='analyze_oerp_tests.py'))
         factory.addStep(PgSetProperties(
             description=["Setting", "PG cluster", "properties"],
             descriptionDone=["Set", "PG cluster", "properties"],

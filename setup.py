@@ -2,6 +2,12 @@ from setuptools import setup, find_packages
 
 version = '0.7'
 
+main_path = 'anybox/buildbot/openerp'
+def data_files(files_dict):
+    return [('%s/%s' % (main_path, subdir),
+             ['%s/%s/%s' % (main_path, subdir, f) for f in files])
+             for subdir, files in files_dict.items()]
+
 setup(
     name = "anybox.buildbot.openerp",
     version = version,
@@ -14,17 +20,16 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
-    data_files=[('build_utils', ['build_utils/analyze_oerp_tests.py',
-                                 'build_utils/buildout_hg_dl.py']),
-                ('anybox/buildbot/openerp/tests/data', [
-                   'anybox/buildbot/openerp/tests/data/manifest_1.cfg',
-                   'anybox/buildbot/openerp/tests/data/manifest_build_for.cfg',
-                   'anybox/buildbot/openerp/tests/data/slaves_build_requires.cfg',
-                   'anybox/buildbot/openerp/tests/data/manifest_build_requires.cfg',
-                   'anybox/buildbot/openerp/tests/data/slaves_build_for.cfg',
-                   'anybox/buildbot/openerp/tests/data/manifest_category.cfg',
-                   'anybox/buildbot/openerp/tests/data/one_slave.cfg',
-                 ])],
+    data_files=data_files({
+            'build_utils': ('analyze_oerp_tests.py', 'buildout_hg_dl.py'),
+            'tests/data': ('manifest_1.cfg',
+                           'manifest_build_for.cfg',
+                           'slaves_build_requires.cfg',
+                           'manifest_build_requires.cfg',
+                           'slaves_build_for.cfg',
+                           'manifest_category.cfg',
+                           'one_slave.cfg',)}),
+
     namespace_packages=['anybox', 'anybox.buildbot'],
     install_requires=['buildbot >= 0.8.7'],
     tests_require=['nose'],

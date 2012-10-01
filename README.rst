@@ -34,19 +34,24 @@ hooks to call the master (currently for Bazaar and Mercurial only).
 Master setup
 ~~~~~~~~~~~~
 
+These steps are for a first setup.
+
 1. Install this package in a virtualenv. This will install buildbot as
    well.
 2. Create a master in the standard way (see ``buildbot create-master --help``).
-3. Ignore the master's ``master.cfg.sample``, copy instead this
-   package's as ``master.cfg``. Our sample actually differs by only
-   two lines (import and call of our configurator).
-4. Copy or symlink ``build_utils`` from this package to the master.
-5. Copy the provided ``buildouts`` directory into the master  or make
-   your own (check buildouts/MANIFEST.cfg for an example on how to do
-   that).
+3. Add these lines in ``master.cfg`` right after the definition of
+   ``BuildMasterConfig``::
+
+      from anybox.buildbot.openerp import configure_from_buildouts
+      configure_from_buildouts(basedir, BuildmasterConfig)
+
+5. Copy the ``buildouts`` directory included in the source
+   distribution in the master or make your own (check
+   ``buildouts/MANIFEST.cfg`` for an example on how to do
+   that). In previous step, one can actually provide explicit
+   locations for buildouts directories.
 6. Put a ``slaves.cfg`` file in the master directory. See the included
-   ``slaves.cfg.sample`` for instructions. This file should not be
-   versionned with the utilities.
+   ``slaves.cfg.sample`` for instructions.
 7. Install the Bzr and Mercurial hooks so that they apply to all
    incoming changesets in the mirror
 8. Put the ``update-mirrors`` console script in a cron job (see

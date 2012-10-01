@@ -2,3 +2,4 @@ include *.rst
 include *.txt
 include *.sample
 include buildouts/*.cfg
+include anybox/recipe/openerp/build_utils/*.py
