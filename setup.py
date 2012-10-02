@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.7'
+version = '0.8-devel'
 pkg_name = "anybox.buildbot.openerp"
 
 setup(
