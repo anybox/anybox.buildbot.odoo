@@ -1,15 +1,10 @@
 from setuptools import setup, find_packages
 
 version = '0.7'
-
-main_path = 'anybox/buildbot/openerp'
-def data_files(files_dict):
-    return [('%s/%s' % (main_path, subdir),
-             ['%s/%s/%s' % (main_path, subdir, f) for f in files])
-             for subdir, files in files_dict.items()]
+pkg_name = "anybox.buildbot.openerp"
 
 setup(
-    name = "anybox.buildbot.openerp",
+    name = pkg_name,
     version = version,
     author="Anybox SAS",
     author_email="gracinet@anybox.fr",
@@ -20,16 +15,6 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
-    data_files=data_files({
-            'build_utils': ('analyze_oerp_tests.py', 'buildout_hg_dl.py'),
-            'tests/data': ('manifest_1.cfg',
-                           'manifest_build_for.cfg',
-                           'slaves_build_requires.cfg',
-                           'manifest_build_requires.cfg',
-                           'slaves_build_for.cfg',
-                           'manifest_category.cfg',
-                           'one_slave.cfg',)}),
-
     namespace_packages=['anybox', 'anybox.buildbot'],
     install_requires=['buildbot >= 0.8.7'],
     tests_require=['nose'],
