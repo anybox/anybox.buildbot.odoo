@@ -27,7 +27,7 @@ BUILDSLAVE_KWARGS = { # name -> validating callable
 
 BUILDSLAVE_REQUIRED = ('password',)
 
-BUILD_UTILS_PATH = os.path.join(os.path.split(__name__)[0], 'build_utils')
+BUILD_UTILS_PATH = os.path.join(os.path.split(__file__)[0], 'build_utils')
 
 logger = logging.getLogger(__name__)
 
