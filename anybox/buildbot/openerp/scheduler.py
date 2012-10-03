@@ -9,11 +9,11 @@ class MirrorChangeFilter(ChangeFilter):
     """Filter changesets from mirros hooks that impact a given buildout.
     """
 
-    def __init__(self, buildmaster_dir, buildout):
+    def __init__(self, manifest_path, buildout):
 
         self.interesting = {} # hash -> (vcs, minor branch spec)
 
-        parser = parse_manifest(buildmaster_dir)
+        parser = parse_manifest(manifest_path)
         try:
             all_watched = parser.get(buildout, 'watch')
         except NoOptionError:

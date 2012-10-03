@@ -10,7 +10,6 @@ from buildbot import locks
 from buildbot.process.factory import BuildFactory
 from steps import PgSetProperties
 from buildbot.steps.shell import ShellCommand
-from buildbot.steps.shell import SetProperty
 from buildbot.steps.transfer import FileDownload
 from buildbot.process.properties import WithProperties
 from buildbot.process.properties import Property
@@ -29,6 +28,8 @@ BUILDSLAVE_KWARGS = { # name -> validating callable
 
 BUILDSLAVE_REQUIRED = ('password',)
 
+BUILD_UTILS_PATH = os.path.join(os.path.split(__file__)[0], 'build_utils')
+
 logger = logging.getLogger(__name__)
 
 # Running buildouts in parallel on one slave fails
@@ -46,16 +47,18 @@ class BuildoutsConfigurator(object):
                            construct the buildout configuration slave-side.
     """
 
-    def __init__(self, buildmaster_dir):
+    def __init__(self, buildmaster_dir,
+                 manifest_paths=('buildouts/MANIFEST.cfg',)):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
         self.buildmaster_dir = buildmaster_dir
         self.build_factories = {} # build factories by name
         self.factories_to_builders = {} # factory name -> builders playing it
+        self.manifest_paths = manifest_paths
 
     def populate(self, config):
         config.setdefault('slaves', []).extend(self.make_slaves('slaves.cfg'))
-        self.register_build_factories('buildouts/MANIFEST.cfg')
+        map(self.register_build_factories, self.manifest_paths)
         config.setdefault('builders', []).extend(
             self.make_builders(master_config=config))
         config.setdefault('change_source', []).extend(self.make_pollers())
@@ -139,40 +142,47 @@ class BuildoutsConfigurator(object):
 
         return slaves
 
-    def buildout_standalone_dl_steps(self, cfg_tokens):
+    def buildout_standalone_dl_steps(self, cfg_tokens, manifest_dir):
         """Return slave side path and steps about the buildout.
 
         The first returned value is the expected path from build directory
         The second is an iterable of steps to get the buildout config file
         and the related needed files (extended cfgs, bootstrap.py).
+
+        manifest_dir is the path (interpreted from buildmaster dir) to the
+        directory in with the manifest file sits.
         """
         if len(cfg_tokens) != 1:
             raise ValueError(
-                "Wrong standalong buildout specification: %r" % tokens)
+                "Wrong standalong buildout specification: %r" % cfg_tokens)
 
         conf_path = cfg_tokens[0]
         conf_name = os.path.split(conf_path)[-1]
-        return conf_name, (FileDownload(mastersrc='buildouts/bootstrap.py',
+        conf_path = os.path.join(manifest_dir, conf_path)
+        bootstrap_path = os.path.join(manifest_dir, 'bootstrap.py')
+        return conf_name, (FileDownload(mastersrc=bootstrap_path,
                                         slavedest='bootstrap.py'),
                            FileDownload(mastersrc=conf_path,
                                         slavedest=conf_name),
                            )
 
-    def buildout_hg_dl_steps(self, cfg_tokens):
+    def buildout_hg_dl_steps(self, cfg_tokens, manifest_dir):
         """Return slave side path and steps about the buildout.
 
         The first returned value is the expected path from build directory
         The second is an iterable of steps to get the buildout config file
         and the related needed files (extended cfgs, bootstrap.py).
+
+        manifest_dir is not used in this downloader.
         """
         if len(cfg_tokens) != 3:
             raise ValueError(
-                "Wrong standalong buildout specification: %r" % tokens)
+                "Wrong standalong buildout specification: %r" % cfg_tokens)
 
         url, branch, conf_path = cfg_tokens
         return conf_path, (
             FileDownload(
-                mastersrc='build_utils/buildout_hg_dl.py',
+                mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_hg_dl.py'),
                 slavedest='buildout_hg_dl.py',
                 haltOnFailure=True),
             ShellCommand(
@@ -207,9 +217,10 @@ class BuildoutsConfigurator(object):
         for dl_step in buildout_dl_steps:
             factory.addStep(dl_step)
 
-        factory.addStep(FileDownload(mastersrc='build_utils/'
-                                     'analyze_oerp_tests.py',
-                                     slavedest='analyze_oerp_tests.py'))
+        factory.addStep(FileDownload(
+                mastersrc=os.path.join(
+                    BUILD_UTILS_PATH, 'analyze_oerp_tests.py'),
+                slavedest='analyze_oerp_tests.py'))
         factory.addStep(PgSetProperties(
             description=["Setting", "PG cluster", "properties"],
             descriptionDone=["Set", "PG cluster", "properties"],
@@ -278,7 +289,9 @@ class BuildoutsConfigurator(object):
                                      haltOnFailure=True))
         factory.addStep(ShellCommand(command=[
                     psql, 'postgres', '-c',
-                    WithProperties('CREATE DATABASE "%(testing_db)s"'),
+                    WithProperties(
+            'CREATE DATABASE "%%(testing_db)s" '
+            'TEMPLATE "%s"' % options.get('db_template', 'template1')),
                     ],
                                      name='createdb',
                                      description=["createdb",
@@ -365,6 +378,7 @@ class BuildoutsConfigurator(object):
         """
         parser = ConfigParser()
         parser.read(self.path_from_buildmaster(manifest_path))
+        manifest_dir = os.path.split(manifest_path)[0]
         registry = self.build_factories
 
         for name in parser.sections():
@@ -380,9 +394,11 @@ class BuildoutsConfigurator(object):
                 raise ValueError("Buildout type %r in %r not supported" % (
                         btype, name))
 
-            conf_slave_path, dl_steps = buildout_downloader(self, buildout[1:])
-            registry[name] = self.make_factory(name, conf_slave_path, dl_steps,
-                                               dict(parser.items(name)))
+            conf_slave_path, dl_steps = buildout_downloader(self, buildout[1:],
+                                                            manifest_dir)
+            registry[name] = factory = self.make_factory(
+                name, conf_slave_path, dl_steps, dict(parser.items(name)))
+            factory.manifest_path = manifest_path # change filter will need it
 
     buildout_dl_steps = dict(standalone=buildout_standalone_dl_steps,
                              hg=buildout_hg_dl_steps)
@@ -437,6 +453,14 @@ class BuildoutsConfigurator(object):
             fact_to_builders[factory_name] = [b.name for b in builders]
             all_builders.extend(builders)
         return all_builders
+
+    def factory_to_manifest(self, fact_name, absolute=False):
+        """Return the path to manifest file where factory with given name arose.
+        """
+        path = self.build_factories[fact_name].manifest_path
+        if absolute:
+            path = self.path_from_buildmaster(path)
+        return path
 
     def make_schedulers(self):
         """We make one scheduler per build factory (ie per buildout).

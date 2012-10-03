@@ -20,10 +20,10 @@ master is just a matter of copying the corresponding buildout in the
 ``buildouts/MANIFEST.cfg``.
 
 An interesting practice for buildbotting of in-house custom projects
-is to put this subdirectory itself under verstion control with your
+is to put this subdirectory itself under version control with your
 preferred VCS, and let the developpers push on it.
 
-It is designed not to be to intrusive to buildbot itself, so that
+It is designed not to be too intrusive to buildbot itself, so that
 buildbot users can tweak their configuration in the normal buildbot
 way, and even add more builds, possibly not even related to
 OpenERP.
@@ -34,19 +34,24 @@ hooks to call the master (currently for Bazaar and Mercurial only).
 Master setup
 ~~~~~~~~~~~~
 
+These steps are for a first setup.
+
 1. Install this package in a virtualenv. This will install buildbot as
    well.
 2. Create a master in the standard way (see ``buildbot create-master --help``).
-3. Ignore the master's ``master.cfg.sample``, copy instead this
-   package's as ``master.cfg``. Our sample actually differs by only
-   two lines (import and call of our configurator).
-4. Copy or symlink ``build_utils`` from this package to the master.
-5. Copy the provided ``buildouts`` directory into the master  or make
-   your own (check buildouts/MANIFEST.cfg for an example on how to do
-   that).
+3. Add these lines in ``master.cfg`` right after the definition of
+   ``BuildMasterConfig``::
+
+      from anybox.buildbot.openerp import configure_from_buildouts
+      configure_from_buildouts(basedir, BuildmasterConfig)
+
+5. Copy the ``buildouts`` directory included in the source
+   distribution in the master or make your own (check
+   ``buildouts/MANIFEST.cfg`` for an example on how to do
+   that). In previous step, one can actually provide explicit
+   locations for buildouts directories.
 6. Put a ``slaves.cfg`` file in the master directory. See the included
-   ``slaves.cfg.sample`` for instructions. This file should not be
-   versionned with the utilities.
+   ``slaves.cfg.sample`` for instructions.
 7. Install the Bzr and Mercurial hooks so that they apply to all
    incoming changesets in the mirror
 8. Put the ``update-mirrors`` console script in a cron job (see
@@ -57,9 +62,18 @@ Buildouts
 
 The buildouts to install and test are stored in the ``buildouts``
 directory; they must be declared with appropriated options in the
-``buildouts/MANIFEST.cfg``. The one included with this package
-is for http://buildbot.anybox.fr.
+``buildouts/MANIFEST.cfg``. The ones included with this package
+are run by <http://buildbot.anybox.fr>_.
 
+Alternatively, one can specify several manifest files, to aggregate from
+several sources. http://buildbot.anybox.fr demonstrates this by running:
+
+* the buildouts included in this package
+* the buildouts shipping with `anybox.recipe.openerp <http://pypi.python.org/pypi/anybox.recipe.openerp>`_. These actually play the role of integration tests for the recipe itself.
+* other combinations of OpenERP versions and community addons that are of interest for Anybox.
+
+Manifest file format
+~~~~~~~~~~~~~~~~~~~~
 In this manifest file, each section corresponds to a buildout (or at
 least a ``BuildFactory`` object).
 Options are:
@@ -78,13 +92,26 @@ Options are:
    changes detected by the buildmaster.
  * watch = LINES: a list of VCS locations to watch for changes (all
    occurrences of this buildout will be rebuilt/retested if any change
-   in them). If you use a VCS buildout type, you need to register here
+   in them). If you use a VCS buildout type, you need to register it here also
    to build if the buildout itself has changed in the remote VCS.
  * build-for = LINES: a list of software combinations that this
    buildout should be run against. Takes the form of a software name
    (currently "postgresql" only) and a version requirement (see
    included example and docstrings in
-   ``anybox.buildout.openerp.version`` for format)
+   ``anybox.buildout.openerp.version`` for format). See also "slave
+   capabilities" below.
+ * build_requires: build will happen only on slaves meeting the requirements
+   (see also "slaves capabilities" below)
+   Some known use-cases:
+
+   + dependencies on additional software or services (LibreOffice server, postgis, functional testing frameworks)
+   + access to private source code repositories
+   + network topology conditions, such as quick access to real-life database
+     dumps.
+ * db_template: the template the database will be built with. Intended
+   for preload of PostgreSQL extensions, such as postgis, but can be
+   used for testing data as well. Should be paired with a conventional
+   requirement expressing that the template exists and can be used.
 
 Slave setup
 ~~~~~~~~~~~
@@ -115,7 +142,7 @@ to be installed from pypi, and this can trigger some compilations. In
 turn, these usually require build utilities (gcc, make, etc),
 libraries and headers.
 
-There is a package for debian-based system that installs them all.
+There are `packages for debian-based systems <http://anybox.fr/blog/debian-package-helpers-for-openerp-buildouts>`_ that install all needed dependencies for OpenERP buildouts.
 
 Registration and slave capabilities
 -----------------------------------
