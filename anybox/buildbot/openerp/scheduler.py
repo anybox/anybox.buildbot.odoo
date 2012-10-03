@@ -1,5 +1,6 @@
 import os
 from ConfigParser import NoOptionError
+from ConfigParser import NoSectionError
 from buildbot.changes.filter import ChangeFilter
 from anybox.buildbot.openerp import utils
 from anybox.buildbot.openerp.mirrors import Updater
@@ -48,15 +49,21 @@ class MirrorChangeFilter(ChangeFilter):
 
 class PollerChangeFilter(ChangeFilter):
 
-    def __init__(self, buildmaster_dir, buildout):
+    def __init__(self, manifest_paths, buildout):
 
         self.interesting = {} # hash -> (vcs, minor branch spec)
 
-        parser = parse_manifest(buildmaster_dir)
-        try:
-            all_watched = parser.get(buildout, 'watch')
-        except NoOptionError:
-            return
+        for path in manifest_paths:
+            # TODO REFACTOR stop this duplication and parse them once and for
+            # in the configurator.
+            parser = parse_manifest(path)
+            try:
+                all_watched = parser.get(buildout, 'watch')
+            except NoSectionError:
+                # not this file
+                continue
+            except NoOptionError:
+                return
 
         for watched in all_watched.split(os.linesep):
             vcs, url, minor_spec = Updater.parse_branch_spec(watched)
