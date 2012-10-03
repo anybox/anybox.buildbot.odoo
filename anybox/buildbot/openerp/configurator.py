@@ -79,7 +79,7 @@ class BuildoutsConfigurator(object):
         """
         # Updater only needs an existing dir
         mirrors_dir = self.buildmaster_dir
-        upd = mirrors.Updater(mirrors_dir, [self.buildmaster_dir])
+        upd = mirrors.Updater(mirrors_dir, self.manifest_paths)
         upd.read_branches()
         return [u for u in upd.make_pollers()]
 
