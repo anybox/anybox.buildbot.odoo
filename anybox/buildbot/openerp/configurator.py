@@ -470,9 +470,11 @@ class BuildoutsConfigurator(object):
         not be preferable for buildmaster performance.
         """
         fact_to_builders = self.factories_to_builders
+        def ch_filter(factory_name):
+            return PollerChangeFilter(self.manifest_paths, factory_name)
+
         return [SingleBranchScheduler(name=factory_name,
-                                      change_filter=PollerChangeFilter(
-                    self.buildmaster_dir, factory_name),
+                                      change_filter=ch_filter(factory_name),
                                       treeStableTimer=600,
                                       builderNames=builders)
                 for factory_name, builders in fact_to_builders.items()]
