@@ -197,6 +197,8 @@ if DEFINE_POLLER:
 
         compare_attrs = ['url']
 
+        db_class_name = 'BzrPoller'
+
         def __init__(self, url, poll_interval=10*60, blame_merge_author=False,
                      branch_name=None, category=None):
             # poll_interval is in seconds, so default poll_interval is 10
@@ -212,10 +214,25 @@ if DEFINE_POLLER:
             self.branch_name = branch_name
             self.category = category
 
+        def _getStateObjectId(self, branch_name):
+            """Return a deferred for object id in state db.
+
+            Being unique among pollers, workdir is used with branch as instance
+            name for db.
+            """
+            return self.master.db.state.getObjectId(
+                branch_name, self.db_class_name)
+
         def startService(self):
             twisted.python.log.msg("BzrPoller(%s) starting" % self.url)
             buildbot.changes.base.ChangeSource.startService(self)
-            if self.branch_name is FULL:
+            self.last_revision = None
+            self.polling = False
+            twisted.internet.reactor.callWhenRunning(
+                self.loop.start, self.poll_interval)
+
+        def _initLastRevision(self):
+            if self.branch_name is FULL or self.branch_name is None:
                 ourbranch = self.url
             elif self.branch_name is SHORT:
                 # We are in a bit of trouble, as we cannot really know what our
@@ -229,15 +246,45 @@ if DEFINE_POLLER:
                 ourbranch = self.url
             else:
                 ourbranch = self.branch_name
-            for change in reversed(self.parent.changes):
-                if change.branch == ourbranch:
-                    self.last_revision = change.revision
-                    break
+            oid = self._getStateObjectId(ourbranch)
+            def oid_callback(oid):
+                print "oid callback for BzrPoller of url=%r" % self.url
+                def set_rev(rev):
+                    print "setting rev %r for BzrPoller of url=%r" % (rev, self.url)
+                    self.last_revision = rev
+                d = self.master.db.state.getState(oid, 'current_rev', None)
+                d.addCallback(set_rev)
+                return d
+            oid.addCallback(oid_callback)
+            return oid
+
+        def _setLastRevision(self, rev, oid=None):
+            """Return a deferred to set current revision in persistent state.
+
+            oid is self's id for state db. It can be passed to avoid a db lookup."""
+            if self.branch_name is FULL or self.branch_name is None:
+                ourbranch = self.url
+            elif self.branch_name is SHORT:
+                # We are in a bit of trouble, as we cannot really know what our
+                # branch is until we have polled new changes.
+                # Seems we would have to wait until we polled the first time,
+                # and only then do the filtering, grabbing the branch name from
+                # whatever we polled.
+                # For now, leave it as it was previously (compare against
+                # self.url); at least now things work when specifying the
+                # branch name explicitly.
+                ourbranch = self.url
             else:
-                self.last_revision = None
-            self.polling = False
-            twisted.internet.reactor.callWhenRunning(
-                self.loop.start, self.poll_interval)
+                ourbranch = self.branch_name
+            if oid is None:
+                d = self._getStateObjectId(ourbranch)
+            else:
+                d = defer.succeed(oid)
+
+            def set_in_state(obj_id):
+                return self.master.db.state.setState(obj_id, 'current_rev', rev)
+            d.addCallback(set_in_state)
+
 
         def stopService(self):
             twisted.python.log.msg("BzrPoller(%s) shutting down" % self.url)
@@ -252,6 +299,8 @@ if DEFINE_POLLER:
             if self.polling: # this is called in a loop, and the loop might
                 # conceivably overlap.
                 return
+            if self.last_revision is None:
+                yield self._initLastRevision()
             self.polling = True
             try:
                 # On a big tree, even individual elements of the bzr commands
@@ -267,9 +316,9 @@ if DEFINE_POLLER:
                     twisted.python.log.err()
                 else:
                     for change in changes:
-                        yield self.addChange(
-                            buildbot.changes.changes.Change(**change))
+                        yield self.addChange(change)
                         self.last_revision = change['revision']
+                        yield self._setLastRevision(self.last_revision)
             finally:
                 self.polling = False
 
@@ -300,12 +349,8 @@ if DEFINE_POLLER:
             return changes
 
         def addChange(self, change):
-            d = twisted.internet.defer.Deferred()
-            def _add_change():
-                d.callback(
-                    self.parent.addChange(change, src='bzr'))
-            twisted.internet.reactor.callLater(0, _add_change)
-            return d
+            return self.master.addChange(src='bzr', **change)
+
 
 #############################################################################
 # hooks
