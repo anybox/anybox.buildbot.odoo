@@ -81,7 +81,7 @@ class BuildoutsConfigurator(object):
         mirrors_dir = self.buildmaster_dir
         upd = mirrors.Updater(mirrors_dir, self.manifest_paths)
         upd.read_branches()
-        return [u for u in upd.make_pollers()]
+        return list(set(upd.make_pollers())) # lp resolution can lead to dupes
 
     def make_slaves(self, conf_path='slaves.cfg'):
         """Create the slave objects from the file at conf_path.
