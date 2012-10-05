@@ -17,6 +17,14 @@ from anybox.buildbot.openerp.buildouts import parse_manifest
 
 logger = logging.getLogger(__name__)
 
+# GR BZR hack NOCOMMIT
+from bzrlib.plugins.launchpad.lp_directory import LaunchpadDirectory
+from bzrlib.plugins.launchpad import account as lp_account
+
+def lp_get_login(_config=None):
+    return
+lp_account.get_login = lp_get_login
+
 class Updater(object):
     """This class is the main mirrors maintainer.
 
@@ -65,6 +73,11 @@ class Updater(object):
                                    workdir=os.path.join('hgpoller', h),
                                    pollInterval=poll_interval)
             elif vcs == 'bzr':
+                if url.startswith('lp:'):
+                    # we need to use the public read-only URL, otherwise
+                    # we can get errors due to lack of SSH key
+                    url = LaunchpadDirectory().look_up('', url)
+
                 yield BzrPoller(url, poll_interval=poll_interval)
 
     def check_paths(self, paths):
