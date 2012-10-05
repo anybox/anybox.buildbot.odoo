@@ -72,7 +72,10 @@ class PollerChangeFilter(ChangeFilter):
     def filter_change(self, change):
         """True if change's about an interesting repo w/correct branch.
         """
-        details = self.interesting.get(change.repository)
+        repo = change.repository
+        if not repo: # (e.g., in bzr) TODO how to know that before hand ?
+            repo = change.branch
+        details = self.interesting.get(repo)
         if details is None:
             return False
 
