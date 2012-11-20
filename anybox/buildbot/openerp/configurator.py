@@ -236,6 +236,7 @@ class BuildoutsConfigurator(object):
                     '-c', buildout_slave_path,
                     'buildout:eggs-directory=' + eggs_cache,
                     'buildout:openerp-downloads-directory=' + openerp_cache,
+                    'openerp:with_devtools=True',
                     'openerp:vcs-clear-locks=True',
                     'openerp:vcs-clear-retry=True',
                     WithProperties(
@@ -327,10 +328,9 @@ class BuildoutsConfigurator(object):
                                      ))
 
         steps.append(ShellCommand(command=[
-                    'bin/start_openerp', '-i',
+                    'bin/test_openerp', '-i',
                     comma_list_sanitize(options.get('openerp-addons', 'all')),
-                    '--stop-after-init',
-                    '--log-level=test', '-d', Property('testing_db'),
+                    '-d', Property('testing_db'),
                     # openerp --logfile does not work with relative paths !
                     WithProperties('--logfile=%(workdir)s/build/test.log')],
                                      name='testing',
