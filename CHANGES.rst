@@ -4,6 +4,7 @@ Changes
 0.8 (Unreleased)
 ----------------
  - Using the uniform test launcher script provided by anybox.recipe.openerp 1.2
+ - launchpad #1086066: detecting unittest2 failures and errors
 
 0.7
 ---

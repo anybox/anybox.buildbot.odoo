@@ -8,7 +8,8 @@ import re
 
 FAILURE_REGEXPS = {
     'Failure in Python block': re.compile(r'WARNING:tests[.].*AssertionError'),
-    'Errors during tests': re.compile(r'ERROR:tests[.]'),
+    'Errors during x/yml tests': re.compile(r'ERROR:tests[.]'),
+    'Errors or failures during unittest2 tests': re.compile(r'at least one error occurred in a test'),
     'Errors loading addons': re.compile(r'ERROR.*openerp: Failed to load'),
     'Critical logs': re.compile(r'CRITICAL'),
     'Error init db': re.compile(r'Failed to initialize database'),
