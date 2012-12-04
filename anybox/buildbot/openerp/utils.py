@@ -43,8 +43,13 @@ def hg_init_pull(path, source, specs):
     hg_pull(path, source, specs)
 
 def hg_pull(path, source, specs):
-    """Pul from source to clone at path and update to named branch."""
-    cmd = [vcs_binaries['hg'], '-q', '--cwd', path, 'pull', source]
+    """Pull from source to clone at path the specified branches.
+
+    Currently try and pull in one shot, and retry branch per branch if that
+    failed (see launchpad #1086392).
+    """
+    base_cmd = (vcs_binaries['hg'], '-q', '--cwd', path, 'pull', source)
+    cmd = list(base_cmd)
     for spec in specs:
         if len(spec) != 1:
             raise ValueError("Invalid in-repo branch specification %r in "
@@ -52,7 +57,16 @@ def hg_pull(path, source, specs):
         cmd.append('-b')
         cmd.append(spec[0])
 
-    subprocess.call(cmd)
+    try:
+        subprocess.check_call(cmd)
+    except subprocess.CalledProcessError:
+        # see launchpad #1086392, we'll retry branch after branch
+        # even if there's only one, so that the process goes on in any case
+        # hg must have already done some console logging
+        for spec in specs:
+            # spec has already been syntactically checked by first attempt
+            subprocess.call(base_cmd + ('-b', spec[0]))
+
 
 def comma_list_sanitize(comma_list):
     """Sanitize a list given as a comma separated string.
