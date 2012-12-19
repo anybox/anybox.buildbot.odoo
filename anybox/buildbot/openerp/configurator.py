@@ -51,10 +51,10 @@ class BuildoutsConfigurator(object):
 
     cap2environ = dict(
         postgresql=dict(version_prop='pg_version',
-                        options={'port': ('PGPORT', '%(option-)s'),
-                                 'host': ('PGHOST', '%(option-)s'),
-                                 'lib': ('LD_LIBRARY_PATH', '%(option-)s'),
-                                 'bin': ('PATH', '%(option-)s'),
+                        options={'port': ('PGPORT', '%(option:-)s'),
+                                 'host': ('PGHOST', '%(option:-)s'),
+                                 'lib': ('LD_LIBRARY_PATH', '%(option:-)s'),
+                                 'bin': ('PATH', '%(option:-)s'),
                                  },
                         ))
 
@@ -292,14 +292,14 @@ class BuildoutsConfigurator(object):
                     'openerp:vcs-clear-locks=True',
                     'openerp:vcs-clear-retry=True',
                     WithProperties(
-                        'openerp:options.db_port=%(pg_port:-5432)s'),
+                        'openerp:options.db_port=%(cap_postgresql_port:-5432)s'),
                     WithProperties(
                         'openerp:options.db_host=%('
-                        'pg_host:-False)s'),
+                        'cap_postgresql_host:-False)s'),
                     WithProperties(
-                        'openerp:options.db_user=%(pg_user:-False)s'),
+                        'openerp:options.db_user=%(cap_postgresql_user:-False)s'),
                     WithProperties(
-                        'openerp:options.db_password=%(pg_passwd:-False)s'),
+                        'openerp:options.db_password=%(cap_postgresql_passwd:-False)s'),
                     ],
                                      name="buildout",
                                      description="buildout",
