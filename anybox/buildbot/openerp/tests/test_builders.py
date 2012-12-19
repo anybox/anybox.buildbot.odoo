@@ -104,9 +104,9 @@ class TestBuilders(BaseTestCase):
     def test_capability_env(self):
         master = {}
         conf = self.configurator
-        conf.cap2environ = dict(
-            python=dict(version_prop='py_version',
-                        options={'bin': ('PYTHONBIN', '%(option-)s')}))
+        conf.add_capability_environ(
+            'python', dict(version_prop='py_version',
+                           options={'bin': ('PYTHONBIN', '%(option-)s')}))
 
         master['slaves'] = conf.make_slaves(self.data_join(
                 'slaves_capability.cfg'))
@@ -119,13 +119,25 @@ class TestBuilders(BaseTestCase):
 
         test_environ = factory.steps[-2].kwargs['env']
         self.assertEquals(test_environ['PYTHONBIN'].fmtstring, '%(cap_python_bin-)s')
+        self.assertEquals(test_environ['PGPORT'].fmtstring, '%(cap_postgresql_port-)s')
+
+        # special case for PATH
+        path = test_environ['PATH']
+        self.assertEquals(path[1], '${PATH}')
+        self.assertEquals(path[0].fmtstring, '%(cap_postgresql_bin-)s')
 
         steps = dict((s.kwargs['name'], s) for s in factory.steps
-                    if s.factory is SetCapabilityProperties)
+                     if s.factory is SetCapabilityProperties)
 
         self.assertTrue('props_python' in steps)
-        py_prop = steps['props_python']
-        self.assertEquals(py_prop.args, ('python',))
-        self.assertEquals(py_prop.kwargs['capability_version_prop'],
+        prop_step = steps['props_python']
+        self.assertEquals(prop_step.args, ('python',))
+        self.assertEquals(prop_step.kwargs['capability_version_prop'],
                           'py_version')
+
+        self.assertTrue('props_postgresql' in steps)
+        prop_step = steps['props_postgresql']
+        self.assertEquals(prop_step.args, ('postgresql',))
+        self.assertEquals(prop_step.kwargs['capability_version_prop'],
+                          'pg_version')
 
