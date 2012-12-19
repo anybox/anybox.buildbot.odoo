@@ -90,11 +90,20 @@ class SetCapabilityProperties(DescriptionBuildStep):
     def start(self):
         cap_details = self.getProperty(self.capability_prop)[
             self.capability_name]
+        if not cap_details:
+            self.finished(SUCCESS)
+
         if self.capability_version_prop:
-            version = self.getProperty(self.capability_version_prop)
+            options = cap_details[
+                self.getProperty(self.capability_version_prop)]
         else:
-            version = None
-        for k, v in cap_details[version].items():
+            assert len(cap_details) == 1, (
+                   "No property defined to store version of capability %r, but"
+                   " slave %r has several versions of it." % (
+                    self.capability_name, self.getProperty('buildslave')))
+            options = cap_details.values()[0]
+
+        for k, v in options.items():
             self.setProperty(CAPABILITY_PROP_FMT % (self.capability_name, k),
                              v, 'capability')
         self.finished(SUCCESS)

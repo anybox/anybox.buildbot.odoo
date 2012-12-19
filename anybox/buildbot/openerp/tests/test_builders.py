@@ -141,3 +141,35 @@ class TestBuilders(BaseTestCase):
         self.assertEquals(prop_step.kwargs['capability_version_prop'],
                           'pg_version')
 
+    def test_capability_env_noprop(self):
+        """Test behaviour if no version property is defined.
+
+        (in that case, SetCapabilityStep is supposed to look for None,
+        meaning eventually the line in slave conf with no version indication.
+        """
+
+        master = {}
+        conf = self.configurator
+        conf.add_capability_environ(
+            'python', dict(
+                           options={'bin': ('PYTHONBIN', '%(option-)s')}))
+
+        master['slaves'] = conf.make_slaves(self.data_join(
+                'slaves_capability.cfg'))
+
+        conf.register_build_factories(self.data_join('manifest_1.cfg'))
+
+        builders = conf.make_builders(master_config=master)
+        factory = builders[0].factory
+
+        test_environ = factory.steps[-2].kwargs['env']
+        self.assertEquals(test_environ['PYTHONBIN'].fmtstring, '%(cap_python_bin-)s')
+
+        steps = dict((s.kwargs['name'], s) for s in factory.steps
+                     if s.factory is SetCapabilityProperties)
+
+        self.assertTrue('props_python' in steps)
+        prop_step = steps['props_python']
+        self.assertEquals(prop_step.args, ('python',))
+        self.assertEquals(prop_step.kwargs['capability_version_prop'], None)
+

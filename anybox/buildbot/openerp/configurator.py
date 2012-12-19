@@ -218,7 +218,7 @@ class BuildoutsConfigurator(object):
                     description=["Setting", capability, "properties"],
                     descriptionDone=["Set", capability, "properties"],
                     name="props_" + capability,
-                    capability_version_prop=to_env['version_prop'],
+                    capability_version_prop=to_env.get('version_prop'),
                     ))
             if to_env:
                 for opt, (env_key, wp) in to_env['options'].items():
