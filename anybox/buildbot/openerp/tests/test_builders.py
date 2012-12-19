@@ -111,7 +111,7 @@ class TestBuilders(BaseTestCase):
         master['slaves'] = conf.make_slaves(self.data_join(
                 'slaves_capability.cfg'))
 
-        conf.register_build_factories(self.data_join('manifest_1.cfg'))
+        conf.register_build_factories(self.data_join('manifest_capability.cfg'))
 
         builders = conf.make_builders(master_config=master)
         factory = builders[0].factory
@@ -151,13 +151,12 @@ class TestBuilders(BaseTestCase):
         master = {}
         conf = self.configurator
         conf.add_capability_environ(
-            'python', dict(
-                           options={'bin': ('PYTHONBIN', '%(option-)s')}))
+            'python', dict(options={'bin': ('PYTHONBIN', '%(option-)s')}))
 
         master['slaves'] = conf.make_slaves(self.data_join(
                 'slaves_capability.cfg'))
 
-        conf.register_build_factories(self.data_join('manifest_1.cfg'))
+        conf.register_build_factories(self.data_join('manifest_capability.cfg'))
 
         builders = conf.make_builders(master_config=master)
         factory = builders[0].factory

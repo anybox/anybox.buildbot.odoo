@@ -208,11 +208,20 @@ class BuildoutsConfigurator(object):
         gets set from the slave definition. The build steps set by this method
         will extract them as regular properties, which are tailored to be used
         by the returned environ dict.
+
+        This is done for all capabilities mentionned for this factory (through
+        build-for and build-requires), so that in particular, it should not
+        spawn absurd build steps that can't run on the slave and aren't needed.
         """
 
         capability_env = {}
 
+        all_capabilities = set(factory.build_for)
+        all_capabilities.update(factory.build_requires)
+
         for capability, to_env in self.cap2environ.items():
+            if capability not in all_capabilities:
+                continue
             factory.addStep(SetCapabilityProperties(
                     capability,
                     description=["Setting", capability, "properties"],
@@ -246,6 +255,20 @@ class BuildoutsConfigurator(object):
         options is the config part for this factory, seen as a dict
         """
         factory = BuildFactory()
+        build_for = options.get('build-for')
+        factory.build_for = {}
+        if build_for is not None:
+            for line in build_for.split(os.linesep):
+                vf = VersionFilter.parse(line)
+                factory.build_for[vf.cap] = vf
+
+        requires = options.get('build-requires')
+        if requires is None:
+            factory.build_requires = []
+        else:
+            factory.build_requires = [r.strip()
+                                      for r in requires.split(os.linesep)]
+
         factory.addStep(ShellCommand(command=['bzr', 'init-repo', '../..'],
                                      name="bzr repo",
                                      description="init bzr repo",
@@ -339,22 +362,6 @@ class BuildoutsConfigurator(object):
         for step in post_buildout_steps(self, options, buildout_slave_path,
                                         environ=capability_env):
             factory.addStep(step)
-
-        # TODO GR this is outside of the factory itself and get back
-        # to the caller
-        build_for = options.get('build-for')
-        factory.build_for = {}
-        if build_for is not None:
-            for line in build_for.split(os.linesep):
-                vf = VersionFilter.parse(line)
-                factory.build_for[vf.cap] = vf
-
-        requires = options.get('build-requires')
-        if requires is None:
-            factory.build_requires = []
-        else:
-            factory.build_requires = [r.strip()
-                                      for r in requires.split(os.linesep)]
 
         build_category = options.get('build-category')
         if build_category:
