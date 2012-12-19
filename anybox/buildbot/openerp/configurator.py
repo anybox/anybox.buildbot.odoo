@@ -263,8 +263,8 @@ class BuildoutsConfigurator(object):
                 slavedest='analyze_oerp_tests.py'))
 
         factory.addStep(PgSetProperties(name,
-            description=["Setting", "PG cluster", "properties"],
-            descriptionDone=["Set", "PG cluster", "properties"],
+            description=["Setting", "Testing DB", "property"],
+            descriptionDone=["Set", "Testing DB", "property"],
             name="pg_cluster_props",
             ))
 
