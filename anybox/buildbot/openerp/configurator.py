@@ -213,6 +213,7 @@ class BuildoutsConfigurator(object):
                 mastersrc=os.path.join(
                     BUILD_UTILS_PATH, 'analyze_oerp_tests.py'),
                 slavedest='analyze_oerp_tests.py'))
+
         factory.addStep(PgSetProperties(
             description=["Setting", "PG cluster", "properties"],
             descriptionDone=["Set", "PG cluster", "properties"],
@@ -222,15 +223,16 @@ class BuildoutsConfigurator(object):
 
         capability_env = {}
 
-        for capability, env in self.cap2environ.items():
+        for capability, to_env in self.cap2environ.items():
             factory.addStep(SetCapabilityProperties(
+                    capability,
                     description=["Setting", capability, "properties"],
                     descriptionDone=["Set", capability, "properties"],
                     name="props_" + capability,
-                    capability_name=capability,
+                    capability_version_prop=to_env['version_prop'],
                     ))
-            if env:
-                for opt, (env_key, wp) in env.items():
+            if to_env:
+                for opt, (env_key, wp) in to_env['options'].items():
                     capability_env[env_key] = WithProperties(
                         wp.replace('option',
                                    CAPABILITY_PROP_FMT % (capability, opt)))

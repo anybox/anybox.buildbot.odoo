@@ -1,6 +1,7 @@
 from base import BaseTestCase
 
 from anybox.buildbot.openerp.configurator import BuildoutsConfigurator
+from anybox.buildbot.openerp.steps import SetCapabilityProperties
 
 class TestBuilders(BaseTestCase):
 
@@ -104,7 +105,8 @@ class TestBuilders(BaseTestCase):
         master = {}
         conf = self.configurator
         conf.cap2environ = dict(
-            python={'bin': ('PYTHONBIN', '%(option-)s')})
+            python=dict(version_prop='py_version',
+                        options={'bin': ('PYTHONBIN', '%(option-)s')}))
 
         master['slaves'] = conf.make_slaves(self.data_join(
                 'slaves_capability.cfg'))
@@ -112,6 +114,18 @@ class TestBuilders(BaseTestCase):
         conf.register_build_factories(self.data_join('manifest_1.cfg'))
 
         builders = conf.make_builders(master_config=master)
-        environ = builders[0].factory.steps[-2].kwargs['env']
-        self.assertEquals(environ['PYTHONBIN'].fmtstring, '%(cap_python_bin-)s')
+        factory = builders[0].factory
+
+
+        test_environ = factory.steps[-2].kwargs['env']
+        self.assertEquals(test_environ['PYTHONBIN'].fmtstring, '%(cap_python_bin-)s')
+
+        steps = dict((s.kwargs['name'], s) for s in factory.steps
+                    if s.factory is SetCapabilityProperties)
+
+        self.assertTrue('props_python' in steps)
+        py_prop = steps['props_python']
+        self.assertEquals(py_prop.args, ('python',))
+        self.assertEquals(py_prop.kwargs['capability_version_prop'],
+                          'py_version')
 
