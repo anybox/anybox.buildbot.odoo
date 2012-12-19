@@ -9,12 +9,14 @@ from buildbot.config import BuilderConfig
 from buildbot import locks
 from buildbot.process.factory import BuildFactory
 from steps import PgSetProperties
+from steps import SetCapabilityProperties
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.transfer import FileDownload
 from buildbot.process.properties import WithProperties
 from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
+from .constants import CAPABILITY_PROP_FMT
 from scheduler import MirrorChangeFilter
 from utils import comma_list_sanitize
 from version import Version
@@ -47,13 +49,17 @@ class BuildoutsConfigurator(object):
     """
 
     def __init__(self, buildmaster_dir,
-                 manifest_paths=('buildouts/MANIFEST.cfg',)):
+                 manifest_paths=('buildouts/MANIFEST.cfg',),
+                 capability_options_to_environ=()):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
         self.buildmaster_dir = buildmaster_dir
         self.build_factories = {} # build factories by name
         self.factories_to_builders = {} # factory name -> builders playing it
         self.manifest_paths = manifest_paths
+        self.cap2environ = dict(capability_options_to_environ)
+
+
 
     def populate(self, config):
         config.setdefault('slaves', []).extend(self.make_slaves('slaves.cfg'))
@@ -214,6 +220,21 @@ class BuildoutsConfigurator(object):
             factory_name=name,
             ))
 
+        capability_env = {}
+
+        for capability, env in self.cap2environ.items():
+            factory.addStep(SetCapabilityProperties(
+                    description=["Setting", capability, "properties"],
+                    descriptionDone=["Set", capability, "properties"],
+                    name="props_" + capability,
+                    capability_name=capability,
+                    ))
+            if env:
+                for opt, (env_key, wp) in env.items():
+                    capability_env[env_key] = WithProperties(
+                        wp.replace('option',
+                                   CAPABILITY_PROP_FMT % (capability, opt)))
+
         cache = '../../buildout-caches'
         eggs_cache = cache + '/eggs'
         openerp_cache = cache + '/openerp'
@@ -289,8 +310,11 @@ class BuildoutsConfigurator(object):
 
         post_buildout_steps = self.post_buildout_steps[
             options.get('post-buildout-steps', 'standard')]
+
+        environ = psycopg2_env.copy()
+        environ.update(capability_env)
         for step in post_buildout_steps(self, options, buildout_slave_path,
-                                        psycopg2_env=psycopg2_env):
+                                        environ=environ):
             factory.addStep(step)
 
         # TODO GR this is outside of the factory itself and get back
@@ -315,10 +339,9 @@ class BuildoutsConfigurator(object):
         return factory
 
     def post_buildout_steps_standard(self, options, buildout_slave_path,
-                                     psycopg2_env=None):
+                                     environ=()):
 
-        if psycopg2_env is None:
-            psycopg2_env = {}
+        environ = dict(environ)
 
         steps = []
 
@@ -338,7 +361,7 @@ class BuildoutsConfigurator(object):
                                      descriptionDone='tests',
                                      logfiles=dict(test='test.log'),
                                      haltOnFailure=True,
-                                     env=psycopg2_env,
+                                     env=environ,
                                      )),
 
         steps.append(ShellCommand(

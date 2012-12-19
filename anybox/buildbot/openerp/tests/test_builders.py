@@ -99,3 +99,19 @@ class TestBuilders(BaseTestCase):
             builders['priv-sup90-postgresql-9.1-devel'].slavenames,
             ['privcode', 'privcode-91'])
 
+
+    def test_capability_env(self):
+        master = {}
+        conf = self.configurator
+        conf.cap2environ = dict(
+            python={'bin': ('PYTHONBIN', '%(option-)s')})
+
+        master['slaves'] = conf.make_slaves(self.data_join(
+                'slaves_capability.cfg'))
+
+        conf.register_build_factories(self.data_join('manifest_1.cfg'))
+
+        builders = conf.make_builders(master_config=master)
+        environ = builders[0].factory.steps[-2].kwargs['env']
+        self.assertEquals(environ['PYTHONBIN'].fmtstring, '%(cap_python_bin-)s')
+
