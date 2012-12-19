@@ -119,12 +119,12 @@ class TestBuilders(BaseTestCase):
 
         test_environ = factory.steps[-2].kwargs['env']
         self.assertEquals(test_environ['PYTHONBIN'].fmtstring, '%(cap_python_bin-)s')
-        self.assertEquals(test_environ['PGPORT'].fmtstring, '%(cap_postgresql_port-)s')
+        self.assertEquals(test_environ['PGPORT'].fmtstring, '%(cap_postgresql_port:-)s')
 
         # special case for PATH
         path = test_environ['PATH']
         self.assertEquals(path[1], '${PATH}')
-        self.assertEquals(path[0].fmtstring, '%(cap_postgresql_bin-)s')
+        self.assertEquals(path[0].fmtstring, '%(cap_postgresql_bin:-)s')
 
         steps = dict((s.kwargs['name'], s) for s in factory.steps
                      if s.factory is SetCapabilityProperties)
