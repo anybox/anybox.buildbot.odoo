@@ -3,7 +3,10 @@ Changes
 
 0.8 (Unreleased)
 ----------------
- - 
+ - Using the uniform test launcher script provided by anybox.recipe.openerp 1.2
+ - launchpad #1086066: detecting unittest2 failures and errors
+ - launchpad #1086392: resilience wrt missing remote mercurial
+   branches by retrying one branch after the other
 
 0.7
 ---
