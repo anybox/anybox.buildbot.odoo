@@ -17,6 +17,7 @@ from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
 from .constants import CAPABILITY_PROP_FMT
+from . import mirrors
 from scheduler import PollerChangeFilter
 from utils import comma_list_sanitize
 from version import Version
