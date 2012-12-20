@@ -9,13 +9,14 @@ from buildbot.config import BuilderConfig
 from buildbot import locks
 from buildbot.process.factory import BuildFactory
 from steps import PgSetProperties
+from steps import SetCapabilityProperties
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.transfer import FileDownload
 from buildbot.process.properties import WithProperties
 from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
-import mirrors
+from .constants import CAPABILITY_PROP_FMT
 from scheduler import PollerChangeFilter
 from utils import comma_list_sanitize
 from version import Version
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 # if they used shared eggs or downloads area
 buildout_lock = locks.SlaveLock("buildout")
 
+
 class BuildoutsConfigurator(object):
     """Populate buildmaster configs from buildouts and external slaves.cfg.
 
@@ -47,14 +49,32 @@ class BuildoutsConfigurator(object):
                            construct the buildout configuration slave-side.
     """
 
+    cap2environ = dict(
+        postgresql=dict(version_prop='pg_version',
+                        options={'port': ('PGPORT', '%(option:-)s'),
+                                 'host': ('PGHOST', '%(option:-)s'),
+                                 'lib': ('LD_LIBRARY_PATH', '%(option:-)s'),
+                                 'bin': ('PATH', '%(option:-)s'),
+                                 },
+                        ))
+
+
     def __init__(self, buildmaster_dir,
-                 manifest_paths=('buildouts/MANIFEST.cfg',)):
+                 manifest_paths=('buildouts/MANIFEST.cfg',),
+                 capability_options_to_environ=None):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
         self.buildmaster_dir = buildmaster_dir
         self.build_factories = {} # build factories by name
         self.factories_to_builders = {} # factory name -> builders playing it
         self.manifest_paths = manifest_paths
+        if capability_options_to_environ is not None:
+            self.cap2environ = capability_options_to_environ
+
+    def add_capability_environ(self, capability_name, options2environ):
+        """Add a dict of capability options to environment mapping."""
+        self.cap2environ = self.cap2environ.copy()
+        self.cap2environ[capability_name] = options2environ
 
     def populate(self, config):
         config.setdefault('slaves', []).extend(self.make_slaves('slaves.cfg'))
@@ -192,6 +212,48 @@ class BuildoutsConfigurator(object):
                 )
             )
 
+    def make_capability_environ(self, factory):
+        """Return an environment dict using properties from capabilities.
+
+        Add the necessary steps to factory to set those props.
+
+        During the build slave selection, the 'capability' dict property value
+        gets set from the slave definition. The build steps set by this method
+        will extract them as regular properties, which are tailored to be used
+        by the returned environ dict.
+
+        This is done for all capabilities mentionned for this factory (through
+        build-for and build-requires), so that in particular, it should not
+        spawn absurd build steps that can't run on the slave and aren't needed.
+        """
+
+        capability_env = {}
+
+        all_capabilities = set(factory.build_for)
+        all_capabilities.update(factory.build_requires)
+
+        for capability, to_env in self.cap2environ.items():
+            if capability not in all_capabilities:
+                continue
+            factory.addStep(SetCapabilityProperties(
+                    capability,
+                    description=["Setting", capability, "properties"],
+                    descriptionDone=["Set", capability, "properties"],
+                    name="props_" + capability,
+                    capability_version_prop=to_env.get('version_prop'),
+                    ))
+            if to_env:
+                for opt, (env_key, wp) in to_env['options'].items():
+                    var = WithProperties(
+                        wp.replace('option',
+                                    CAPABILITY_PROP_FMT % (capability, opt)))
+
+                    if env_key == 'PATH':
+                        var = [var, '${PATH}']
+                    capability_env[env_key] = var
+
+        return capability_env
+
     def make_factory(self, name, buildout_slave_path, buildout_dl_steps,
                      options):
         """Return a build factory using name and buildout config at cfg_path.
@@ -206,6 +268,20 @@ class BuildoutsConfigurator(object):
         options is the config part for this factory, seen as a dict
         """
         factory = BuildFactory()
+        build_for = options.get('build-for')
+        factory.build_for = {}
+        if build_for is not None:
+            for line in build_for.split(os.linesep):
+                vf = VersionFilter.parse(line)
+                factory.build_for[vf.cap] = vf
+
+        requires = options.get('build-requires')
+        if requires is None:
+            factory.build_requires = []
+        else:
+            factory.build_requires = [r.strip()
+                                      for r in requires.split(os.linesep)]
+
         factory.addStep(ShellCommand(command=['bzr', 'init-repo', '../..'],
                                      name="bzr repo",
                                      description="init bzr repo",
@@ -221,12 +297,14 @@ class BuildoutsConfigurator(object):
                 mastersrc=os.path.join(
                     BUILD_UTILS_PATH, 'analyze_oerp_tests.py'),
                 slavedest='analyze_oerp_tests.py'))
-        factory.addStep(PgSetProperties(
-            description=["Setting", "PG cluster", "properties"],
-            descriptionDone=["Set", "PG cluster", "properties"],
+
+        factory.addStep(PgSetProperties(name,
+            description=["Setting", "Testing DB", "property"],
+            descriptionDone=["Set", "Testing DB", "property"],
             name="pg_cluster_props",
-            factory_name=name,
             ))
+
+        capability_env = self.make_capability_environ(factory)
 
         cache = '../../buildout-caches'
         eggs_cache = cache + '/eggs'
@@ -241,10 +319,6 @@ class BuildoutsConfigurator(object):
                                      haltOnFailure=True,
                                      ))
 
-        psycopg2_env=dict(PATH=[WithProperties('%(pg_bin:-)s'),
-                                '${PATH}'],
-                          LD_LIBRARY_PATH=WithProperties('%(pg_lib:-)s'),
-                          )
         factory.addStep(ShellCommand(command=[
                     'bin/buildout',
                     '-c', buildout_slave_path,
@@ -254,30 +328,23 @@ class BuildoutsConfigurator(object):
                     'openerp:vcs-clear-locks=True',
                     'openerp:vcs-clear-retry=True',
                     WithProperties(
-                        'openerp:options.db_port=%(pg_port:-5432)s'),
+                        'openerp:options.db_port=%(cap_postgresql_port:-5432)s'),
                     WithProperties(
                         'openerp:options.db_host=%('
-                        'pg_host:-False)s'),
+                        'cap_postgresql_host:-False)s'),
                     WithProperties(
-                        'openerp:options.db_user=%(pg_user:-False)s'),
+                        'openerp:options.db_user=%(cap_postgresql_user:-False)s'),
                     WithProperties(
-                        'openerp:options.db_password=%(pg_passwd:-False)s'),
+                        'openerp:options.db_password=%(cap_postgresql_passwd:-False)s'),
                     ],
                                      name="buildout",
                                      description="buildout",
                                      timeout=3600*4,
                                      haltOnFailure=True,
                                      locks=[buildout_lock.access('exclusive')],
-                                     env=psycopg2_env,
+                                     env=capability_env,
                                      ))
-
-        # psql command and its environmental variables
         psql = Property('pg_psql', default='psql')
-        psql_env = dict(PGHOST=WithProperties('%(pg_host:-)s'),
-                        PGPORT=WithProperties('%(pg_port:-)s'),
-                        PATH=[WithProperties('%(pg_bin:-)s'),
-                              '${PATH}'],
-                        )
 
         factory.addStep(ShellCommand(command=[
                     psql, 'postgres', '-c',
@@ -286,8 +353,9 @@ class BuildoutsConfigurator(object):
                                      name='dropdb',
                                      description=["dropdb",
                                                   Property('testing_db')],
-                                     env=psql_env,
+                                     env=capability_env,
                                      haltOnFailure=True))
+
         factory.addStep(ShellCommand(command=[
                     psql, 'postgres', '-c',
                     WithProperties(
@@ -297,31 +365,16 @@ class BuildoutsConfigurator(object):
                                      name='createdb',
                                      description=["createdb",
                                                   Property('testing_db')],
-                                     env=psql_env,
+                                     env=capability_env,
                                      haltOnFailure=True,
                                      ))
 
         post_buildout_steps = self.post_buildout_steps[
             options.get('post-buildout-steps', 'standard')]
+
         for step in post_buildout_steps(self, options, buildout_slave_path,
-                                        psycopg2_env=psycopg2_env):
+                                        environ=capability_env):
             factory.addStep(step)
-
-        # TODO GR this is outside of the factory itself and get back
-        # to the caller
-        build_for = options.get('build-for')
-        factory.build_for = {}
-        if build_for is not None:
-            for line in build_for.split(os.linesep):
-                vf = VersionFilter.parse(line)
-                factory.build_for[vf.cap] = vf
-
-        requires = options.get('build-requires')
-        if requires is None:
-            factory.build_requires = []
-        else:
-            factory.build_requires = [r.strip()
-                                      for r in requires.split(os.linesep)]
 
         build_category = options.get('build-category')
         if build_category:
@@ -329,10 +382,9 @@ class BuildoutsConfigurator(object):
         return factory
 
     def post_buildout_steps_standard(self, options, buildout_slave_path,
-                                     psycopg2_env=None):
+                                     environ=()):
 
-        if psycopg2_env is None:
-            psycopg2_env = {}
+        environ = dict(environ)
 
         steps = []
 
@@ -352,7 +404,7 @@ class BuildoutsConfigurator(object):
                                      descriptionDone='tests',
                                      logfiles=dict(test='test.log'),
                                      haltOnFailure=True,
-                                     env=psycopg2_env,
+                                     env=environ,
                                      )),
 
         steps.append(ShellCommand(

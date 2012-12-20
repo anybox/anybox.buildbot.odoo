@@ -1,6 +1,7 @@
 from base import BaseTestCase
 
 from anybox.buildbot.openerp.configurator import BuildoutsConfigurator
+from anybox.buildbot.openerp.steps import SetCapabilityProperties
 
 class TestBuilders(BaseTestCase):
 
@@ -98,4 +99,76 @@ class TestBuilders(BaseTestCase):
         self.assertEquals(
             builders['priv-sup90-postgresql-9.1-devel'].slavenames,
             ['privcode', 'privcode-91'])
+
+
+    def test_capability_env(self):
+        master = {}
+        conf = self.configurator
+        conf.add_capability_environ(
+            'python', dict(version_prop='py_version',
+                           options={'bin': ('PYTHONBIN', '%(option-)s')}))
+
+        master['slaves'] = conf.make_slaves(self.data_join(
+                'slaves_capability.cfg'))
+
+        conf.register_build_factories(self.data_join('manifest_capability.cfg'))
+
+        builders = conf.make_builders(master_config=master)
+        factory = builders[0].factory
+
+
+        test_environ = factory.steps[-2].kwargs['env']
+        self.assertEquals(test_environ['PYTHONBIN'].fmtstring, '%(cap_python_bin-)s')
+        self.assertEquals(test_environ['PGPORT'].fmtstring, '%(cap_postgresql_port:-)s')
+
+        # special case for PATH
+        path = test_environ['PATH']
+        self.assertEquals(path[1], '${PATH}')
+        self.assertEquals(path[0].fmtstring, '%(cap_postgresql_bin:-)s')
+
+        steps = dict((s.kwargs['name'], s) for s in factory.steps
+                     if s.factory is SetCapabilityProperties)
+
+        self.assertTrue('props_python' in steps)
+        prop_step = steps['props_python']
+        self.assertEquals(prop_step.args, ('python',))
+        self.assertEquals(prop_step.kwargs['capability_version_prop'],
+                          'py_version')
+
+        self.assertTrue('props_postgresql' in steps)
+        prop_step = steps['props_postgresql']
+        self.assertEquals(prop_step.args, ('postgresql',))
+        self.assertEquals(prop_step.kwargs['capability_version_prop'],
+                          'pg_version')
+
+    def test_capability_env_noprop(self):
+        """Test behaviour if no version property is defined.
+
+        (in that case, SetCapabilityStep is supposed to look for None,
+        meaning eventually the line in slave conf with no version indication.
+        """
+
+        master = {}
+        conf = self.configurator
+        conf.add_capability_environ(
+            'python', dict(options={'bin': ('PYTHONBIN', '%(option-)s')}))
+
+        master['slaves'] = conf.make_slaves(self.data_join(
+                'slaves_capability.cfg'))
+
+        conf.register_build_factories(self.data_join('manifest_capability.cfg'))
+
+        builders = conf.make_builders(master_config=master)
+        factory = builders[0].factory
+
+        test_environ = factory.steps[-2].kwargs['env']
+        self.assertEquals(test_environ['PYTHONBIN'].fmtstring, '%(cap_python_bin-)s')
+
+        steps = dict((s.kwargs['name'], s) for s in factory.steps
+                     if s.factory is SetCapabilityProperties)
+
+        self.assertTrue('props_python' in steps)
+        prop_step = steps['props_python']
+        self.assertEquals(prop_step.args, ('python',))
+        self.assertEquals(prop_step.kwargs['capability_version_prop'], None)
 
