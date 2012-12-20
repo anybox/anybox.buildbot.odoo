@@ -3,7 +3,7 @@ Changes
 
 0.8 (Unreleased)
 ----------------
- - 
+ - Using the uniform test launcher script provided by anybox.recipe.openerp 1.2
 
 0.7
 ---
