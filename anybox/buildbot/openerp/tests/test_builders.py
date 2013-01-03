@@ -100,6 +100,16 @@ class TestBuilders(BaseTestCase):
             builders['priv-sup90-postgresql-9.1-devel'].slavenames,
             ['privcode', 'privcode-91'])
 
+        # now with a version
+        self.assertEquals(
+            set(name for name in builders.keys()
+                if name.startswith('rabb-sup20')),
+            set(('rabb-sup20-postgresql-9.0',)))
+
+        self.assertEquals(
+            builders['rabb-sup20-postgresql-9.0'].slavenames,
+            ['rabb284',] )
+
 
     def test_capability_env(self):
         master = {}

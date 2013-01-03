@@ -217,7 +217,7 @@ class BuildoutsConfigurator(object):
         capability_env = {}
 
         all_capabilities = set(factory.build_for)
-        all_capabilities.update(factory.build_requires)
+        all_capabilities.update(r.cap for r in factory.build_requires)
 
         for capability, to_env in self.cap2environ.items():
             if capability not in all_capabilities:
@@ -266,8 +266,8 @@ class BuildoutsConfigurator(object):
         if requires is None:
             factory.build_requires = []
         else:
-            factory.build_requires = [r.strip()
-                                      for r in requires.split(os.linesep)]
+            factory.build_requires = set(VersionFilter.parse(r)
+                                         for r in requires.split(os.linesep))
 
         factory.addStep(ShellCommand(command=['bzr', 'init-repo', '../..'],
                                      name="bzr repo",
@@ -471,12 +471,29 @@ class BuildoutsConfigurator(object):
         fact_to_builders = self.factories_to_builders
         for factory_name, factory in self.build_factories.items():
             pgvf = factory.build_for.get('postgresql')
-            requires = set(factory.build_requires)
-
+            requires = factory.build_requires
             meet_requires = {} # pg version -> list of slave names
+
+            def does_meet_requires(slave):
+                """True if slave meets all the requirements in 'requires.'
+
+                TODO move this to an independent capability module."""
+                capability = slave.properties['capability']
+                for req in requires:
+                    version_options = capability.get(req.cap)
+                    if version_options is None:
+                        return False
+                    for version in version_options:
+                        if req.match(None if version is None
+                                     else Version.parse(version)):
+                            break
+                    else:
+                        return False
+                return True
+
             for pg, slaves in slaves_by_pg.items():
                 meet = [slave.slavename for slave in slaves
-                        if requires.issubset(slave.properties['capability'])]
+                        if does_meet_requires(slave)]
                 if meet:
                     meet_requires[pg] = meet
 

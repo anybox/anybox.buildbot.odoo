@@ -120,6 +120,12 @@ class VersionFilter(object):
       >>> vf.match(Version.parse('8.4-special'))
       True
 
+    For uniformity, absence of criteria is also accepted, and of course matches
+    any version::
+      >>> vf = VersionFilter.parse('rabbitmq')
+      >>> vf.match(Version.parse('6.6.6-any'))
+      True
+
     With errors:
       >>> try: vf = VersionFilter.parse('pg 8.4')
       ... except VersionParseError, exc: exc.args[0]
@@ -134,6 +140,9 @@ class VersionFilter(object):
 
     def match(self, version):
         """Tell if the given version matches the criteria."""
+
+        if not self.criteria:
+            return True
 
         return self.boolean_match(version, self.criteria)
 
@@ -186,6 +195,9 @@ class VersionFilter(object):
         >>> VersionFilter.parse('postgresql <= 9.2 > 8.4 OR == 8.4-patched')
         VersionFilter('postgresql', ('OR', ('AND', ('<=', Version(9, 2)), ('>', Version(8, 4))), ('==', Version(8, 4, suffix='patched'))))
         """
-        cap, req = as_string.split(' ', 1)
-        return cls(cap, cls.boolean_parse(req))
+        split = as_string.split(' ', 1)
+        cap = split[0]
+        if len(split) == 1:
+            return cls(split[0], ())
+        return cls(cap, cls.boolean_parse(split[1]))
 
