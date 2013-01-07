@@ -164,14 +164,26 @@ capability and version pair. Each line ends with additional
  capability = postgresql 8.4
               postgresql 9.1 port=5433
 	      private-bzr+ssh-access
-	      selenium-server
+	      selenium-server 2.3
 
-For now, only the postgresql capability has a special meaning to this generic
-configurator, but any can be used as a convention for specialized
-builds. The example demonstrates how to use that to indicate access to
-some private repositories, relying implicitely that the master's
-``MANIFEST.cfg`` refers to the same capability to dispatch builds only
-to those slaves that can run them.
+Capabilities are used for
+
+ * *filtering* : running builds only on those that can take them (see
+   ``build-requires`` option)
+ * *slave-local conditions*: applying parameters that depend on the
+   slave (here the port for PostgreSQL 9.1) through build properties
+   and environment variables. Everything is already tuned by
+   default for the ``postgresql`` capability, but an advanced user can
+   register environment variables mappings in ``master.cfg`` for other
+   capabilities.
+ * *demultiplication*: this is the ``build-for`` option of ``MANIFEST.cfg``.
+
+The example above demonstrates how to use that to indicate access to
+some private repositories, assuming that the master's
+``MANIFEST.cfg`` declares the builds that need this access::
+
+  build-requires=private-bzr+ssh-access
+
 
 PostgreSQL requirements and capability declaration
 --------------------------------------------------
@@ -252,6 +264,42 @@ for the relevant buildouts::
   [mybuildout]
   post-buildout-steps = mycase
   ...
+
+Capability custom environment mappings
+--------------------------------------
+
+As explained above, the capability system is able to set environment
+variables depending on the selected buildlsave and capability
+version. Of course, this is useful if the tests themselves make use
+directly or indirectly of them.
+
+The environment mappings are preset for ``postgresql`` only, here's how to do
+register some for another capability, from ``master.cfg``. Again,
+this goes by splitting througth instantiation of a configurator object
+instead of the ``configure_from_buildouts`` helper function::
+
+  abo_conf = BuildoutsConfigurator(basedir)
+  abo_conf.add_capability_environ(
+      'rabbitmq',
+      dict(version_prop='rabbitmq_version',
+           environ={'RMQ_BASE_URI': '%(cap(base_uri):-)s'),
+                    'RMQ_BINARY': '%(cap(binary):-)s'),
+                    'AMQP_CTL_SUDO': '%(cap(sudo):-TRUE)s'),
+        }))
+
+  abo_conf.populate(BuildmasterConfig)
+
+
+Now with ``rabbitmq`` capability defined this way on slaves::
+  rabbitmq 2.8.4 base_uri=amqp://guest:guest@localhost:5672/ binary=rabbitmqctl sudo=True
+
+This will setup ``RMQ_BASE_URI``, ``RMQ_BINARY`` and ``AMQP_CTL_SUDO``
+to these values.
+
+The values, in the ``environ`` sub-dict are ``WithProperties``
+statement, with their entire expressivity ; just notice the
+``cap(option_name)`` added syntax to refer to properties corresponding
+to capability options.
 
 Tweaks, optimization and traps
 ------------------------------

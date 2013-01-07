@@ -9,13 +9,13 @@ from buildbot.config import BuilderConfig
 from buildbot import locks
 from buildbot.process.factory import BuildFactory
 from steps import PgSetProperties
-from steps import SetCapabilityProperties
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.transfer import FileDownload
 from buildbot.process.properties import WithProperties
 from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
+from . import capability
 from .constants import CAPABILITY_PROP_FMT
 from scheduler import MirrorChangeFilter
 from utils import comma_list_sanitize
@@ -51,10 +51,11 @@ class BuildoutsConfigurator(object):
 
     cap2environ = dict(
         postgresql=dict(version_prop='pg_version',
-                        options={'port': ('PGPORT', '%(option:-)s'),
-                                 'host': ('PGHOST', '%(option:-)s'),
-                                 'lib': ('LD_LIBRARY_PATH', '%(option:-)s'),
-                                 'bin': ('PATH', '%(option:-)s'),
+                        environ={'PGPORT': '%(cap(port):-)s',
+                                 'PGHOST': '%(cap(host):-)s',
+                                 'LD_LIBRARY_PATH': '%(cap(lib):-)s',
+                                 'PATH': '%(cap(bin):-)s',
+                                 'PGCLUSTER': '%(pg_version:-)/main',
                                  },
                         ))
 
@@ -199,48 +200,6 @@ class BuildoutsConfigurator(object):
                 )
             )
 
-    def make_capability_environ(self, factory):
-        """Return an environment dict using properties from capabilities.
-
-        Add the necessary steps to factory to set those props.
-
-        During the build slave selection, the 'capability' dict property value
-        gets set from the slave definition. The build steps set by this method
-        will extract them as regular properties, which are tailored to be used
-        by the returned environ dict.
-
-        This is done for all capabilities mentionned for this factory (through
-        build-for and build-requires), so that in particular, it should not
-        spawn absurd build steps that can't run on the slave and aren't needed.
-        """
-
-        capability_env = {}
-
-        all_capabilities = set(factory.build_for)
-        all_capabilities.update(r.cap for r in factory.build_requires)
-
-        for capability, to_env in self.cap2environ.items():
-            if capability not in all_capabilities:
-                continue
-            factory.addStep(SetCapabilityProperties(
-                    capability,
-                    description=["Setting", capability, "properties"],
-                    descriptionDone=["Set", capability, "properties"],
-                    name="props_" + capability,
-                    capability_version_prop=to_env.get('version_prop'),
-                    ))
-            if to_env:
-                for opt, (env_key, wp) in to_env['options'].items():
-                    var = WithProperties(
-                        wp.replace('option',
-                                    CAPABILITY_PROP_FMT % (capability, opt)))
-
-                    if env_key == 'PATH':
-                        var = [var, '${PATH}']
-                    capability_env[env_key] = var
-
-        return capability_env
-
     def make_factory(self, name, buildout_slave_path, buildout_dl_steps,
                      options):
         """Return a build factory using name and buildout config at cfg_path.
@@ -291,7 +250,8 @@ class BuildoutsConfigurator(object):
             name="pg_cluster_props",
             ))
 
-        capability_env = self.make_capability_environ(factory)
+        capability_env = capability.set_properties_make_environ(
+            self.cap2environ, factory)
 
         cache = '../../buildout-caches'
         eggs_cache = cache + '/eggs'
@@ -331,7 +291,8 @@ class BuildoutsConfigurator(object):
                                      locks=[buildout_lock.access('exclusive')],
                                      env=capability_env,
                                      ))
-        psql = Property('pg_psql', default='psql')
+        psql = Property(CAPABILITY_PROP_FMT % ('postgresql', 'bin'),
+                        default='psql')
 
         factory.addStep(ShellCommand(command=[
                     psql, 'postgres', '-c',

@@ -116,7 +116,7 @@ class TestBuilders(BaseTestCase):
         conf = self.configurator
         conf.add_capability_environ(
             'python', dict(version_prop='py_version',
-                           options={'bin': ('PYTHONBIN', '%(option-)s')}))
+                           environ={'PYTHONBIN': '%(cap(bin)-)s'}))
 
         master['slaves'] = conf.make_slaves(self.data_join(
                 'slaves_capability.cfg'))
@@ -161,7 +161,7 @@ class TestBuilders(BaseTestCase):
         master = {}
         conf = self.configurator
         conf.add_capability_environ(
-            'python', dict(options={'bin': ('PYTHONBIN', '%(option-)s')}))
+            'python', dict(environ={'PYTHONBIN': '%(cap(bin)-)s'}))
 
         master['slaves'] = conf.make_slaves(self.data_join(
                 'slaves_capability.cfg'))
