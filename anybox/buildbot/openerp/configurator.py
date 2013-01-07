@@ -120,20 +120,7 @@ class BuildoutsConfigurator(object):
                 if key in ('passwd', 'password'):
                     pwd = value
                 elif key == 'capability':
-                    for cap_line in value.split(os.linesep):
-                        split = cap_line.split()
-                        if len(split) == 1:
-                            name = split[0]
-                            version = None
-                        else:
-                            name = split[0]
-                            version = split[1]
-                        this_cap = caps.setdefault(name, {})
-                        cap_opts = this_cap.setdefault(version, {})
-                        for option in split[2:]:
-                            opt_name, opt_val = option.split('=')
-                            cap_opts[opt_name] = opt_val
-
+                    caps.update(capability.parse_slave_declaration(value))
                 elif key in BUILDSLAVE_KWARGS:
                     kw[key] = BUILDSLAVE_KWARGS[key](value)
                 else:
@@ -435,26 +422,10 @@ class BuildoutsConfigurator(object):
             requires = factory.build_requires
             meet_requires = {} # pg version -> list of slave names
 
-            def does_meet_requires(slave):
-                """True if slave meets all the requirements in 'requires.'
-
-                TODO move this to an independent capability module."""
-                capability = slave.properties['capability']
-                for req in requires:
-                    version_options = capability.get(req.cap)
-                    if version_options is None:
-                        return False
-                    for version in version_options:
-                        if req.match(None if version is None
-                                     else Version.parse(version)):
-                            break
-                    else:
-                        return False
-                return True
-
             for pg, slaves in slaves_by_pg.items():
                 meet = [slave.slavename for slave in slaves
-                        if does_meet_requires(slave)]
+                        if capability.does_meet_requirements(
+                            slave.properties['capability'], requires)]
                 if meet:
                     meet_requires[pg] = meet
 

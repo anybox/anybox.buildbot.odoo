@@ -1,4 +1,3 @@
-import os
 from base import BaseTestCase
 
 from anybox.buildbot.openerp.configurator import BuildoutsConfigurator
