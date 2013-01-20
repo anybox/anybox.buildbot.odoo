@@ -304,12 +304,13 @@ class BuildoutsConfigurator(object):
                                      haltOnFailure=True,
                                      ))
 
-        post_buildout_steps = self.post_buildout_steps[
-            options.get('post-buildout-steps', 'standard')]
+        for line in options.get('post-buildout-steps',
+                                'standard').split(os.linesep):
+            post_buildout_steps = self.post_buildout_steps[line]
 
-        for step in post_buildout_steps(self, options, buildout_slave_path,
-                                        environ=capability_env):
-            factory.addStep(step)
+            for step in post_buildout_steps(self, options, buildout_slave_path,
+                                            environ=capability_env):
+                factory.addStep(step)
 
         build_category = options.get('build-category')
         if build_category:
