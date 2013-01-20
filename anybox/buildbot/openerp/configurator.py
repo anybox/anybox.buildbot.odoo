@@ -55,7 +55,7 @@ class BuildoutsConfigurator(object):
                                  'PGHOST': '%(cap(host):-)s',
                                  'LD_LIBRARY_PATH': '%(cap(lib):-)s',
                                  'PATH': '%(cap(bin):-)s',
-                                 'PGCLUSTER': '%(pg_version:-)/main',
+                                 'PGCLUSTER': '%(pg_version:-)s/main',
                                  },
                         ))
 
