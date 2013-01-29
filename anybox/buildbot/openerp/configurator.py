@@ -22,10 +22,10 @@ from utils import comma_list_sanitize
 from version import Version
 from version import VersionFilter
 
-BUILDSLAVE_KWARGS = { # name -> validating callable
-    'max_builds' : int,
+BUILDSLAVE_KWARGS = {  # name -> validating callable
+    'max_builds': int,
     'notify_on_missing': str,
-    }
+}
 
 BUILDSLAVE_REQUIRED = ('password',)
 
@@ -59,15 +59,14 @@ class BuildoutsConfigurator(object):
                                  },
                         ))
 
-
     def __init__(self, buildmaster_dir,
                  manifest_paths=('buildouts/MANIFEST.cfg',),
                  capability_options_to_environ=None):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
         self.buildmaster_dir = buildmaster_dir
-        self.build_factories = {} # build factories by name
-        self.factories_to_builders = {} # factory name -> builders playing it
+        self.build_factories = {}  # build factories by name
+        self.factories_to_builders = {}  # factory name -> builders playing it
         self.manifest_paths = manifest_paths
         if capability_options_to_environ is not None:
             self.cap2environ = capability_options_to_environ
@@ -113,7 +112,7 @@ class BuildoutsConfigurator(object):
         for slavename in parser.sections():
             kw = {}
             kw['properties'] = props = {}
-            props['capability'] = caps = {} # name -> versions
+            props['capability'] = caps = {}  # name -> versions
             seen = set()
             for key, value in parser.items(slavename):
                 seen.add(key)
@@ -227,15 +226,15 @@ class BuildoutsConfigurator(object):
             factory.addStep(dl_step)
 
         factory.addStep(FileDownload(
-                mastersrc=os.path.join(
-                    BUILD_UTILS_PATH, 'analyze_oerp_tests.py'),
-                slavedest='analyze_oerp_tests.py'))
+            mastersrc=os.path.join(
+                BUILD_UTILS_PATH, 'analyze_oerp_tests.py'),
+            slavedest='analyze_oerp_tests.py'))
 
-        factory.addStep(PgSetProperties(name,
-            description=["Setting", "Testing DB", "property"],
+        factory.addStep(PgSetProperties(
+            name, description=["Setting", "Testing DB", "property"],
             descriptionDone=["Set", "Testing DB", "property"],
             name="pg_cluster_props",
-            ))
+        ))
 
         capability_env = capability.set_properties_make_environ(
             self.cap2environ, factory)
@@ -254,55 +253,55 @@ class BuildoutsConfigurator(object):
                                      ))
 
         factory.addStep(ShellCommand(command=[
-                    'bin/buildout',
-                    '-c', buildout_slave_path,
-                    'buildout:eggs-directory=' + eggs_cache,
-                    'buildout:openerp-downloads-directory=' + openerp_cache,
-                    'openerp:with_devtools=True',
-                    'openerp:vcs-clear-locks=True',
-                    'openerp:vcs-clear-retry=True',
-                    WithProperties(
-                        'openerp:options.db_port=%(cap_postgresql_port:-5432)s'),
-                    WithProperties(
-                        'openerp:options.db_host=%('
-                        'cap_postgresql_host:-False)s'),
-                    WithProperties(
-                        'openerp:options.db_user=%(cap_postgresql_user:-False)s'),
-                    WithProperties(
-                        'openerp:options.db_password=%(cap_postgresql_passwd:-False)s'),
-                    ],
-                                     name="buildout",
-                                     description="buildout",
-                                     timeout=3600*4,
-                                     haltOnFailure=True,
-                                     locks=[buildout_lock.access('exclusive')],
-                                     env=capability_env,
-                                     ))
+            'bin/buildout',
+            '-c', buildout_slave_path,
+            'buildout:eggs-directory=' + eggs_cache,
+            'buildout:openerp-downloads-directory=' + openerp_cache,
+            'openerp:with_devtools=True',
+            'openerp:vcs-clear-locks=True',
+            'openerp:vcs-clear-retry=True',
+            WithProperties(
+                'openerp:options.db_port=%(cap_postgresql_port:-5432)s'),
+            WithProperties(
+                'openerp:options.db_host=%(cap_postgresql_host:-False)s'),
+            WithProperties(
+                'openerp:options.db_user=%(cap_postgresql_user:-False)s'),
+            WithProperties(
+                'openerp:options.db_password='
+                '%(cap_postgresql_passwd:-False)s'),
+        ],
+            name="buildout",
+            description="buildout",
+            timeout=3600*4,
+            haltOnFailure=True,
+            locks=[buildout_lock.access('exclusive')],
+            env=capability_env,
+        ))
+
         psql = Property(CAPABILITY_PROP_FMT % ('postgresql', 'bin'),
                         default='psql')
 
         factory.addStep(ShellCommand(command=[
-                    psql, 'postgres', '-c',
-                    WithProperties('DROP DATABASE IF EXISTS "%(testing_db)s"'),
-                    ],
-                                     name='dropdb',
-                                     description=["dropdb",
-                                                  Property('testing_db')],
-                                     env=capability_env,
-                                     haltOnFailure=True))
+            'psql', 'postgres', '-c',
+            WithProperties('DROP DATABASE IF EXISTS "%(testing_db)s"'),
+        ],
+            name='dropdb',
+            description=["dropdb", Property('testing_db')],
+            env=capability_env,
+            haltOnFailure=True,
+        ))
 
         factory.addStep(ShellCommand(command=[
-                    psql, 'postgres', '-c',
-                    WithProperties(
-            'CREATE DATABASE "%%(testing_db)s" '
-            'TEMPLATE "%s"' % options.get('db_template', 'template1')),
-                    ],
-                                     name='createdb',
-                                     description=["createdb",
-                                                  Property('testing_db')],
-                                     env=capability_env,
-                                     haltOnFailure=True,
-                                     ))
+            psql, 'postgres', '-c',
+            WithProperties('CREATE DATABASE "%%(testing_db)s" '
+                           'TEMPLATE "%s"' % options.get('db_template',
+                                                         'template1')),
+        ],
+            name='createdb',
+            description=["createdb", Property('testing_db')],
+            env=capability_env,
+            haltOnFailure=True,
+        ))
 
         for line in options.get('post-buildout-steps',
                                 'standard').split(os.linesep):
@@ -325,29 +324,29 @@ class BuildoutsConfigurator(object):
         steps = []
 
         steps.append(ShellCommand(command=['rm', '-f', 'test.log'],
-                                     name="Log cleanup",
-                                     descriptionDone=['Cleaned', 'logs'],
-                                     ))
+                                  name="Log cleanup",
+                                  descriptionDone=['Cleaned', 'logs'],
+                                  ))
 
         steps.append(ShellCommand(command=[
-                    'bin/test_openerp', '-i',
-                    comma_list_sanitize(options.get('openerp-addons', 'all')),
-                    '-d', Property('testing_db'),
-                    # openerp --logfile does not work with relative paths !
-                    WithProperties('--logfile=%(workdir)s/build/test.log')],
-                                     name='testing',
-                                     description='testing',
-                                     descriptionDone='tests',
-                                     logfiles=dict(test='test.log'),
-                                     haltOnFailure=True,
-                                     env=environ,
-                                     )),
+            'bin/test_openerp', '-i',
+            comma_list_sanitize(options.get('openerp-addons', 'all')),
+            '-d', Property('testing_db'),
+            # openerp --logfile does not work with relative paths !
+            WithProperties('--logfile=%(workdir)s/build/test.log')],
+            name='testing',
+            description='testing',
+            descriptionDone='tests',
+            logfiles=dict(test='test.log'),
+            haltOnFailure=True,
+            env=environ,
+        ))
 
         steps.append(ShellCommand(
-                command=["python", "analyze_oerp_tests.py", "test.log"],
-                name='analyze',
-                description="analyze",
-                ))
+            command=["python", "analyze_oerp_tests.py", "test.log"],
+            name='analyze',
+            description="analyze",
+        ))
 
         return steps
 
@@ -380,13 +379,13 @@ class BuildoutsConfigurator(object):
             buildout_downloader = self.buildout_dl_steps.get(btype)
             if buildout_downloader is None:
                 raise ValueError("Buildout type %r in %r not supported" % (
-                        btype, name))
+                    btype, name))
 
             conf_slave_path, dl_steps = buildout_downloader(self, buildout[1:],
                                                             manifest_dir)
             registry[name] = factory = self.make_factory(
                 name, conf_slave_path, dl_steps, dict(parser.items(name)))
-            factory.manifest_path = manifest_path # change filter will need it
+            factory.manifest_path = manifest_path  # change filter will need it
 
     buildout_dl_steps = dict(standalone=buildout_standalone_dl_steps,
                              hg=buildout_hg_dl_steps)
@@ -411,9 +410,9 @@ class BuildoutsConfigurator(object):
 
         slaves = master_config['slaves']
 
-        slaves_by_pg = {} # pg version -> list of slaves
+        slaves_by_pg = {}  # pg version -> list of slaves
         for slave in slaves:
-            for pg in slave.properties['capability'].get('postgresql', {}).keys():
+            for pg in slave.properties['capability'].get('postgresql', {}):
                 slaves_by_pg.setdefault(pg, []).append(slave)
 
         all_builders = []
@@ -421,7 +420,7 @@ class BuildoutsConfigurator(object):
         for factory_name, factory in self.build_factories.items():
             pgvf = factory.build_for.get('postgresql')
             requires = factory.build_requires
-            meet_requires = {} # pg version -> list of slave names
+            meet_requires = {}  # pg version -> list of slave names
 
             for pg, slaves in slaves_by_pg.items():
                 meet = [slave.slavename for slave in slaves
@@ -431,20 +430,22 @@ class BuildoutsConfigurator(object):
                     meet_requires[pg] = meet
 
             builders = [
-                BuilderConfig(name='%s-postgresql-%s' % (factory_name,
-                                                         pg_version),
-                              properties=dict(pg_version=pg_version),
-                              category=getattr(factory, 'build_category', None),
-                              factory=factory, slavenames=slavenames)
+                BuilderConfig(
+                    name='%s-postgresql-%s' % (factory_name,
+                                               pg_version),
+                    properties=dict(pg_version=pg_version),
+                    category=getattr(factory, 'build_category', None),
+                    factory=factory, slavenames=slavenames)
                 for pg_version, slavenames in meet_requires.items()
                 if pgvf is None or pgvf.match(Version.parse(pg_version))
-                ]
+            ]
+
             fact_to_builders[factory_name] = [b.name for b in builders]
             all_builders.extend(builders)
         return all_builders
 
     def factory_to_manifest(self, fact_name, absolute=False):
-        """Return the path to manifest file where factory with given name arose.
+        """Return the path to manifest file where factory fact_name arose.
         """
         path = self.build_factories[fact_name].manifest_path
         if absolute:
@@ -459,6 +460,7 @@ class BuildoutsConfigurator(object):
         not be preferable for buildmaster performance.
         """
         fact_to_builders = self.factories_to_builders
+
         def make_filter(factory_name):
             """Make a Mirror Change Filter for factory with given name."""
             return MirrorChangeFilter(
