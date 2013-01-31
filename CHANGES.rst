@@ -7,6 +7,9 @@ Changes
  - launchpad #1086066: detecting unittest2 failures and errors
  - launchpad #1086392: resilience wrt missing remote mercurial
    branches by retrying one branch after the other
+ - post download steps for alternative presentation to buildout and
+   tests (allow for packaging and testing the packaged)
+ - hgtag buildout source to read from a tag expressed in properties
 
 0.7
 ---

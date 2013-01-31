@@ -41,12 +41,17 @@ buildout_lock = locks.SlaveLock("buildout")
 class BuildoutsConfigurator(object):
     """Populate buildmaster configs from buildouts and external slaves.cfg.
 
-    There are two dictionnaries of methods:
+    There are three dictionnaries of methods:
+       buildout_dl_steps : name -> method returning the main buildout config
+                           file name and a list of steps to
+                           construct the buildout configuration slave-side.
+       post_dl_steps: name-> method returning the main buildout config file
+                             name and a list of steps to be inserted
+                             between the buildout conf retrieval and the main
+                             buildout run.
        post_buildout_steps : name -> method returning a list of steps to be
                              added after buildout has run and testing db is
                              done
-       buildout_dl_steps : name -> method returning a list of steps to
-                           construct the buildout configuration slave-side.
     """
 
     cap2environ = dict(
@@ -183,8 +188,36 @@ class BuildoutsConfigurator(object):
                 command=['python', 'buildout_hg_dl.py', url, branch],
                 description=("Retrieve buildout", "from hg",),
                 haltOnFailure=True,
-                )
             )
+        )
+
+    def buildout_hg_tag_dl_steps(self, cfg_tokens, manifest_dir):
+        """Steps to retrieve the buildout dir as a Mercurial tag.
+
+        Useful for release/packaging oriented builds.
+        The tag name is read from build properties.
+        The clone is made outside of the main build/ directory, that must
+        stay pristine to test the produced packages.
+        """
+
+        if len(cfg_tokens) != 2:
+            raise ValueError(
+                "Wrong hgtag buildout specification: %r" % cfg_tokens)
+
+        url, conf_path = cfg_tokens
+        tag = Property('buildout-tag')
+        return conf_path, (
+            FileDownload(
+                mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_hg_dl.py'),
+                slavedest='../src/buildout_hg_dl.py',
+                haltOnFailure=True),
+            ShellCommand(
+                command=['python', 'buildout_hg_dl.py', '-t', 'tag', url, tag],
+                workdir='./src',
+                description=("Retrieve buildout", "tag", tag, "from hg",),
+                haltOnFailure=True,
+            )
+        )
 
     def make_factory(self, name, buildout_slave_path, buildout_dl_steps,
                      options):
@@ -225,6 +258,16 @@ class BuildoutsConfigurator(object):
         for dl_step in buildout_dl_steps:
             factory.addStep(dl_step)
 
+        capability_env = capability.set_properties_make_environ(
+            self.cap2environ, factory)
+
+        for line in options.get('post-dl-steps', 'standard').split(os.linesep):
+            post_dl_steps = self.post_dl_steps[line]
+            buildout_slave_path, steps = post_dl_steps(
+                self, options, buildout_slave_path, environ=capability_env)
+            for step in steps:
+                factory.addStep(step)
+
         factory.addStep(FileDownload(
             mastersrc=os.path.join(
                 BUILD_UTILS_PATH, 'analyze_oerp_tests.py'),
@@ -235,9 +278,6 @@ class BuildoutsConfigurator(object):
             descriptionDone=["Set", "Testing DB", "property"],
             name="pg_cluster_props",
         ))
-
-        capability_env = capability.set_properties_make_environ(
-            self.cap2environ, factory)
 
         cache = '../../buildout-caches'
         eggs_cache = cache + '/eggs'
@@ -316,6 +356,11 @@ class BuildoutsConfigurator(object):
             factory.build_category = build_category.strip()
         return factory
 
+    def post_dl_steps_standard(self, options, buildout_slave_path, environ=()):
+        return buildout_slave_path, ()
+
+    post_dl_steps = dict(standard=post_dl_steps_standard)
+
     def post_buildout_steps_standard(self, options, buildout_slave_path,
                                      environ=()):
 
@@ -388,6 +433,7 @@ class BuildoutsConfigurator(object):
             factory.manifest_path = manifest_path  # change filter will need it
 
     buildout_dl_steps = dict(standalone=buildout_standalone_dl_steps,
+                             hgtag=buildout_hg_tag_dl_steps,
                              hg=buildout_hg_dl_steps)
 
     def make_builders(self, master_config=None):
