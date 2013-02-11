@@ -9,6 +9,7 @@ from .version import Version
 
 RE_PROP_CAP_OPT = re.compile(r'cap\((\w*)\)')
 
+
 def set_properties_make_environ(cap2environ, factory):
     """Return env usable in steps after adding suitable prop steps to factory.
 
@@ -52,12 +53,12 @@ def set_properties_make_environ(cap2environ, factory):
         if capability not in all_capabilities:
             continue
         factory.addStep(SetCapabilityProperties(
-                capability,
-                description=["Setting", capability, "properties"],
-                descriptionDone=["Set", capability, "properties"],
-                name="props_" + capability,
-                capability_version_prop=to_env.get('version_prop'),
-                ))
+            capability,
+            description=["Setting", capability, "properties"],
+            descriptionDone=["Set", capability, "properties"],
+            name="props_" + capability,
+            capability_version_prop=to_env.get('version_prop'),
+        ))
         if to_env:
             for env_key, wp in to_env['environ'].items():
                 def rep(m):
@@ -68,6 +69,7 @@ def set_properties_make_environ(cap2environ, factory):
                 capability_env[env_key] = var
 
     return capability_env
+
 
 def parse_slave_declaration(value):
     """Return a dict representing the contents of a whole slave declaration."""
@@ -90,6 +92,7 @@ def parse_slave_declaration(value):
 
     return caps
 
+
 def does_meet_requirements(capability, requirements):
     """True if a buildslave capability fulfills all requirements.
 
@@ -107,4 +110,3 @@ def does_meet_requirements(capability, requirements):
         else:
             return False
     return True
-

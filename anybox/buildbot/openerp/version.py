@@ -9,6 +9,7 @@ class VersionParseError(ValueError):
     VersionParseError('asds', 'not a number')
     """
 
+
 class Version(object):
     """Enhanced version tuple, understanding some suffixes.
 
@@ -94,6 +95,7 @@ class Version(object):
         kw = dict(suffix=suffix)
         return cls(*version, **kw)
 
+
 class VersionFilter(object):
     """Represent a simple version filter.
 
@@ -138,6 +140,9 @@ class VersionFilter(object):
         self.cap = capability
         self.criteria = tuple(criteria)
 
+    def __eq__(self, other):
+        return (self.cap, self.criteria) == (other.cap, other.criteria)
+
     def match(self, version):
         """Tell if the given version matches the criteria."""
 
@@ -179,25 +184,29 @@ class VersionFilter(object):
 
         # unary ops
         crit_version = criteria[1]
-        if (op == '>=' and not version >= crit_version or
-                    op == '==' and not version == crit_version or
-                    op == '<=' and not version <= crit_version or
-                    op == '<' and not version < crit_version or
-                    op == '>' and not version > crit_version):
-                    return False
-        return True
+        return not(op == '>=' and not version >= crit_version or
+                   op == '==' and not version == crit_version or
+                   op == '<=' and not version <= crit_version or
+                   op == '<' and not version < crit_version or
+                   op == '>' and not version > crit_version)
 
     @classmethod
     def parse(cls, as_string):
         """Parse the filter from a requirement line.
 
-        ANDs are implicit between operands, OR are not and take precedence.
-        >>> VersionFilter.parse('postgresql <= 9.2 > 8.4 OR == 8.4-patched')
-        VersionFilter('postgresql', ('OR', ('AND', ('<=', Version(9, 2)), ('>', Version(8, 4))), ('==', Version(8, 4, suffix='patched'))))
+        ANDs are implicit between operands, OR are not and have lower
+        precedence.
+        >>> vf = VersionFilter.parse(
+        ...     'postgresql <= 9.2 > 8.4 OR == 8.4-patched')
+        >>> vf == VersionFilter(
+        ...           'postgresql',
+        ...           ('OR',
+        ...            ('AND', ('<=', Version(9, 2)), ('>', Version(8, 4))),
+        ...            ('==', Version(8, 4, suffix='patched'))))
+        True
         """
         split = as_string.split(' ', 1)
         cap = split[0]
         if len(split) == 1:
             return cls(split[0], ())
         return cls(cap, cls.boolean_parse(split[1]))
-
