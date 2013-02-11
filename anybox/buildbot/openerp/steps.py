@@ -80,7 +80,6 @@ class SetCapabilityProperties(DescriptionBuildStep):
         entirely describing the capabilities
         capability_version_prop is the name of the property (builder-level)
         giving the version capability to take into account.
-
         """
         DescriptionBuildStep.__init__(self, **kw)
         self.capability_name = capability_name
@@ -93,12 +92,17 @@ class SetCapabilityProperties(DescriptionBuildStep):
         if not cap_details:
             self.finished(SUCCESS)
 
+        options = None
         if self.capability_version_prop:
-            options = cap_details[
-                self.getProperty(self.capability_version_prop)]
-        else:
+            cap_version = self.getProperty(self.capability_version_prop)
+            if cap_version is not None:
+                options = cap_details[cap_version]
+
+        if options is None:
+            # could not get options by a capacity version from props
+            # works if there's only one capacity version on this buildslave
             assert len(cap_details) == 1, (
-                "No property defined to store version of capability %r, but"
+                "No version of capability %r in properties, but"
                 " slave %r has several versions of it." % (
                     self.capability_name, self.getProperty('buildslave')))
             options = cap_details.values()[0]
