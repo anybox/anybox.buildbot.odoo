@@ -318,9 +318,6 @@ class BuildoutsConfigurator(object):
             env=capability_env,
         ))
 
-        psql = Property(CAPABILITY_PROP_FMT % ('postgresql', 'bin'),
-                        default='psql')
-
         factory.addStep(ShellCommand(command=[
             'psql', 'postgres', '-c',
             WithProperties('DROP DATABASE IF EXISTS "%(testing_db)s"'),
@@ -332,7 +329,7 @@ class BuildoutsConfigurator(object):
         ))
 
         factory.addStep(ShellCommand(command=[
-            psql, 'postgres', '-c',
+            'psql', 'postgres', '-c',
             WithProperties('CREATE DATABASE "%%(testing_db)s" '
                            'TEMPLATE "%s"' % options.get('db_template',
                                                          'template1')),
