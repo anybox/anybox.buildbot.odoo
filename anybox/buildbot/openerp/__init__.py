@@ -3,6 +3,7 @@ import os
 import warnings
 from configurator import BuildoutsConfigurator
 
+
 def configure_from_buildouts(buildmaster_path, config, **kw):
     """Load the configuration with what's needed for the buildouts.
 

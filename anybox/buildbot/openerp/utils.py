@@ -6,6 +6,7 @@ import subprocess
 # for the version that has the buildbot hooks.
 vcs_binaries = dict(bzr='bzr', hg='hg')
 
+
 def mkdirp(path):
     """Python equivalent for mkdir -p"""
     if os.path.isdir(path):
@@ -15,9 +16,11 @@ def mkdirp(path):
         mkdirp(parent)
     os.mkdir(path)
 
+
 def ez_hash(url):
     """Return a uniform hash code meant for source URL."""
     return hashlib.sha1(url).hexdigest()
+
 
 def bzr_refuse_branch_specs(url, specs):
     for spec in specs:
@@ -26,10 +29,12 @@ def bzr_refuse_branch_specs(url, specs):
                              "should not get minor specifications %r for %r",
                              spec, url)
 
+
 def bzr_init_branch(path, url, specs):
     """Retrieve a branch from source to path."""
     bzr_refuse_branch_specs(url, specs)
     subprocess.call([vcs_binaries['bzr'], 'branch', url, path])
+
 
 def bzr_update_branch(path, url, specs):
     """Update a branch from source to path."""
@@ -37,10 +42,12 @@ def bzr_update_branch(path, url, specs):
     subprocess.call([vcs_binaries['bzr'], 'pull', '--quiet', '--overwrite',
                      '-d', path, url])
 
+
 def hg_init_pull(path, source, specs):
     """Init hg repo and pull only required branches."""
     subprocess.call([vcs_binaries['hg'], 'init', path])
     hg_pull(path, source, specs)
+
 
 def hg_pull(path, source, specs):
     """Pull from source to clone at path the specified branches.

@@ -44,5 +44,3 @@ else:
 
 s.close()
 print(p)
-
-

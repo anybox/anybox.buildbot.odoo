@@ -1,7 +1,7 @@
-import os
 from base import BaseTestCase
 
 from anybox.buildbot.openerp.mirrors import Updater
+
 
 class TestMirrors(BaseTestCase):
 
@@ -10,5 +10,3 @@ class TestMirrors(BaseTestCase):
 
     def test_not_found(self):
         self.assertRaises(ValueError, self.mirrors, source='doesnt-exist')
-
-

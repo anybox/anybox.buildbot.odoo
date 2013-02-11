@@ -3,12 +3,13 @@ from base import BaseTestCase
 from anybox.buildbot.openerp.configurator import BuildoutsConfigurator
 from anybox.buildbot.openerp.steps import SetCapabilityProperties
 
+
 class TestBuilders(BaseTestCase):
 
     def setUp(self):
         super(TestBuilders, self).setUp()
         self.configurator = BuildoutsConfigurator(self.master_join(
-                'master.cfg'))
+            'master.cfg'))
 
     def test_register_openerp_addons(self):
         """The ``addons-list`` builder factory installs given addons."""
@@ -31,7 +32,8 @@ class TestBuilders(BaseTestCase):
             i = commands.index('-i')
             addons = commands[i+1]
         except IndexError:
-            self.fail("Addons list not found in OpenERP command: %r" % commands)
+            self.fail(
+                "Addons list not found in OpenERP command: %r" % commands)
 
         self.assertEquals(addons, 'stock,crm')
 
@@ -48,13 +50,12 @@ class TestBuilders(BaseTestCase):
         for b in builders:
             self.assertEquals(b.category, expected[b.name])
 
-
     def test_build_for(self):
         master = {}
         conf = self.configurator
 
-        master['slaves'] = conf.make_slaves(self.data_join(
-                'slaves_build_for.cfg'))
+        master['slaves'] = conf.make_slaves(
+            self.data_join('slaves_build_for.cfg'))
         conf.register_build_factories(self.data_join('manifest_build_for.cfg'))
         builders = self.configurator.make_builders(master_config=master)
         names = set(builder.name for builder in builders)
@@ -108,8 +109,7 @@ class TestBuilders(BaseTestCase):
 
         self.assertEquals(
             builders['rabb-sup20-postgresql-9.0'].slavenames,
-            ['rabb284',] )
-
+            ['rabb284'])
 
     def test_capability_env(self):
         master = {}
@@ -118,18 +118,20 @@ class TestBuilders(BaseTestCase):
             'python', dict(version_prop='py_version',
                            environ={'PYTHONBIN': '%(cap(bin)-)s'}))
 
-        master['slaves'] = conf.make_slaves(self.data_join(
-                'slaves_capability.cfg'))
+        master['slaves'] = conf.make_slaves(
+            self.data_join('slaves_capability.cfg'))
 
-        conf.register_build_factories(self.data_join('manifest_capability.cfg'))
+        conf.register_build_factories(
+            self.data_join('manifest_capability.cfg'))
 
         builders = conf.make_builders(master_config=master)
         factory = builders[0].factory
 
-
         test_environ = factory.steps[-2].kwargs['env']
-        self.assertEquals(test_environ['PYTHONBIN'].fmtstring, '%(cap_python_bin-)s')
-        self.assertEquals(test_environ['PGPORT'].fmtstring, '%(cap_postgresql_port:-)s')
+        self.assertEquals(test_environ['PYTHONBIN'].fmtstring,
+                          '%(cap_python_bin-)s')
+        self.assertEquals(test_environ['PGPORT'].fmtstring,
+                          '%(cap_postgresql_port:-)s')
 
         # special case for PATH
         path = test_environ['PATH']
@@ -163,16 +165,18 @@ class TestBuilders(BaseTestCase):
         conf.add_capability_environ(
             'python', dict(environ={'PYTHONBIN': '%(cap(bin)-)s'}))
 
-        master['slaves'] = conf.make_slaves(self.data_join(
-                'slaves_capability.cfg'))
+        master['slaves'] = conf.make_slaves(
+            self.data_join('slaves_capability.cfg'))
 
-        conf.register_build_factories(self.data_join('manifest_capability.cfg'))
+        conf.register_build_factories(
+            self.data_join('manifest_capability.cfg'))
 
         builders = conf.make_builders(master_config=master)
         factory = builders[0].factory
 
         test_environ = factory.steps[-2].kwargs['env']
-        self.assertEquals(test_environ['PYTHONBIN'].fmtstring, '%(cap_python_bin-)s')
+        self.assertEquals(test_environ['PYTHONBIN'].fmtstring,
+                          '%(cap_python_bin-)s')
 
         steps = dict((s.kwargs['name'], s) for s in factory.steps
                      if s.factory is SetCapabilityProperties)
@@ -181,4 +185,3 @@ class TestBuilders(BaseTestCase):
         prop_step = steps['props_python']
         self.assertEquals(prop_step.args, ('python',))
         self.assertEquals(prop_step.kwargs['capability_version_prop'], None)
-

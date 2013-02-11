@@ -5,12 +5,13 @@ from anybox.buildbot.openerp import utils
 from anybox.buildbot.openerp.mirrors import Updater
 from anybox.buildbot.openerp.buildouts import parse_manifest
 
+
 class MirrorChangeFilter(ChangeFilter):
     """Filter changesets that are to be watched for a given buildout."""
 
     def __init__(self, manifest_path, buildout):
 
-        self.interesting = {} # hash -> (vcs, minor branch spec)
+        self.interesting = {}  # hash -> (vcs, minor branch spec)
 
         parser = parse_manifest(manifest_path)
         try:
@@ -27,9 +28,9 @@ class MirrorChangeFilter(ChangeFilter):
         """True if change's about an interesting repo w/correct branch.
         """
         repo_prop = change.repository
-        if repo_prop: # hg
+        if repo_prop:  # hg
             h = repo_prop.rsplit('/', 1)[-1]
-        else: # bzr
+        else:  # bzr
             h = change.branch
 
         details = self.interesting.get(h)
@@ -37,7 +38,7 @@ class MirrorChangeFilter(ChangeFilter):
             return False
 
         vcs, minor_spec = details
-        if vcs == 'hg': # TODO less hardcoding
+        if vcs == 'hg':  # TODO less hardcoding
             # in hg, a minor spec is a singleton holding branch name
             assert(len(minor_spec) == 1)
             if minor_spec[0] != change.branch:

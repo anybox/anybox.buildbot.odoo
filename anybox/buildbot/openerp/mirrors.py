@@ -14,6 +14,7 @@ from anybox.buildbot.openerp.buildouts import parse_manifest
 
 logger = logging.getLogger(__name__)
 
+
 class Updater(object):
     """This class is the main mirrors maintainer.
 
@@ -50,8 +51,8 @@ class Updater(object):
     def __init__(self, mirrors_dir, manifest_paths):
         self.mirrors_dir = mirrors_dir
         self.manifest_paths = self.check_paths(manifest_paths)
-        self.hashes = {} #  (vcs, url) -> hash
-        self.repos = {} # hash -> (vcs, url, branch minor specs)
+        self.hashes = {}  # (vcs, url) -> hash
+        self.repos = {}  # hash -> (vcs, url, branch minor specs)
 
     def check_paths(self, paths):
         missing = [path for path in paths if not os.path.isfile(path)]
@@ -142,6 +143,7 @@ class Updater(object):
             logger.info("[%s] %s %r from %r", vcs, msg, path, url)
             methods[vcs](path, url, branch_specs)
 
+
 def configure_logging(logging_level):
     """Configure logging for the given logging level (upper-case)."""
 
@@ -220,4 +222,3 @@ def update():
     updater.update_all()
 
     fcntl.lockf(lock_file, fcntl.LOCK_UN)
-

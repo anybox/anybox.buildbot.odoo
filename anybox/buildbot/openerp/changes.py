@@ -11,6 +11,7 @@ from anybox.buildbot.openerp.mirrors import Updater
 from anybox.buildbot.openerp.buildouts import parse_manifest
 from ConfigParser import NoOptionError
 
+
 class SharedChangePerspective(ChangePerspective):
 
     def __init__(self, interesting_hashes, *a, **kw):
@@ -21,7 +22,7 @@ class SharedChangePerspective(ChangePerspective):
         repo = changedict.get('repository')
         if repo:
             h = repo.rsplit('/', 1)[-1]
-        else: # bzr
+        else:  # bzr
             h = changedict.get('branch', '')
 
         if not h in self.interesting_hashes:

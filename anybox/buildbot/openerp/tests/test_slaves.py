@@ -2,6 +2,7 @@ from base import BaseTestCase
 
 from anybox.buildbot.openerp.configurator import BuildoutsConfigurator
 
+
 class TestSlaves(BaseTestCase):
 
     def setUp(self):
@@ -20,4 +21,3 @@ class TestSlaves(BaseTestCase):
         slaves = self.conf.make_slaves(self.data_join('slaves_capability.cfg'))
         self.assertEquals(slaves[0].max_builds, 2)
         self.assertEquals(slaves[0].notify_on_missing, ['joe@example.org'])
-

@@ -2,7 +2,7 @@
 
 from buildbot.process.buildstep import BuildStep
 from buildbot.process.buildstep import SUCCESS
-from buildbot.process.buildstep import FAILURE
+from buildbot.process.buildstep import FAILURE  # NOQA
 
 from .constants import CAPABILITY_PROP_FMT
 
@@ -98,8 +98,8 @@ class SetCapabilityProperties(DescriptionBuildStep):
                 self.getProperty(self.capability_version_prop)]
         else:
             assert len(cap_details) == 1, (
-                   "No property defined to store version of capability %r, but"
-                   " slave %r has several versions of it." % (
+                "No property defined to store version of capability %r, but"
+                " slave %r has several versions of it." % (
                     self.capability_name, self.getProperty('buildslave')))
             options = cap_details.values()[0]
 

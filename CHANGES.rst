@@ -10,6 +10,7 @@ Changes
  - post download steps for alternative presentation to buildout and
    tests (allow for packaging and testing the packaged)
  - hgtag buildout source to read from a tag expressed in properties
+ - quality: flake8 compliance
 
 0.7
 ---
