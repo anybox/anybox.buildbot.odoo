@@ -9,10 +9,14 @@
 password = secret
 # if a capability has several versions, make one for each. You may specify
 # additional properties at the end of each line. The example below shows the
-# one used to refer to the correct PostgreSQL clusters
+# one used to refer to the correct PostgreSQL clusters and an arbitrary one
 capability = postgresql 8.4 port=5432
              postgresql 9.1 port=5433
              postgresql 9.2-devel port=5434 bin=/opt/postgresql-9.2devel/bin lib=/opt/postgresql-9.2devel/lib
+             some-convention-of-yours
+
+# this restricts to builds that are known to need that capability
+build-only-if-requires = some-convention-of-yours
 
 # builder's testing db is concatenation of db_prefix and builder name
 db_prefix = openerp-buildbot

@@ -184,6 +184,12 @@ some private repositories, assuming that the master's
 
   build-requires=private-bzr+ssh-access
 
+In some cases, it's meaningful to further restrict a buildslave to run
+only those builds that really need it. This is useful for rare or
+expensive resources. Sample ``slave.cfg`` extract for that::
+
+  [mybuildslave]
+  build-only-if-requires=selenium
 
 PostgreSQL requirements and capability declaration
 --------------------------------------------------

@@ -459,15 +459,27 @@ class BuildoutsConfigurator(object):
 
         all_builders = []
         fact_to_builders = self.factories_to_builders
+
+        def only_if_requires(slave):
+            """Shorcut for extraction of build-only-if-requires tokens."""
+            only = slave.properties.getProperty('build-only-if-requires')
+            if only is None:
+                return set()
+            else:
+                return set(only.split())
+
         for factory_name, factory in self.build_factories.items():
             pgvf = factory.build_for.get('postgresql')
             requires = factory.build_requires
+            require_names = set(req.cap for req in requires)
             meet_requires = {}  # pg version -> list of slave names
 
             for pg, slaves in slaves_by_pg.items():
                 meet = [slave.slavename for slave in slaves
                         if capability.does_meet_requirements(
-                            slave.properties['capability'], requires)]
+                            slave.properties['capability'], requires)
+                        and only_if_requires(slave).issubset(require_names)
+                        ]
                 if meet:
                     meet_requires[pg] = meet
 

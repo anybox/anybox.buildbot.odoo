@@ -111,6 +111,56 @@ class TestBuilders(BaseTestCase):
             builders['rabb-sup20-postgresql-9.0'].slavenames,
             ['rabb284'])
 
+    def test_build_requires_only_if(self):
+        master = {}
+        conf = self.configurator
+
+        master['slaves'] = conf.make_slaves(
+            self.data_join('slaves_build_requires_only_if.cfg'))
+        conf.register_build_factories(
+            self.data_join('manifest_build_requires.cfg'))
+        builders = self.configurator.make_builders(master_config=master)
+        builders = dict((b.name, b) for b in builders)
+
+        # 'privcode' doesn't run a the sup90 builders, since they don't
+        # need private-code-access cap
+        self.assertEquals(builders['sup90-postgresql-9.1-devel'].slavenames,
+                          ['privcode-91', 'pg90-91'])
+
+        # Redoing the tests of normal build_requires about builds that do
+        # need the capabilities
+        self.assertEquals(
+            set(name for name in builders.keys()
+                if name.startswith('priv-pgall')),
+            set(('priv-pgall-postgresql-8.4',
+                 'priv-pgall-postgresql-9.1-devel',)))
+
+        self.assertEquals(builders['priv-pgall-postgresql-8.4'].slavenames,
+                          ['privcode', 'privcode-84'])
+        self.assertEquals(
+            builders['priv-pgall-postgresql-9.1-devel'].slavenames,
+            ['privcode', 'privcode-91'])
+
+        # now build-for and build-requires together
+        self.assertEquals(
+            set(name for name in builders.keys()
+                if name.startswith('priv-sup90')),
+            set(('priv-sup90-postgresql-9.1-devel',)))
+
+        self.assertEquals(
+            builders['priv-sup90-postgresql-9.1-devel'].slavenames,
+            ['privcode', 'privcode-91'])
+
+        # now with a version
+        self.assertEquals(
+            set(name for name in builders.keys()
+                if name.startswith('rabb-sup20')),
+            set(('rabb-sup20-postgresql-9.0',)))
+
+        self.assertEquals(
+            builders['rabb-sup20-postgresql-9.0'].slavenames,
+            ['rabb284'])
+
     def test_capability_env(self):
         master = {}
         conf = self.configurator
