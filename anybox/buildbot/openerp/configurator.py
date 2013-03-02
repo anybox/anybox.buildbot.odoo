@@ -16,7 +16,10 @@ from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
 from . import capability
-from scheduler import MirrorChangeFilter
+from .constants import CAPABILITY_PROP_FMT
+from . import mirrors
+from scheduler import PollerChangeFilter
+
 from utils import comma_list_sanitize
 from version import Version
 from version import VersionFilter
@@ -85,6 +88,7 @@ class BuildoutsConfigurator(object):
         map(self.register_build_factories, self.manifest_paths)
         config.setdefault('builders', []).extend(
             self.make_builders(master_config=config))
+        config.setdefault('change_source', []).extend(self.make_pollers())
         config.setdefault('schedulers', []).extend(self.make_schedulers())
 
     def path_from_buildmaster(self, path):
@@ -93,6 +97,18 @@ class BuildoutsConfigurator(object):
         The path can still be absolute."""
 
         return os.path.join(self.buildmaster_dir, path)
+
+    def make_pollers(self):
+        """Return pollers for watched repositories.
+
+        Implementation for now relies on mirrors.Updater, but does not
+        actually perform any mirroring (TODO refactor)
+        """
+        # Updater only needs an existing dir
+        mirrors_dir = self.buildmaster_dir
+        upd = mirrors.Updater(mirrors_dir, self.manifest_paths)
+        upd.read_branches()
+        return list(set(upd.make_pollers())) # lp resolution can lead to dupes
 
     def make_slaves(self, conf_path='slaves.cfg'):
         """Create the slave objects from the file at conf_path.
@@ -515,14 +531,11 @@ class BuildoutsConfigurator(object):
         """
         fact_to_builders = self.factories_to_builders
 
-        def make_filter(factory_name):
-            """Make a Mirror Change Filter for factory with given name."""
-            return MirrorChangeFilter(
-                self.factory_to_manifest(factory_name, absolute=True),
-                factory_name)
+        def ch_filter(factory_name):
+            return PollerChangeFilter(self.manifest_paths, factory_name)
 
         return [SingleBranchScheduler(name=factory_name,
-                                      change_filter=make_filter(factory_name),
-                                      treeStableTimer=60,
+                                      change_filter=ch_filter(factory_name),
+                                      treeStableTimer=600,
                                       builderNames=builders)
                 for factory_name, builders in fact_to_builders.items()]

@@ -16,7 +16,9 @@ setup(
     zip_safe=False,
     include_package_data=True,
     namespace_packages=['anybox', 'anybox.buildbot'],
-    install_requires=['buildbot >= 0.8.7'],
+    install_requires=['buildbot >= 0.8.7',
+                      'bzr',
+                      ],
     tests_require=['nose'],
     test_suite='nose.collector',
     classifiers=[

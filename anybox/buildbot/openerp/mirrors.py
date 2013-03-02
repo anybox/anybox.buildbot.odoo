@@ -9,10 +9,28 @@ import optparse
 from ConfigParser import NoOptionError
 import logging
 
+from buildbot.changes.hgpoller import HgPoller
+from anybox.buildbot.openerp.bzr_buildbot import BzrPoller
+
 from anybox.buildbot.openerp import utils
 from anybox.buildbot.openerp.buildouts import parse_manifest
 
 logger = logging.getLogger(__name__)
+
+try:
+    from bzrlib.plugins.launchpad.lp_directory import LaunchpadDirectory
+    from bzrlib.plugins.launchpad import account as lp_account
+except ImportError:
+    LPDIR = None
+else:
+    def lp_get_login(_config=None):
+        """we need to use the public read-only URL to avoid lack of SSH key.
+
+        TODO probably gentler to pass a _config to look_up
+        """
+        return
+    lp_account.get_login = lp_get_login
+    LPDIR = LaunchpadDirectory()
 
 
 class Updater(object):
@@ -54,6 +72,26 @@ class Updater(object):
         self.hashes = {}  # (vcs, url) -> hash
         self.repos = {}  # hash -> (vcs, url, branch minor specs)
 
+    def make_pollers(self, poll_interval=10*60):
+        """Return an iterable of pollers for the watched repos."""
+        for h, (vcs, url, minor_specs) in self.repos.items():
+            if vcs == 'hg':
+                for ms in minor_specs:
+                    yield HgPoller(url, branch=ms[0],
+                                   workdir=os.path.join('hgpoller', h),
+                                   pollInterval=poll_interval)
+            elif vcs == 'bzr':
+                branch_name = url
+                if url.startswith('lp:'):
+                    if LPDIR is None:
+                        raise RuntimeError(
+                            "can't resolve bzr location %r without the "
+                            "launchpad plugin" % url)
+                    url = LPDIR.look_up('', url)
+
+                yield BzrPoller(url, poll_interval=poll_interval,
+                                branch_name=branch_name)
+
     def check_paths(self, paths):
         missing = [path for path in paths if not os.path.isfile(path)]
         if missing:
@@ -79,6 +117,7 @@ class Updater(object):
                     self.hashes[vcs, url] = h
                     specs = self.repos.setdefault(h, (vcs, url, set()))[-1]
                     specs.add(minor_spec)
+
 
     @classmethod
     def list_supported_vcs(cls):
