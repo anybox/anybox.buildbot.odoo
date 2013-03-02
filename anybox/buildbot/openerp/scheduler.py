@@ -48,11 +48,12 @@ class MirrorChangeFilter(ChangeFilter):
 
         return True
 
+
 class PollerChangeFilter(ChangeFilter):
 
     def __init__(self, manifest_paths, buildout):
 
-        self.interesting = {} # hash -> (vcs, minor branch spec)
+        self.interesting = {}  # hash -> (vcs, minor branch spec)
 
         for path in manifest_paths:
             # TODO REFACTOR stop this duplication and parse them once and for
@@ -74,14 +75,14 @@ class PollerChangeFilter(ChangeFilter):
         """True if change's about an interesting repo w/correct branch.
         """
         repo = change.repository
-        if not repo: # (e.g., in bzr) TODO how to know that before hand ?
+        if not repo:  # (e.g., in bzr) TODO how to know that before hand ?
             repo = change.branch
         details = self.interesting.get(repo)
         if details is None:
             return False
 
         vcs, minor_spec = details
-        if vcs == 'hg': # TODO less hardcoding
+        if vcs == 'hg':  # TODO less hardcoding
             # in hg, a minor spec is a singleton holding branch name
             assert(len(minor_spec) == 1)
             if minor_spec[0] != change.branch:

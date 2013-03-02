@@ -1,3 +1,4 @@
+# flake8: noqa
 # Copyright (C) 2008-2009 Canonical
 #
 # This program is free software: you can redistribute it and/or modify

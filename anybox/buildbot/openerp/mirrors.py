@@ -118,7 +118,6 @@ class Updater(object):
                     specs = self.repos.setdefault(h, (vcs, url, set()))[-1]
                     specs.add(minor_spec)
 
-
     @classmethod
     def list_supported_vcs(cls):
         return tuple(cls.vcses_branch_spec_length)

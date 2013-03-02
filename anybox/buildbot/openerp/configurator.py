@@ -16,7 +16,6 @@ from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
 from . import capability
-from .constants import CAPABILITY_PROP_FMT
 from . import mirrors
 from scheduler import PollerChangeFilter
 
@@ -108,7 +107,7 @@ class BuildoutsConfigurator(object):
         mirrors_dir = self.buildmaster_dir
         upd = mirrors.Updater(mirrors_dir, self.manifest_paths)
         upd.read_branches()
-        return list(set(upd.make_pollers())) # lp resolution can lead to dupes
+        return list(set(upd.make_pollers()))  # lp resolution can lead to dupes
 
     def make_slaves(self, conf_path='slaves.cfg'):
         """Create the slave objects from the file at conf_path.
