@@ -5,8 +5,8 @@ Changes
 ----------------
 
 
-0.8
----
+0.8.1
+-----
  - launchpad #1130838: build-only-if-requires buildslave option
  - Using the uniform test launcher script provided by anybox.recipe.openerp 1.2
  - launchpad #1086066: detecting unittest2 failures and errors
