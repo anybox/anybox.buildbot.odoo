@@ -4,8 +4,8 @@ version = '0.8-devel'
 pkg_name = "anybox.buildbot.openerp"
 
 setup(
-    name = pkg_name,
-    version = version,
+    name=pkg_name,
+    version=version,
     author="Anybox SAS",
     author_email="gracinet@anybox.fr",
     description="Buildbot setup for buildout based openerp installations",
@@ -20,19 +20,17 @@ setup(
     tests_require=['nose'],
     test_suite='nose.collector',
     classifiers=[
-      'Intended Audience :: Developers',
-      'Intended Audience :: System Administrators',
-      'Topic :: Software Development :: Build Tools',
-      'Topic :: Software Development :: Testing',
-      'Topic :: Software Development :: Quality Assurance',
-      'Topic :: Software Development :: Libraries :: Python Modules',
-      'License :: OSI Approved :: GNU Affero General Public License v3 '
-      'or later (AGPLv3+)',
-      ],
-   entry_points="""
+        'Intended Audience :: Developers',
+        'Intended Audience :: System Administrators',
+        'Topic :: Software Development :: Build Tools',
+        'Topic :: Software Development :: Testing',
+        'Topic :: Software Development :: Quality Assurance',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'License :: OSI Approved :: GNU Affero General Public License v3 '
+        'or later (AGPLv3+)',
+    ],
+    entry_points="""
     [console_scripts]
     update-mirrors = anybox.buildbot.openerp.mirrors:update
     """
-    )
-
-
+)
