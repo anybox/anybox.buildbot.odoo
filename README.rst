@@ -45,16 +45,16 @@ These steps are for a first setup.
       from anybox.buildbot.openerp import configure_from_buildouts
       configure_from_buildouts(basedir, BuildmasterConfig)
 
-5. Copy the ``buildouts`` directory included in the source
+4. Copy the ``buildouts`` directory included in the source
    distribution in the master or make your own (check
    ``buildouts/MANIFEST.cfg`` for an example on how to do
    that). In previous step, one can actually provide explicit
    locations for buildouts directories.
-6. Put a ``slaves.cfg`` file in the master directory. See the included
+5. Put a ``slaves.cfg`` file in the master directory. See the included
    ``slaves.cfg.sample`` for instructions.
-7. Install the Bzr and Mercurial hooks so that they apply to all
+6. Install the Bzr and Mercurial hooks so that they apply to all
    incoming changesets in the mirror
-8. Put the ``update-mirrors`` console script in a cron job (see
+7. Put the ``update-mirrors`` console script in a cron job (see
    ``update-mirrors --help`` for invocation details).
 
 Buildouts
@@ -317,6 +317,7 @@ instead of the ``configure_from_buildouts`` helper function::
 
 
 Now with ``rabbitmq`` capability defined this way on slaves::
+
   rabbitmq 2.8.4 base_uri=amqp://guest:guest@localhost:5672/ binary=rabbitmqctl sudo=True
 
 This will setup ``RMQ_BASE_URI``, ``RMQ_BINARY`` and ``AMQP_CTL_SUDO``
