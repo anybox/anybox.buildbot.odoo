@@ -67,6 +67,7 @@ class BuildoutsConfigurator(object):
 
     def __init__(self, buildmaster_dir,
                  manifest_paths=('buildouts/MANIFEST.cfg',),
+                 slaves_path='slaves.cfg',
                  capability_options_to_environ=None):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
@@ -74,6 +75,7 @@ class BuildoutsConfigurator(object):
         self.build_factories = {}  # build factories by name
         self.factories_to_builders = {}  # factory name -> builders playing it
         self.manifest_paths = manifest_paths
+        self.slaves_path = slaves_path
         if capability_options_to_environ is not None:
             self.cap2environ = capability_options_to_environ
 
@@ -83,7 +85,8 @@ class BuildoutsConfigurator(object):
         self.cap2environ[capability_name] = options2environ
 
     def populate(self, config):
-        config.setdefault('slaves', []).extend(self.make_slaves('slaves.cfg'))
+        config.setdefault('slaves', []).extend(
+            self.make_slaves(self.slaves_path))
         map(self.register_build_factories, self.manifest_paths)
         config.setdefault('builders', []).extend(
             self.make_builders(master_config=config))
