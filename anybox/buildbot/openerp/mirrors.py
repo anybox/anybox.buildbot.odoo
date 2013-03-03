@@ -36,6 +36,9 @@ else:
 class Updater(object):
     """This class is the main mirrors maintainer.
 
+    It can also be used as support for non-mirrors based installations by
+    providing info about watched repos from configuration files.
+
     It supports several VCS systems.
 
     It works for a set of watched branches, currently described by manifest
@@ -56,6 +59,7 @@ class Updater(object):
     conflicts while not needing to record a correspondence between the
     directory name and the specification to be usable : a scheduler can
     also read the watched branches and store the inverse mapping.
+
     """
 
     vcses_branch_spec_length = dict(bzr=1, hg=2)
@@ -71,6 +75,8 @@ class Updater(object):
         self.manifest_paths = self.check_paths(manifest_paths)
         self.hashes = {}  # (vcs, url) -> hash
         self.repos = {}  # hash -> (vcs, url, branch minor specs)
+        # watched repo per buildout
+        self.buildout_watch = {}  # (buildout -> url -> (vcs, minor spec)
 
     def make_pollers(self, poll_interval=10*60):
         """Return an iterable of pollers for the watched repos."""
@@ -105,6 +111,12 @@ class Updater(object):
             parser = parse_manifest(manifest_path)
 
             for buildout in parser.sections():
+                if buildout in self.buildout_watch:
+                    raise ValueError("Buildout %r from %r duplicates an "
+                                     "earlier entry." % (buildout,
+                                                         manifest_path))
+
+                bw = self.buildout_watch[buildout] = {}
                 try:
                     all_watched = parser.get(buildout, 'watch')
                 except NoOptionError:
@@ -117,6 +129,8 @@ class Updater(object):
                     self.hashes[vcs, url] = h
                     specs = self.repos.setdefault(h, (vcs, url, set()))[-1]
                     specs.add(minor_spec)
+
+                    bw[url] = vcs, minor_spec
 
     @classmethod
     def list_supported_vcs(cls):

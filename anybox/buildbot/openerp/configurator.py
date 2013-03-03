@@ -105,7 +105,7 @@ class BuildoutsConfigurator(object):
         """
         # Updater only needs an existing dir
         mirrors_dir = self.buildmaster_dir
-        upd = mirrors.Updater(mirrors_dir, self.manifest_paths)
+        self.sources = upd = mirrors.Updater(mirrors_dir, self.manifest_paths)
         upd.read_branches()
         return list(set(upd.make_pollers()))  # lp resolution can lead to dupes
 
@@ -531,7 +531,7 @@ class BuildoutsConfigurator(object):
         fact_to_builders = self.factories_to_builders
 
         def ch_filter(factory_name):
-            return PollerChangeFilter(self.manifest_paths, factory_name)
+            return PollerChangeFilter(self, factory_name)
 
         return [SingleBranchScheduler(name=factory_name,
                                       change_filter=ch_filter(factory_name),
