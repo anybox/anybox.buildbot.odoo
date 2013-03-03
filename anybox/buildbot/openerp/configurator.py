@@ -528,13 +528,16 @@ class BuildoutsConfigurator(object):
         TODO at some point check if a big dedicated, single schedulers would
         not be preferable for buildmaster performance.
         """
-        fact_to_builders = self.factories_to_builders
 
-        def ch_filter(factory_name):
-            return PollerChangeFilter(self, factory_name)
-
-        return [SingleBranchScheduler(name=factory_name,
-                                      change_filter=ch_filter(factory_name),
-                                      treeStableTimer=600,
-                                      builderNames=builders)
-                for factory_name, builders in fact_to_builders.items()]
+        schedulers = []
+        for factory_name, builders in self.factories_to_builders.items():
+            interesting = self.sources.buildout_watch.get(factory_name)
+            if interesting:
+                schedulers.append(
+                    SingleBranchScheduler(
+                        name=factory_name,
+                        change_filter=PollerChangeFilter(interesting),
+                        treeStableTimer=600,
+                        builderNames=builders)
+                )
+        return schedulers

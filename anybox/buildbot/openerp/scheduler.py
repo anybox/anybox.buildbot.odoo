@@ -2,11 +2,16 @@ from buildbot.changes.filter import ChangeFilter
 
 
 class BuildoutsChangeFilter(ChangeFilter):
-    """Base class that gets interesting repos from a configurator."""
+    """Base class for ChangeFilter based on watched buildouts.
+    """
 
-    def __init__(self, configurator, buildout):
+    def __init__(self, interesting):
+        """Initialisation: the interesting dict is url -> (vcs, minor_spec).
+        """
+        self.interesting = interesting
 
-        self.interesting = configurator.sources.buildout_watch[buildout]
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, self.interesting)
 
 
 class MirrorChangeFilter(BuildoutsChangeFilter):
