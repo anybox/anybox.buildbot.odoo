@@ -50,6 +50,11 @@ class Updater(object):
     in all cases, that'll be:
        VCS SOURCE_URL [[BRANCH MINOR SPECS]]
 
+    There is a capability for URL rewriting, through the url_rewrite_rules
+    attribute (a list of pairs (original_prefix, rewritten prefix).
+    The original URLs are stored in a translation dict for
+    quick comparison.
+
     Repositories are stored in the 'mirrors' subdirectory of the buildmaster.
     Each VCS has its own subdirectory of that one (a mirror).
 
@@ -70,13 +75,16 @@ class Updater(object):
     branch_update_methods = dict(bzr=utils.bzr_update_branch,
                                  hg=utils.hg_pull)
 
-    def __init__(self, mirrors_dir, manifest_paths):
+    def __init__(self, mirrors_dir, manifest_paths, url_rewrite_rules=()):
         self.mirrors_dir = mirrors_dir
         self.manifest_paths = self.check_paths(manifest_paths)
         self.hashes = {}  # (vcs, url) -> hash
         self.repos = {}  # hash -> (vcs, url, branch minor specs)
         # watched repo per buildout
         self.buildout_watch = {}  # (buildout -> url -> (vcs, minor spec)
+        self.url_rewrite_rules = url_rewrite_rules
+        self.original_urls = {}   # final -> original
+        self.rewritten_urls = {}  # original -> final
 
     def make_pollers(self, poll_interval=10*60):
         """Return an iterable of pollers for the watched repos."""
@@ -123,14 +131,32 @@ class Updater(object):
                     continue
                 for watched in all_watched.split(os.linesep):
                     vcs, url, minor_spec = self.parse_branch_spec(watched)
-
-                    h = utils.ez_hash(url)
+                    h = utils.ez_hash(url)  # non rewritten continuity of state
 
                     self.hashes[vcs, url] = h
-                    specs = self.repos.setdefault(h, (vcs, url, set()))[-1]
+                    specs = self.repos.setdefault(
+                        h, (vcs, self.rewrite_url(url), set()))[-1]
                     specs.add(minor_spec)
 
                     bw[url] = vcs, minor_spec
+
+    def rewrite_url(self, url):
+        """Perform URL rewritting according to url_rewrite_rules attribute.
+
+        Takes care of cases where several rewritings happen
+        Also manage the two-way correspondence.
+        """
+        rewritten_url = self.rewritten_urls.get(url)
+        if rewritten_url is None:
+            rewritten_url = url
+            for prefix, new_prefix in self.url_rewrite_rules:
+                if rewritten_url.startswith(prefix):
+                    ancestor = self.original_urls.get(rewritten_url,
+                                                      rewritten_url)
+                    rewritten_url = new_prefix + rewritten_url[len(prefix):]
+                    self.original_urls[rewritten_url] = ancestor
+            self.rewritten_urls[url] = rewritten_url
+        return rewritten_url
 
     @classmethod
     def list_supported_vcs(cls):

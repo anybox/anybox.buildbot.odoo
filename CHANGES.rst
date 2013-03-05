@@ -4,6 +4,7 @@ Changes
 0.9 (unreleased)
 ----------------
 
+ - launchpad #1142994: url rewrites for vcs polling
 
 0.8.1
 -----

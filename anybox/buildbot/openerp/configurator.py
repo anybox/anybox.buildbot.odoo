@@ -65,6 +65,8 @@ class BuildoutsConfigurator(object):
                                  },
                         ))
 
+    vcs_master_url_rewrite_rules = ()
+
     def __init__(self, buildmaster_dir,
                  manifest_paths=('buildouts/MANIFEST.cfg',),
                  slaves_path='slaves.cfg',
@@ -108,7 +110,9 @@ class BuildoutsConfigurator(object):
         """
         # Updater only needs an existing dir
         mirrors_dir = self.buildmaster_dir
-        self.sources = upd = mirrors.Updater(mirrors_dir, self.manifest_paths)
+        self.sources = upd = mirrors.Updater(
+            mirrors_dir, self.manifest_paths,
+            url_rewrite_rules=self.vcs_master_url_rewrite_rules)
         upd.read_branches()
         return list(set(upd.make_pollers()))  # lp resolution can lead to dupes
 

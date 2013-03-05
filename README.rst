@@ -28,8 +28,10 @@ buildbot users can tweak their configuration in the normal buildbot
 way, and even add more builds, possibly not even related to
 OpenERP.
 
-The real-time scheduling works by keeping a local mirror in sync, with
-hooks to call the master (currently for Bazaar and Mercurial only).
+The real-time scheduling works by polling the remote VCS systems
+(currently for Bazaar and Mercurial only). There is a basic URL
+rewritting capability to ease make this polling efficient.
+
 
 Master setup
 ~~~~~~~~~~~~
