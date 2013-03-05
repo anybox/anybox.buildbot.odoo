@@ -13,6 +13,7 @@ class TestPollers(BaseTestCase):
     def test_make_pollers(self):
         """The ``addons-list`` builder factory installs given addons."""
         self.configurator.manifest_paths = (self.data_join('manifest_1.cfg'),)
+        self.configurator.init_watch()
         pollers = self.configurator.make_pollers()
         self.assertEquals(len(pollers), 1)
         self.assertEquals(pollers[0].branch_name, 'lp:openobject-server/6.1')

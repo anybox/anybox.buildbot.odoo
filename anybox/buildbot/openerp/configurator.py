@@ -16,8 +16,7 @@ from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
 from . import capability
-from . import mirrors
-from scheduler import PollerChangeFilter
+from . import watch
 
 from utils import comma_list_sanitize
 from version import Version
@@ -102,19 +101,17 @@ class BuildoutsConfigurator(object):
 
         return os.path.join(self.buildmaster_dir, path)
 
+    def init_watch(self):
+        self.watcher = watch.MultiWatcher(
+            self.manifest_paths,
+            url_rewrite_rules=self.vcs_master_url_rewrite_rules)
+        self.watcher.read_branches()
+
     def make_pollers(self):
         """Return pollers for watched repositories.
-
-        Implementation for now relies on mirrors.Updater, but does not
-        actually perform any mirroring (TODO refactor)
         """
-        # Updater only needs an existing dir
-        mirrors_dir = self.buildmaster_dir
-        self.sources = upd = mirrors.Updater(
-            mirrors_dir, self.manifest_paths,
-            url_rewrite_rules=self.vcs_master_url_rewrite_rules)
-        upd.read_branches()
-        return list(set(upd.make_pollers()))  # lp resolution can lead to dupes
+        # lp resolution can lead to dupes
+        return list(set(self.watcher.make_pollers()))
 
     def make_slaves(self, conf_path='slaves.cfg'):
         """Create the slave objects from the file at conf_path.
@@ -538,13 +535,13 @@ class BuildoutsConfigurator(object):
 
         schedulers = []
         for factory_name, builders in self.factories_to_builders.items():
-            interesting = self.sources.buildout_watch.get(factory_name)
-            if interesting:
-                schedulers.append(
-                    SingleBranchScheduler(
-                        name=factory_name,
-                        change_filter=PollerChangeFilter(interesting),
-                        treeStableTimer=600,
-                        builderNames=builders)
-                )
+            change_filter = self.watcher.change_filter(factory_name)
+            if change_filter is None:
+                continue
+            schedulers.append(SingleBranchScheduler(
+                name=factory_name,
+                change_filter=change_filter,
+                treeStableTimer=600,
+                builderNames=builders))
+
         return schedulers

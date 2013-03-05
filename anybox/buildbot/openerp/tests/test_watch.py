@@ -1,23 +1,21 @@
 import os
 from .base import BaseTestCase
 
-from anybox.buildbot.openerp.mirrors import Updater
+from anybox.buildbot.openerp.watch import MultiWatcher
 
 
-class TestMirrors(BaseTestCase):
+class TestMultiWatcher(BaseTestCase):
 
-    def mirrors(self, source, **kw):
-        mirrors_dir = os.path.join(self.bm_dir, 'mirrors')
-        os.mkdir(mirrors_dir)
+    def watcher(self, source, **kw):
         buildouts_dir = os.path.join(self.bm_dir, 'buildouts')
         os.mkdir(buildouts_dir)
-        return Updater(mirrors_dir, [self.data_join(source)], **kw)
+        return MultiWatcher([self.data_join(source)], **kw)
 
     def test_not_found(self):
-        self.assertRaises(ValueError, self.mirrors, source='doesnt-exist')
+        self.assertRaises(ValueError, self.watcher, source='doesnt-exist')
 
     def test_make_pollers(self):
-        updater = self.mirrors(source='manifest_watch.cfg')
+        updater = self.watcher(source='manifest_watch.cfg')
         updater.read_branches()
         hg, bzr = updater.make_pollers()
         self.assertEquals(hg.repourl, 'http://mercurial.example/some/repo')
@@ -26,7 +24,7 @@ class TestMirrors(BaseTestCase):
         self.assertTrue(bzr.url.endswith('openobject-server/6.1'))
 
     def test_url_rewrite(self):
-        updater = self.mirrors(
+        updater = self.watcher(
             source='manifest_watch.cfg',
             url_rewrite_rules=(
                 ('protocol://special/', 'http://hg.example/'),

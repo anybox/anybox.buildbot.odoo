@@ -33,5 +33,6 @@ class BaseTestCase(unittest.TestCase):
         conf = self.configurator
         conf.slaves_path = self.data_join(slaves)
         conf.manifest_paths = (self.data_join(manifest),)
+        conf.init_watch()
         conf.populate(master)
         return master

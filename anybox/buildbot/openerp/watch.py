@@ -1,4 +1,4 @@
-"""This module takes care of creating, organizing and updating mirrors.
+"""This module takes care of watching source repositories.
 """
 
 import os
@@ -6,10 +6,11 @@ from ConfigParser import NoOptionError
 import logging
 
 from buildbot.changes.hgpoller import HgPoller
-from anybox.buildbot.openerp.bzr_buildbot import BzrPoller
+from .bzr_buildbot import BzrPoller
 
-from anybox.buildbot.openerp import utils
-from anybox.buildbot.openerp.buildouts import parse_manifest
+from . import utils
+from .buildouts import parse_manifest
+from .scheduler import PollerChangeFilter
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +30,8 @@ else:
     LPDIR = LaunchpadDirectory()
 
 
-class Updater(object):
-    """This class is the main mirrors maintainer.
-
-    It can also be used as support for non-mirrors based installations by
-    providing info about watched repos from configuration files.
+class MultiWatcher(object):
+    """This class holds information about all VCS repositories to watch
 
     It supports several VCS systems.
 
@@ -51,16 +49,6 @@ class Updater(object):
     The original URLs are stored in a translation dict for
     quick comparison.
 
-    Repositories are stored in the 'mirrors' subdirectory of the buildmaster.
-    Each VCS has its own subdirectory of that one (a mirror).
-
-    In a given VCS mirror, repositories storage is flat, with directory names
-    being SHAs of their remote URLs.
-    This is not human-friendly, but is a simple way of avoiding naming
-    conflicts while not needing to record a correspondence between the
-    directory name and the specification to be usable : a scheduler can
-    also read the watched branches and store the inverse mapping.
-
     """
 
     vcses_branch_spec_length = dict(bzr=1, hg=2)
@@ -71,8 +59,7 @@ class Updater(object):
     branch_update_methods = dict(bzr=utils.bzr_update_branch,
                                  hg=utils.hg_pull)
 
-    def __init__(self, mirrors_dir, manifest_paths, url_rewrite_rules=()):
-        self.mirrors_dir = mirrors_dir
+    def __init__(self, manifest_paths, url_rewrite_rules=()):
         self.manifest_paths = self.check_paths(manifest_paths)
         self.hashes = {}  # (vcs, url) -> hash
         self.repos = {}  # hash -> (vcs, url, branch minor specs)
@@ -183,3 +170,12 @@ class Updater(object):
                              "specification in %r" % full_spec)
 
         return vcs, full_spec[1], tuple(full_spec[2:])
+
+    def change_filter(self, buildout):
+        """Return the change filter expressing the watch option of a buildout.
+
+        If no watch has been set or buildout is unknown, return None
+        """
+        interesting = self.buildout_watch.get(buildout)
+        if interesting:
+            return PollerChangeFilter(interesting)
