@@ -33,6 +33,5 @@ setup(
     ],
     entry_points="""
     [console_scripts]
-    update-mirrors = anybox.buildbot.openerp.mirrors:update
     """
 )

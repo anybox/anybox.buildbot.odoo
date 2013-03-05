@@ -54,10 +54,7 @@ These steps are for a first setup.
    locations for buildouts directories.
 5. Put a ``slaves.cfg`` file in the master directory. See the included
    ``slaves.cfg.sample`` for instructions.
-6. Install the Bzr and Mercurial hooks so that they apply to all
-   incoming changesets in the mirror
-7. Put the ``update-mirrors`` console script in a cron job (see
-   ``update-mirrors --help`` for invocation details).
+
 
 Buildouts
 ~~~~~~~~~
