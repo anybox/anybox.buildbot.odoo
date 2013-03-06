@@ -50,3 +50,24 @@ class TestMultiWatcher(BaseTestCase):
 
         self.assertEquals(updater.original_urls['ssh://hg@example/repo2'],
                           'protocol://special/repo2')
+
+    def test_change_filter_rewrite(self):
+        """Change filter consistency with rewritten URLs.
+
+        The change filter must be based on the rewritten URL, because
+        that's what the pollers give.
+        """
+        watcher = self.watcher(
+            source='manifest_watch.cfg',
+            url_rewrite_rules=(
+                ('http://mercurial.example/',
+                 'ssh://hg@mercurial.example/'),
+            ))
+        watcher.read_branches()
+        chf = watcher.change_filter('w_hg')
+
+        # would make even more sense to ignore the details and test behaviour
+        # of chf.filter_change
+        self.assertEquals(
+            chf.interesting,
+            {'ssh://hg@mercurial.example/some/repo': ('hg', ('default',))})

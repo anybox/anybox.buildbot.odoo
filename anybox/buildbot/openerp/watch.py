@@ -115,12 +115,12 @@ class MultiWatcher(object):
                 for watched in all_watched.split(os.linesep):
                     vcs, url, minor_spec = self.parse_branch_spec(watched)
                     h = utils.ez_hash(url)  # non rewritten continuity of state
-
                     self.hashes[vcs, url] = h
-                    specs = self.repos.setdefault(
-                        h, (vcs, self.rewrite_url(url), set()))[-1]
-                    specs.add(minor_spec)
 
+                    url = self.rewrite_url(url)
+                    specs = self.repos.setdefault(
+                        h, (vcs, url, set()))[-1]
+                    specs.add(minor_spec)
                     bw[url] = vcs, minor_spec
 
     def rewrite_url(self, url):
