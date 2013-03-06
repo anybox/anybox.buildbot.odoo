@@ -91,6 +91,7 @@ class BuildoutsConfigurator(object):
         map(self.register_build_factories, self.manifest_paths)
         config.setdefault('builders', []).extend(
             self.make_builders(master_config=config))
+        self.init_watch()
         config.setdefault('change_source', []).extend(self.make_pollers())
         config.setdefault('schedulers', []).extend(self.make_schedulers())
 
