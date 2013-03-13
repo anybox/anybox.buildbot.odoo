@@ -28,8 +28,10 @@ buildbot users can tweak their configuration in the normal buildbot
 way, and even add more builds, possibly not even related to
 OpenERP.
 
-The real-time scheduling works by keeping a local mirror in sync, with
-hooks to call the master (currently for Bazaar and Mercurial only).
+The real-time scheduling works by polling the remote VCS systems
+(currently for Bazaar and Mercurial only). There is a basic URL
+rewritting capability to ease make this polling efficient.
+
 
 Master setup
 ~~~~~~~~~~~~
@@ -52,10 +54,7 @@ These steps are for a first setup.
    locations for buildouts directories.
 5. Put a ``slaves.cfg`` file in the master directory. See the included
    ``slaves.cfg.sample`` for instructions.
-6. Install the Bzr and Mercurial hooks so that they apply to all
-   incoming changesets in the mirror
-7. Put the ``update-mirrors`` console script in a cron job (see
-   ``update-mirrors --help`` for invocation details).
+
 
 Buildouts
 ~~~~~~~~~

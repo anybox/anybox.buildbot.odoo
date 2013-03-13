@@ -16,7 +16,8 @@ from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
 from . import capability
-from scheduler import MirrorChangeFilter
+from . import watch
+
 from utils import comma_list_sanitize
 from version import Version
 from version import VersionFilter
@@ -63,8 +64,13 @@ class BuildoutsConfigurator(object):
                                  },
                         ))
 
+    vcs_master_url_rewrite_rules = ()
+
+    tree_stable_timer = 600
+
     def __init__(self, buildmaster_dir,
                  manifest_paths=('buildouts/MANIFEST.cfg',),
+                 slaves_path='slaves.cfg',
                  capability_options_to_environ=None):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
@@ -72,6 +78,7 @@ class BuildoutsConfigurator(object):
         self.build_factories = {}  # build factories by name
         self.factories_to_builders = {}  # factory name -> builders playing it
         self.manifest_paths = manifest_paths
+        self.slaves_path = slaves_path
         if capability_options_to_environ is not None:
             self.cap2environ = capability_options_to_environ
 
@@ -81,10 +88,13 @@ class BuildoutsConfigurator(object):
         self.cap2environ[capability_name] = options2environ
 
     def populate(self, config):
-        config.setdefault('slaves', []).extend(self.make_slaves('slaves.cfg'))
+        config.setdefault('slaves', []).extend(
+            self.make_slaves(self.slaves_path))
         map(self.register_build_factories, self.manifest_paths)
         config.setdefault('builders', []).extend(
             self.make_builders(master_config=config))
+        self.init_watch()
+        config.setdefault('change_source', []).extend(self.make_pollers())
         config.setdefault('schedulers', []).extend(self.make_schedulers())
 
     def path_from_buildmaster(self, path):
@@ -93,6 +103,18 @@ class BuildoutsConfigurator(object):
         The path can still be absolute."""
 
         return os.path.join(self.buildmaster_dir, path)
+
+    def init_watch(self):
+        self.watcher = watch.MultiWatcher(
+            self.manifest_paths,
+            url_rewrite_rules=self.vcs_master_url_rewrite_rules)
+        self.watcher.read_branches()
+
+    def make_pollers(self):
+        """Return pollers for watched repositories.
+        """
+        # lp resolution can lead to dupes
+        return list(set(self.watcher.make_pollers()))
 
     def make_slaves(self, conf_path='slaves.cfg'):
         """Create the slave objects from the file at conf_path.
@@ -347,9 +369,7 @@ class BuildoutsConfigurator(object):
                                             environ=capability_env):
                 factory.addStep(step)
 
-        build_category = options.get('build-category')
-        if build_category:
-            factory.build_category = build_category.strip()
+        factory.options = options
         return factory
 
     def post_dl_steps_standard(self, options, buildout_slave_path, environ=()):
@@ -488,7 +508,7 @@ class BuildoutsConfigurator(object):
                     name='%s-postgresql-%s' % (factory_name,
                                                pg_version),
                     properties=dict(pg_version=pg_version),
-                    category=getattr(factory, 'build_category', None),
+                    category=factory.options.get('build-category', '').strip(),
                     factory=factory, slavenames=slavenames)
                 for pg_version, slavenames in meet_requires.items()
                 if pgvf is None or pgvf.match(Version.parse(pg_version))
@@ -513,16 +533,24 @@ class BuildoutsConfigurator(object):
         TODO at some point check if a big dedicated, single schedulers would
         not be preferable for buildmaster performance.
         """
-        fact_to_builders = self.factories_to_builders
 
-        def make_filter(factory_name):
-            """Make a Mirror Change Filter for factory with given name."""
-            return MirrorChangeFilter(
-                self.factory_to_manifest(factory_name, absolute=True),
-                factory_name)
+        schedulers = []
+        for factory_name, builders in self.factories_to_builders.items():
+            options = self.build_factories[factory_name].options
 
-        return [SingleBranchScheduler(name=factory_name,
-                                      change_filter=make_filter(factory_name),
-                                      treeStableTimer=60,
-                                      builderNames=builders)
-                for factory_name, builders in fact_to_builders.items()]
+            tree_stable_timer = options.get('tree-stable-timer')
+            if tree_stable_timer is not None:
+                tree_stable_timer = int(tree_stable_timer.strip())
+            else:
+                tree_stable_timer = self.tree_stable_timer
+
+            change_filter = self.watcher.change_filter(factory_name)
+            if change_filter is None:
+                continue
+            schedulers.append(SingleBranchScheduler(
+                name=factory_name,
+                change_filter=change_filter,
+                treeStableTimer=tree_stable_timer,
+                builderNames=builders))
+
+        return schedulers

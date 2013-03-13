@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '0.9-devel'
+version = '0.9-pollers-devel'
 pkg_name = "anybox.buildbot.openerp"
 
 setup(
@@ -16,7 +16,9 @@ setup(
     zip_safe=False,
     include_package_data=True,
     namespace_packages=['anybox', 'anybox.buildbot'],
-    install_requires=['buildbot >= 0.8.7'],
+    install_requires=['buildbot >= 0.8.7',
+                      'bzr',
+                      ],
     tests_require=['nose'],
     test_suite='nose.collector',
     classifiers=[
@@ -31,6 +33,5 @@ setup(
     ],
     entry_points="""
     [console_scripts]
-    update-mirrors = anybox.buildbot.openerp.mirrors:update
     """
 )

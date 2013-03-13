@@ -20,3 +20,19 @@ class BaseTestCase(unittest.TestCase):
     def master_join(self, *path_segments):
         """Join some path segments to buildmaster directory."""
         return os.path.join(self.bm_dir, *path_segments)
+
+    def populate(self, manifest, slaves):
+        """Call configurator's populate w/ conf from slaves and manifest files.
+
+        manifest and slaves are file names in the data dir.
+        This is almost like configurator.populate()
+
+        Return master conf dict
+        """
+        master = {}
+        conf = self.configurator
+        conf.slaves_path = self.data_join(slaves)
+        conf.manifest_paths = (self.data_join(manifest),)
+        conf.init_watch()
+        conf.populate(master)
+        return master

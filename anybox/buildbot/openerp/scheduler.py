@@ -1,39 +1,29 @@
-import os
-from ConfigParser import NoOptionError
 from buildbot.changes.filter import ChangeFilter
-from anybox.buildbot.openerp import utils
-from anybox.buildbot.openerp.mirrors import Updater
-from anybox.buildbot.openerp.buildouts import parse_manifest
 
 
-class MirrorChangeFilter(ChangeFilter):
-    """Filter changesets that are to be watched for a given buildout."""
+class BuildoutsChangeFilter(ChangeFilter):
+    """Base class for ChangeFilter based on watched buildouts.
+    """
 
-    def __init__(self, manifest_path, buildout):
+    def __init__(self, interesting):
+        """Initialisation: the interesting dict is url -> (vcs, minor_spec).
+        """
+        self.interesting = interesting
 
-        self.interesting = {}  # hash -> (vcs, minor branch spec)
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, self.interesting)
 
-        parser = parse_manifest(manifest_path)
-        try:
-            all_watched = parser.get(buildout, 'watch')
-        except NoOptionError:
-            return
 
-        for watched in all_watched.split(os.linesep):
-            vcs, url, minor_spec = Updater.parse_branch_spec(watched)
-            h = utils.ez_hash(url)
-            self.interesting[h] = vcs, minor_spec
+class PollerChangeFilter(BuildoutsChangeFilter):
+    """A change filter adapted to the pollers spawned by our buildouts."""
 
     def filter_change(self, change):
         """True if change's about an interesting repo w/correct branch.
         """
-        repo_prop = change.repository
-        if repo_prop:  # hg
-            h = repo_prop.rsplit('/', 1)[-1]
-        else:  # bzr
-            h = change.branch
-
-        details = self.interesting.get(h)
+        repo = change.repository
+        if not repo:  # (e.g., in bzr) TODO how to know that before hand ?
+            repo = change.branch
+        details = self.interesting.get(repo)
         if details is None:
             return False
 
