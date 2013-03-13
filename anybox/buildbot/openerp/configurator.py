@@ -66,6 +66,8 @@ class BuildoutsConfigurator(object):
 
     vcs_master_url_rewrite_rules = ()
 
+    tree_stable_timer = 600
+
     def __init__(self, buildmaster_dir,
                  manifest_paths=('buildouts/MANIFEST.cfg',),
                  slaves_path='slaves.cfg',
@@ -367,9 +369,7 @@ class BuildoutsConfigurator(object):
                                             environ=capability_env):
                 factory.addStep(step)
 
-        build_category = options.get('build-category')
-        if build_category:
-            factory.build_category = build_category.strip()
+        factory.options = options
         return factory
 
     def post_dl_steps_standard(self, options, buildout_slave_path, environ=()):
@@ -508,7 +508,7 @@ class BuildoutsConfigurator(object):
                     name='%s-postgresql-%s' % (factory_name,
                                                pg_version),
                     properties=dict(pg_version=pg_version),
-                    category=getattr(factory, 'build_category', None),
+                    category=factory.options.get('build-category', '').strip(),
                     factory=factory, slavenames=slavenames)
                 for pg_version, slavenames in meet_requires.items()
                 if pgvf is None or pgvf.match(Version.parse(pg_version))
@@ -536,13 +536,21 @@ class BuildoutsConfigurator(object):
 
         schedulers = []
         for factory_name, builders in self.factories_to_builders.items():
+            options = self.build_factories[factory_name].options
+
+            tree_stable_timer = options.get('tree-stable-timer')
+            if tree_stable_timer is not None:
+                tree_stable_timer = int(tree_stable_timer.strip())
+            else:
+                tree_stable_timer = self.tree_stable_timer
+
             change_filter = self.watcher.change_filter(factory_name)
             if change_filter is None:
                 continue
             schedulers.append(SingleBranchScheduler(
                 name=factory_name,
                 change_filter=change_filter,
-                treeStableTimer=600,
+                treeStableTimer=tree_stable_timer,
                 builderNames=builders))
 
         return schedulers
