@@ -16,6 +16,7 @@ FAILURE_REGEXPS = {
     'Error init db': re.compile(r'Failed to initialize database'),
     'Tests failed to excute': re.compile(
         r'openerp.modules.loading: Tests failed to execute'),
+    'WARNING no field in model': re.compile('No such field(s) in model'),
 }
 
 test_log = open(sys.argv[1], 'r')
