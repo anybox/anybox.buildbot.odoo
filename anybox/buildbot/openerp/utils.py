@@ -81,3 +81,8 @@ def comma_list_sanitize(comma_list):
     Will remove all internal whitespace
     """
     return ','.join([i.strip() for i in comma_list.split(',')])
+
+
+def bool_opt(options, name):
+    """Parse a boolean from a config section dict."""
+    return options.get(name, '').strip().lower() == 'true'
