@@ -10,6 +10,7 @@ from buildbot import locks
 from buildbot.process.factory import BuildFactory
 from steps import PgSetProperties
 from buildbot.steps.shell import ShellCommand
+from buildbot.steps.shell import SetProperty
 from buildbot.steps.transfer import FileDownload
 from buildbot.steps.transfer import DirectoryUpload
 from buildbot.steps.master import MasterShellCommand
@@ -39,6 +40,7 @@ logger = logging.getLogger(__name__)
 # Running buildouts in parallel on one slave fails
 # if they used shared eggs or downloads area
 buildout_lock = locks.SlaveLock("buildout")
+port_lock = locks.SlaveLock("port-reserve")
 
 
 class BuildoutsConfigurator(object):
@@ -541,8 +543,102 @@ class BuildoutsConfigurator(object):
                          'chmod', '755', '{}', ';']))
         return steps
 
+    def post_buildout_steps_functional(self, options, buildout_slave_path,
+                                       environ=()):
+        """Reserve a port, start openerp, launch testing commands, stop openerp.
+
+        Options:
+        - functional.commands: whitespace separated list of scripts to launch.
+          Each of them must accept two arguments: port and db_name
+        - functional.parts: buildout parts to install to get the commands to
+          work
+        - functional.wait: time (in seconds) to wait for the server to be ready
+          for functional testing after starting up (defaults to 30s)
+        """
+
+        steps = []
+
+        buildout_parts = options.get('functional.parts', '').split()
+        if buildout_parts:
+            steps.append(ShellCommand(
+                command=['bin/buildout',
+                         '-c', buildout_slave_path,
+                         'buildout:eggs-directory=../../buildout-caches/eggs',
+                         'install'] + buildout_parts,
+                name="functional tools",
+                description=['install', 'functional', 'buildout', 'parts'],
+                descriptionDone=['installed', 'functional',
+                                 'buildout', 'parts'],
+                haltOnFailure=True,
+                env=environ,
+            ))
+
+        steps.append(FileDownload(
+            mastersrc=os.path.join(BUILD_UTILS_PATH, 'port_reserve.py'),
+            slavedest='port_reserve.py'))
+
+        steps.append(SetProperty(
+            property='openerp_port',
+            description=['Port', 'reservation'],
+            locks=[port_lock.access('exclusive')],
+            command=['python', 'port_reserve.py', '--port-min=9069',
+                     '--port-max=11069', '--step=5']))
+
+        steps.append(ShellCommand(
+            command=['rm', '-f', WithProperties('%(workdir)s/openerp.pid')],
+            name='cleanup',
+            description='clean pid file',
+            descriptionDone='cleaned pid file',
+            haltOnFailure=True,
+            env=environ,
+        ))
+
+        steps.append(ShellCommand(
+            command=['/sbin/start-stop-daemon',
+                     '--pidfile', WithProperties('%(workdir)s/openerp.pid'),
+                     '--exec',
+                     WithProperties('%(workdir)s/build/bin/start_openerp'),
+                     '--background',
+                     '--make-pidfile', '-v', '--start',
+                     '--', '--xmlrpc-port', Property('openerp_port'),
+                     WithProperties('--logfile=%(workdir)s/build/install.log')],
+            name='start',
+            description='starting openerp',
+            descriptionDone='openerp started',
+            haltOnFailure=True,
+            env=environ,
+        ))
+
+        steps.append(ShellCommand(
+            description=['Wait'],
+            command=['sleep', options.get('functional.wait', '30')]))
+
+        steps.extend(ShellCommand(
+            command=[cmd, Property('openerp_port'), Property('testing_db')],
+            name=cmd.rsplit('/')[-1],
+            description="running %s" % cmd,
+            descriptionDone="ran %s" % cmd,
+            flunkOnFailure=True,
+            haltOnFailure=False,
+            env=environ)
+            for cmd in options.get('functional.commands').split())
+
+        steps.append(ShellCommand(
+            command=['/sbin/start-stop-daemon',
+                     '--pidfile', WithProperties('%(workdir)s/openerp.pid'),
+                     '--stop', '--oknodo', '--retry', '-1/-9'],
+            name='start',
+            description='stoping openerp',
+            descriptionDone='openerp stopped',
+            haltOnFailure=True,
+            env=environ,
+        ))
+
+        return steps
+
     post_buildout_steps = dict(standard=post_buildout_steps_standard,
-                               nose=post_buildout_steps_nose)
+                               nose=post_buildout_steps_nose,
+                               functional=post_buildout_steps_functional)
 
     def register_build_factories(self, manifest_path):
         """Register a build factory per buildout from file at manifest_path.
