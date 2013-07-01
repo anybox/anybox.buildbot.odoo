@@ -217,6 +217,32 @@ class BuildoutsConfigurator(object):
             )
         )
 
+    def buildout_bzr_dl_steps(self, cfg_tokens, manifest_dir):
+        """Return slave side path and steps about the buildout.
+
+        The first returned value is the expected path from build directory
+        The second is an iterable of steps to get the buildout config file
+        and the related needed files (extended cfgs, bootstrap.py).
+
+        manifest_dir is not used in this downloader.
+        """
+        if len(cfg_tokens) != 2:
+            raise ValueError(
+                "Wrong standalong buildout specification: %r" % cfg_tokens)
+
+        url, conf_path = cfg_tokens
+        return conf_path, (
+            FileDownload(
+                mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_bzr_dl.py'),
+                slavedest='buildout_bzr_dl.py',
+                haltOnFailure=True),
+            ShellCommand(
+                command=['python', 'buildout_bzr_dl.py', url],
+                description=("Retrieve buildout", "from bzr",),
+                haltOnFailure=True,
+            )
+        )
+
     def buildout_hg_tag_dl_steps(self, cfg_tokens, manifest_dir):
         """Steps to retrieve the buildout dir as a Mercurial tag.
 
@@ -626,7 +652,7 @@ class BuildoutsConfigurator(object):
         steps.append(ShellCommand(
             command=['/sbin/start-stop-daemon',
                      '--pidfile', WithProperties('%(workdir)s/openerp.pid'),
-                     '--stop', '--oknodo', '--retry', '-1/-9'],
+                     '--stop', '--oknodo', '--retry', '5'],
             name='start',
             description='stoping openerp',
             descriptionDone='openerp stopped',
@@ -677,6 +703,7 @@ class BuildoutsConfigurator(object):
 
     buildout_dl_steps = dict(standalone=buildout_standalone_dl_steps,
                              hgtag=buildout_hg_tag_dl_steps,
+                             bzr=buildout_bzr_dl_steps,
                              hg=buildout_hg_dl_steps)
 
     def make_builders(self, master_config=None):
