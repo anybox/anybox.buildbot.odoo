@@ -352,6 +352,7 @@ class BuildoutsConfigurator(object):
             'openerp:with_devtools=True',
             'openerp:vcs-clear-locks=True',
             'openerp:vcs-clear-retry=True',
+            'openerp:clean=True',
             WithProperties(
                 'openerp:options.db_port=%(cap_postgresql_port:-5432)s'),
             WithProperties(
