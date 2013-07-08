@@ -339,10 +339,23 @@ class BuildoutsConfigurator(object):
                                      name="cachedirs",
                                      description="prepare cache dirs"))
 
-        factory.addStep(ShellCommand(command=['python', 'bootstrap.py',
-                                              '-c', buildout_slave_path],
-                                     haltOnFailure=True,
-                                     ))
+        bootstrap_prefix = 'bootstrap-'
+        bootstrap_options = dict((k[len(bootstrap_prefix):], v.strip())
+                                 for k, v in options.items()
+                                 if k.startswith(bootstrap_prefix))
+        bootstrap_options.setdefault('version', '2.1.1')
+        forbidden = set(('bootstrap-eggs',))
+        if not forbidden.isdisjoint(bootstrap_options):
+            raise ValueError(
+                "The following bootstrap options are forbidden: %r" % forbidden)
+        command = ['python', 'bootstrap.py', '--eggs=' + eggs_cache,
+                   '-c', buildout_slave_path]
+        command.extend('--%s=%s' % (k, v) for k, v in bootstrap_options.items())
+
+        factory.addStep(ShellCommand(command=command,
+                                     description="bootstrapping",
+                                     descriptionDone="bootstrapped",
+                                     haltOnFailure=True))
 
         factory.addStep(ShellCommand(command=[
             'bin/buildout',

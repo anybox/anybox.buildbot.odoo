@@ -6,6 +6,7 @@ Changes
 
  - launchpad #1196310: provide a "post buildout steps" for functional testing
  - launchpad #1196308: provide a "post buildout steps" for nose testing
+ - launchpad #1198702: bootstrap options in MANIFEST
  - launchpad #1142994: url rewrites for vcs polling
  - launchpad #1154673: treeStableTimer scheduler parameter now
    configurable on a per-buildout basis

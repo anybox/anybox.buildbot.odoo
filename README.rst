@@ -111,6 +111,14 @@ Options are:
    for preload of PostgreSQL extensions, such as postgis, but can be
    used for testing data as well. Should be paired with a conventional
    requirement expressing that the template exists and can be used.
+ * bootstrap options: any option of the form ``bootstrap-foo`` will
+   give rise to a command-line option ``--foo`` with the same value
+   for the bootstrap. Example::
+
+     bootstrap-version = 2.1.0
+
+   Exceptions: neither ``--eggs`` nor ``-c`` can be passed this
+   way. They are managed internally by the configurator.
 
 Slave setup
 ~~~~~~~~~~~
