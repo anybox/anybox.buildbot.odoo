@@ -344,11 +344,23 @@ class BuildoutsConfigurator(object):
                                  for k, v in options.items()
                                  if k.startswith(bootstrap_prefix))
         bootstrap_options.setdefault('version', '2.1.1')
-        forbidden = set(('bootstrap-eggs',))
+        forbidden = set(('eggs', 'help', 'find-links'))
         if not forbidden.isdisjoint(bootstrap_options):
             raise ValueError(
-                "The following bootstrap options are forbidden: %r" % forbidden)
-        command = ['python', 'bootstrap.py', '--eggs=' + eggs_cache,
+                "The following bootstrap options are forbidden: %r" % list(
+                    forbidden))
+
+        known_bootstraps = ('v1', 'v2')
+
+        bootstrap_type = bootstrap_options.pop('type', 'v1').lower()
+        if not bootstrap_type in known_bootstraps:
+            raise ValueError(
+                "Unknown bootstrap type: %r. Known ones are %r" % (
+                    bootstrap_type, known_bootstraps))
+
+        find_links_option = dict(v1='--eggs', v2='--find-links')[bootstrap_type]
+
+        command = ['python', 'bootstrap.py', find_links_option, eggs_cache,
                    '-c', buildout_slave_path]
         command.extend('--%s=%s' % (k, v) for k, v in bootstrap_options.items())
 

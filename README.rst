@@ -117,8 +117,22 @@ Options are:
 
      bootstrap-version = 2.1.0
 
-   Exceptions: neither ``--eggs`` nor ``-c`` can be passed this
-   way. They are managed internally by the configurator.
+   Exceptions: some options, such as ``--eggs`` or ``-c`` can be passed this
+   way. They are managed internally by the configurator. The error
+   message will tell you.
+
+   The ``--version`` option of ``bootstrap.py`` is mean to require a
+   ``zc.buildout`` version, the ``bootstrap.py`` script may itself be
+   more or less recent. You may specify the major version of
+   ``bootstrap.py`` itself in the following way::
+
+     bootstrap-type = v2
+
+   ..warning :: currently, ``bootstrap-type`` defaults to ``v1``. If it
+                does not match the reality, the build **will fail**, because
+                command-line options have changed a lot between ``v1``
+                and ``v2``.
+
 
 Slave setup
 ~~~~~~~~~~~
