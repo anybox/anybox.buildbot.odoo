@@ -4,6 +4,8 @@ Changes
 0.9 (unreleased)
 ----------------
 
+ - launchpad #1201099: introduce subfactories for cleaner pluggability
+                       (post buildout steps, etc)
  - launchpad #1196310: provide a "post buildout steps" for functional testing
  - launchpad #1196308: provide a "post buildout steps" for nose testing
  - launchpad #1198702: bootstrap options in MANIFEST

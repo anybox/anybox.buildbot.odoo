@@ -10,19 +10,16 @@ from buildbot import locks
 from buildbot.process.factory import BuildFactory
 from steps import PgSetProperties
 from buildbot.steps.shell import ShellCommand
-from buildbot.steps.shell import SetProperty
 from buildbot.steps.transfer import FileDownload
-from buildbot.steps.transfer import DirectoryUpload
-from buildbot.steps.master import MasterShellCommand
 from buildbot.process.properties import WithProperties
 from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
 from . import capability
 from . import watch
+from . import subfactories
 
-from utils import comma_list_sanitize
-from utils import bool_opt
+from .utils import BUILD_UTILS_PATH
 from version import Version
 from version import VersionFilter
 
@@ -33,30 +30,20 @@ BUILDSLAVE_KWARGS = {  # name -> validating callable
 
 BUILDSLAVE_REQUIRED = ('password',)
 
-BUILD_UTILS_PATH = os.path.join(os.path.split(__file__)[0], 'build_utils')
-
 logger = logging.getLogger(__name__)
 
 # Running buildouts in parallel on one slave fails
 # if they used shared eggs or downloads area
 buildout_lock = locks.SlaveLock("buildout")
-port_lock = locks.SlaveLock("port-reserve")
 
 
 class BuildoutsConfigurator(object):
     """Populate buildmaster configs from buildouts and external slaves.cfg.
 
-    There are three dictionnaries of methods:
-       buildout_dl_steps : name -> method returning the main buildout config
-                           file name and a list of steps to
-                           construct the buildout configuration slave-side.
-       post_dl_steps: name-> method returning the main buildout config file
-                             name and a list of steps to be inserted
-                             between the buildout conf retrieval and the main
-                             buildout run.
-       post_buildout_steps : name -> method returning a list of steps to be
-                             added after buildout has run and testing db is
-                             done
+    Use the three subfactories of steps from ``subfactories``:
+       - buildout_download (see ``subfactories.download``)
+       - post_download (see ``subfactories.postdownload``)
+       - post_buildout (see ``subfactories.postbuildout``)
     """
 
     cap2environ = dict(
@@ -167,110 +154,6 @@ class BuildoutsConfigurator(object):
 
         return slaves
 
-    def buildout_standalone_dl_steps(self, cfg_tokens, manifest_dir):
-        """Return slave side path and steps about the buildout.
-
-        The first returned value is the expected path from build directory
-        The second is an iterable of steps to get the buildout config file
-        and the related needed files (extended cfgs, bootstrap.py).
-
-        manifest_dir is the path (interpreted from buildmaster dir) to the
-        directory in with the manifest file sits.
-        """
-        if len(cfg_tokens) != 1:
-            raise ValueError(
-                "Wrong standalong buildout specification: %r" % cfg_tokens)
-
-        conf_path = cfg_tokens[0]
-        conf_name = os.path.split(conf_path)[-1]
-        conf_path = os.path.join(manifest_dir, conf_path)
-        bootstrap_path = os.path.join(manifest_dir, 'bootstrap.py')
-        return conf_name, (FileDownload(mastersrc=bootstrap_path,
-                                        slavedest='bootstrap.py'),
-                           FileDownload(mastersrc=conf_path,
-                                        slavedest=conf_name),
-                           )
-
-    def buildout_hg_dl_steps(self, cfg_tokens, manifest_dir):
-        """Return slave side path and steps about the buildout.
-
-        The first returned value is the expected path from build directory
-        The second is an iterable of steps to get the buildout config file
-        and the related needed files (extended cfgs, bootstrap.py).
-
-        manifest_dir is not used in this downloader.
-        """
-        if len(cfg_tokens) != 3:
-            raise ValueError(
-                "Wrong standalong buildout specification: %r" % cfg_tokens)
-
-        url, branch, conf_path = cfg_tokens
-        return conf_path, (
-            FileDownload(
-                mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_hg_dl.py'),
-                slavedest='buildout_hg_dl.py',
-                haltOnFailure=True),
-            ShellCommand(
-                command=['python', 'buildout_hg_dl.py', url, branch],
-                description=("Retrieve buildout", "from hg",),
-                haltOnFailure=True,
-            )
-        )
-
-    def buildout_bzr_dl_steps(self, cfg_tokens, manifest_dir):
-        """Return slave side path and steps about the buildout.
-
-        The first returned value is the expected path from build directory
-        The second is an iterable of steps to get the buildout config file
-        and the related needed files (extended cfgs, bootstrap.py).
-
-        manifest_dir is not used in this downloader.
-        """
-        if len(cfg_tokens) != 2:
-            raise ValueError(
-                "Wrong standalong buildout specification: %r" % cfg_tokens)
-
-        url, conf_path = cfg_tokens
-        return conf_path, (
-            FileDownload(
-                mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_bzr_dl.py'),
-                slavedest='buildout_bzr_dl.py',
-                haltOnFailure=True),
-            ShellCommand(
-                command=['python', 'buildout_bzr_dl.py', url],
-                description=("Retrieve buildout", "from bzr",),
-                haltOnFailure=True,
-            )
-        )
-
-    def buildout_hg_tag_dl_steps(self, cfg_tokens, manifest_dir):
-        """Steps to retrieve the buildout dir as a Mercurial tag.
-
-        Useful for release/packaging oriented builds.
-        The tag name is read from build properties.
-        The clone is made outside of the main build/ directory, that must
-        stay pristine to test the produced packages.
-        """
-
-        if len(cfg_tokens) != 2:
-            raise ValueError(
-                "Wrong hgtag buildout specification: %r" % cfg_tokens)
-
-        url, conf_path = cfg_tokens
-        tag = Property('buildout-tag')
-        return conf_path, (
-            FileDownload(
-                mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_hg_dl.py'),
-                slavedest='../src/buildout_hg_dl.py',
-                haltOnFailure=True),
-            ShellCommand(
-                command=['python', 'buildout_hg_dl.py', '-t', 'tag', url, tag],
-                workdir='./src',
-                description=("Retrieve buildout", "tag", tag, "from hg",),
-                haltOnFailure=True,
-            )
-        )
-
     def steps_bootstrap(self, buildout_slave_path, options, eggs_cache,
                         **step_kw):
         """return a list of steps for buildout bootstrap.
@@ -299,11 +182,12 @@ class BuildoutsConfigurator(object):
                 "Unknown bootstrap type: %r. Known ones are %r" % (
                     bootstrap_type, known_bootstraps))
 
-        find_links_option = dict(v1='--eggs', v2='--find-links')[bootstrap_type]
+        find_links_opt = dict(v1='--eggs', v2='--find-links')[bootstrap_type]
 
-        command = ['python', 'bootstrap.py', find_links_option, eggs_cache,
+        command = ['python', 'bootstrap.py', find_links_opt, eggs_cache,
                    '-c', buildout_slave_path]
-        command.extend('--%s=%s' % (k, v) for k, v in bootstrap_options.items())
+        command.extend('--%s=%s' % (k, v)
+                       for k, v in bootstrap_options.items())
 
         return [ShellCommand(command=command,
                              description="bootstrapping",
@@ -347,19 +231,16 @@ class BuildoutsConfigurator(object):
                                      warnOnFailure=False,
                                      hideStepIf=True,
                                      ))
-
-        for dl_step in buildout_dl_steps:
-            factory.addStep(dl_step)
+        map(factory.addStep, buildout_dl_steps)
 
         capability_env = capability.set_properties_make_environ(
             self.cap2environ, factory)
 
-        for line in options.get('post-dl-steps', 'standard').split(os.linesep):
-            post_dl_steps = self.post_dl_steps[line]
-            buildout_slave_path, steps = post_dl_steps(
+        for line in options.get('post-dl-steps', 'noop').split(os.linesep):
+            subfactory = subfactories.post_download[line]
+            buildout_slave_path, steps = subfactory(
                 self, options, buildout_slave_path, environ=capability_env)
-            for step in steps:
-                factory.addStep(step)
+            map(factory.addStep, steps)
 
         factory.addStep(FileDownload(
             mastersrc=os.path.join(
@@ -435,276 +316,13 @@ class BuildoutsConfigurator(object):
 
         for line in options.get('post-buildout-steps',
                                 'standard').split(os.linesep):
-            post_buildout_steps = self.post_buildout_steps[line]
-
-            for step in post_buildout_steps(self, options, buildout_slave_path,
-                                            environ=capability_env):
-                factory.addStep(step)
+            map(factory.addStep,
+                subfactories.post_buildout[line](
+                    self, options, buildout_slave_path,
+                    environ=capability_env))
 
         factory.options = options
         return factory
-
-    def post_dl_steps_standard(self, options, buildout_slave_path, environ=()):
-        return buildout_slave_path, ()
-
-    post_dl_steps = dict(standard=post_dl_steps_standard)
-
-    def post_buildout_steps_standard(self, options, buildout_slave_path,
-                                     environ=()):
-
-        environ = dict(environ)
-
-        steps = []
-
-        steps.append(ShellCommand(command=['rm', '-f', 'test.log'],
-                                  name="Log cleanup",
-                                  descriptionDone=['Cleaned', 'logs'],
-                                  ))
-
-        steps.append(ShellCommand(command=[
-            'bin/test_openerp', '-i',
-            comma_list_sanitize(options.get('openerp-addons', 'all')),
-            # openerp --logfile does not work with relative paths !
-            WithProperties('--logfile=%(workdir)s/build/test.log')],
-            name='testing',
-            description='testing',
-            descriptionDone='tests',
-            logfiles=dict(test='test.log'),
-            haltOnFailure=True,
-            env=environ,
-        ))
-
-        steps.append(ShellCommand(
-            command=["python", "analyze_oerp_tests.py", "test.log"],
-            name='analyze',
-            description="analyze",
-        ))
-
-        return steps
-
-    def post_buildout_steps_nose(self, options, buildout_slave_path,
-                                 environ=()):
-        """Install addons, run nose tests, upload result.
-
-        Warning: this works only for addons that use the trick in main
-        __init__ that avoids executing the models definition twice.
-
-        Options:
-
-          - openerp-addons: comma-separated list of addons to test
-          - nose.tests: goes directly to command line; list directories to find
-            tests here.
-          - nose.coverage: boolean, if true, will run coverage for the listed
-            addons
-          - nose.cover-options: additional options for nosetests invocation
-          - nose.upload-path: path on master to upload files produced by nose
-          - nose.upload-url: URL to present files produced by nose in waterfall
-
-        In upload-path and upload-url, one may use properties as in the
-        steps definitions, with $ instead of %, to avoid ConfigParser interpret
-        them.
-        """
-
-        environ = dict(environ)
-
-        steps = []
-
-        steps.append(ShellCommand(command=['rm', '-f', 'install.log'],
-                                  name="Log cleanup",
-                                  descriptionDone=['Cleaned', 'logs'],
-                                  ))
-        addons = comma_list_sanitize(options.get('openerp-addons', ''))
-
-        steps.append(ShellCommand(command=[
-            'bin/start_openerp', '--stop-after-init', '-i',
-            addons if addons else 'all',
-            # openerp --logfile does not work with relative paths !
-            WithProperties('--logfile=%(workdir)s/build/install.log')],
-            name='install',
-            description='install modules',
-            descriptionDone='installed modules',
-            logfiles=dict(log='install.log'),
-            haltOnFailure=True,
-            env=environ,
-        ))
-
-        steps.append(ShellCommand(
-            command=["python", "analyze_oerp_tests.py", "install.log"],
-            name='check',
-            description="check install log",
-            descriptionDone="checked install log",
-        ))
-
-        addons = addons.split(',')
-        nose_output_dir = 'nose_output'
-        nose_cmd = ["bin/nosetests", "-v"]
-        nose_cmd.extend(options.get('nose.tests', '').split())
-        upload = False
-
-        if bool_opt(options, 'nose.coverage'):
-            upload = True
-            nose_cmd.append('--with-coverage')
-            nose_cmd.append('--cover-html')
-            nose_cmd.append('--cover-html-dir=%s' % os.path.join(
-                nose_output_dir, 'coverage'))
-            nose_cmd.extend(options.get(
-                'nose.cover-options',
-                '--cover-erase --cover-branches').split())
-
-            for addon in addons:
-                nose_cmd.extend(('--cover-package', addon))
-
-        if bool_opt(options, 'nose.profile'):
-            upload = True
-            nose_cmd.extend(('--with-profile',
-                             '--profile-stats-file',
-                             os.path.join(nose_output_dir, 'profile.stats')))
-
-            # sadly, restrict if always interpreted by nose as a string
-            # it can't be used to limit the number of displayed lines
-            # putting a default value here would make no sense.
-            restrict = options.get('nose.profile-restrict')
-            if restrict:
-                nose_cmd.extend(('--profile-restrict', restrict))
-
-        if upload:
-            steps.append(ShellCommand(command=['mkdir', '-p', nose_output_dir],
-                                      name='mkdir',
-                                      description='prepare nose output',
-                                      haltOnFailure=True,
-                                      env=environ))
-
-        steps.append(ShellCommand(
-            command=nose_cmd,
-            name='tests',
-            description="nose tests",
-            haltOnFailure=True,
-            env=environ,
-            timeout=3600*4,
-        ))
-
-        if upload:
-            upload_path = options.get('nose.upload-path', '').replace('$', '%')
-            upload_url = options.get('nose.upload-url', '').replace('$', '%')
-            steps.append(DirectoryUpload(slavesrc=nose_output_dir,
-                                         haltOnFailure=True,
-                                         compress='gz',
-                                         masterdest=WithProperties(upload_path),
-                                         url=WithProperties(upload_url)))
-
-            # Fixing perms on uploaded files. Yes we could have unmask = 022 in
-            # all slaves, see note at the end of
-            # http://buildbot.net/buildbot/docs/0.8.7/full.html#
-            #     buildbot.steps.source.buildbot.steps.transfer.DirectoryUpload
-            # but it's less work to fix the perms from here than to check all of
-            # them
-            steps.append(MasterShellCommand(
-                description=["nose", "output", "read", "permissions"],
-                command=['chmod', '-R', 'a+r',
-                         WithProperties(upload_path)]))
-            steps.append(MasterShellCommand(
-                description=["nose", "output", "dirx", "permissions"],
-                command=['find', WithProperties(upload_path),
-                         '-type', 'd', '-exec',
-                         'chmod', '755', '{}', ';']))
-        return steps
-
-    def post_buildout_steps_functional(self, options, buildout_slave_path,
-                                       environ=()):
-        """Reserve a port, start openerp, launch testing commands, stop openerp.
-
-        Options:
-        - functional.commands: whitespace separated list of scripts to launch.
-          Each of them must accept two arguments: port and db_name
-        - functional.parts: buildout parts to install to get the commands to
-          work
-        - functional.wait: time (in seconds) to wait for the server to be ready
-          for functional testing after starting up (defaults to 30s)
-        """
-
-        steps = []
-
-        buildout_parts = options.get('functional.parts', '').split()
-        if buildout_parts:
-            steps.append(ShellCommand(
-                command=['bin/buildout',
-                         '-c', buildout_slave_path,
-                         'buildout:eggs-directory=../../buildout-caches/eggs',
-                         'install'] + buildout_parts,
-                name="functional tools",
-                description=['install', 'functional', 'buildout', 'parts'],
-                descriptionDone=['installed', 'functional',
-                                 'buildout', 'parts'],
-                haltOnFailure=True,
-                env=environ,
-            ))
-
-        steps.append(FileDownload(
-            mastersrc=os.path.join(BUILD_UTILS_PATH, 'port_reserve.py'),
-            slavedest='port_reserve.py'))
-
-        steps.append(SetProperty(
-            property='openerp_port',
-            description=['Port', 'reservation'],
-            locks=[port_lock.access('exclusive')],
-            command=['python', 'port_reserve.py', '--port-min=9069',
-                     '--port-max=11069', '--step=5']))
-
-        steps.append(ShellCommand(
-            command=['rm', '-f', WithProperties('%(workdir)s/openerp.pid')],
-            name='cleanup',
-            description='clean pid file',
-            descriptionDone='cleaned pid file',
-            haltOnFailure=True,
-            env=environ,
-        ))
-
-        steps.append(ShellCommand(
-            command=['/sbin/start-stop-daemon',
-                     '--pidfile', WithProperties('%(workdir)s/openerp.pid'),
-                     '--exec',
-                     WithProperties('%(workdir)s/build/bin/start_openerp'),
-                     '--background',
-                     '--make-pidfile', '-v', '--start',
-                     '--', '--xmlrpc-port', Property('openerp_port'),
-                     WithProperties('--logfile=%(workdir)s/build/install.log')],
-            name='start',
-            description='starting openerp',
-            descriptionDone='openerp started',
-            haltOnFailure=True,
-            env=environ,
-        ))
-
-        steps.append(ShellCommand(
-            description=['Wait'],
-            command=['sleep', options.get('functional.wait', '30')]))
-
-        steps.extend(ShellCommand(
-            command=[cmd, Property('openerp_port'), Property('testing_db')],
-            name=cmd.rsplit('/')[-1],
-            description="running %s" % cmd,
-            descriptionDone="ran %s" % cmd,
-            flunkOnFailure=True,
-            haltOnFailure=False,
-            env=environ)
-            for cmd in options.get('functional.commands').split())
-
-        steps.append(ShellCommand(
-            command=['/sbin/start-stop-daemon',
-                     '--pidfile', WithProperties('%(workdir)s/openerp.pid'),
-                     '--stop', '--oknodo', '--retry', '5'],
-            name='start',
-            description='stoping openerp',
-            descriptionDone='openerp stopped',
-            haltOnFailure=True,
-            env=environ,
-        ))
-
-        return steps
-
-    post_buildout_steps = dict(standard=post_buildout_steps_standard,
-                               nose=post_buildout_steps_nose,
-                               functional=post_buildout_steps_functional)
 
     def register_build_factories(self, manifest_path):
         """Register a build factory per buildout from file at manifest_path.
@@ -730,7 +348,7 @@ class BuildoutsConfigurator(object):
                 continue
 
             btype = buildout[0]
-            buildout_downloader = self.buildout_dl_steps.get(btype)
+            buildout_downloader = subfactories.buildout_download.get(btype)
             if buildout_downloader is None:
                 raise ValueError("Buildout type %r in %r not supported" % (
                     btype, name))
@@ -740,11 +358,6 @@ class BuildoutsConfigurator(object):
             registry[name] = factory = self.make_factory(
                 name, conf_slave_path, dl_steps, dict(parser.items(name)))
             factory.manifest_path = manifest_path  # change filter will need it
-
-    buildout_dl_steps = dict(standalone=buildout_standalone_dl_steps,
-                             hgtag=buildout_hg_tag_dl_steps,
-                             bzr=buildout_bzr_dl_steps,
-                             hg=buildout_hg_dl_steps)
 
     def make_builders(self, master_config=None):
         """Spawn builders from build factories.

@@ -2,6 +2,9 @@ import os
 import hashlib
 import subprocess
 
+BUILD_UTILS_PATH = os.path.join(os.path.split(__file__)[0], 'build_utils')
+
+
 # can be overridden from command line tools such as update-mirrors,
 # for the version that has the buildbot hooks.
 vcs_binaries = dict(bzr='bzr', hg='hg')
