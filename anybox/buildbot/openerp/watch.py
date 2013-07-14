@@ -112,7 +112,19 @@ class MultiWatcher(object):
                     all_watched = parser.get(buildout, 'watch')
                 except NoOptionError:
                     continue
-                for watched in all_watched.split(os.linesep):
+                all_watched = all_watched.split(os.linesep)
+
+                try:
+                    buildout_address = parser.get(buildout, 'buildout')
+                except NoOptionError:
+                    pass
+                else:
+                    bsplit = buildout_address.split()
+                    if bsplit[0] in self.list_supported_vcs():
+                        # last token is buildout file name
+                        all_watched.append(' '.join(bsplit[:-1]))
+
+                for watched in all_watched:
                     vcs, url, minor_spec = self.parse_branch_spec(watched)
                     h = utils.ez_hash(url)  # non rewritten continuity of state
                     self.hashes[vcs, url] = h

@@ -79,3 +79,23 @@ class TestMultiWatcher(BaseTestCase):
         self.assertIsNotNone(chf)
         self.assertEquals(chf.interesting, {
             'http://mercurial.example/some/repo': ('hg', ('default',))})
+
+    def test_auto_buildout(self):
+        """A VCS-based buildout must be automatically watched."""
+        watcher = self.watcher(source='manifest_auto_watch.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('hg_buildout')
+        self.assertIsNotNone(chf)
+        self.assertEquals(chf.interesting, {
+            'http://mercurial.example/buildout': ('hg', ('somebranch',)),
+            'http://mercurial.example/some/repo': ('hg', ('default',))})
+
+    def test_auto_buildout_precedence(self):
+        """A VCS-based buildout must be automatically watched."""
+        watcher = self.watcher(source='manifest_auto_watch.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('hg_buildout_precedence')
+        self.assertIsNotNone(chf)
+        self.assertEquals(chf.interesting, {
+            'http://mercurial.example/buildout': ('hg', ('somebranch',)),
+        })

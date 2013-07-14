@@ -5,6 +5,8 @@ Changes
 ----------------
 
  - launchpad #1201138: simple inheritance system
+ - launchpad #1201175: auto watch for VCS buildout itself
+   (not what it references)
  - added a 'static-analysis' postbuildout subfactory
  - launchpad #1201099: introduce subfactories for cleaner pluggability
                        (post buildout steps, etc)
