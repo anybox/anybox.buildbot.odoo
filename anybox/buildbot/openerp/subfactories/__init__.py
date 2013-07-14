@@ -1,6 +1,5 @@
 import download
 import postdownload
-import buildoutdb
 import postbuildout
 
 buildout_download = dict(standalone=download.standalone_buildout,
