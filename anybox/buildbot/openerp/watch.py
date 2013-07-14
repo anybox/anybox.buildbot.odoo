@@ -112,7 +112,9 @@ class MultiWatcher(object):
                     all_watched = parser.get(buildout, 'watch')
                 except NoOptionError:
                     continue
-                all_watched = all_watched.split(os.linesep)
+
+                all_watched = [w for w in (
+                    w.strip() for w in all_watched.split(os.linesep)) if w]
 
                 try:
                     buildout_address = parser.get(buildout, 'buildout')

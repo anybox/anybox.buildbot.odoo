@@ -99,3 +99,10 @@ class TestMultiWatcher(BaseTestCase):
         self.assertEquals(chf.interesting, {
             'http://mercurial.example/buildout': ('hg', ('somebranch',)),
         })
+
+    def test_auto_buildout_inherit_no_watch(self):
+        """Explictely indication of empty watch means no watch at all"""
+        watcher = self.watcher(source='manifest_auto_watch.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('hgtag_nowatch')
+        self.assertIsNone(chf)
