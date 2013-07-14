@@ -271,6 +271,47 @@ class BuildoutsConfigurator(object):
             )
         )
 
+    def steps_bootstrap(self, buildout_slave_path, options, eggs_cache,
+                        **step_kw):
+        """return a list of steps for buildout bootstrap.
+
+        step_kw will be passed to the step constructor. Known use-case:
+        change workdir in packaging step.
+        options prefixed with 'bootstrap-' are applied
+        """
+
+        bootstrap_prefix = 'bootstrap-'
+        bootstrap_options = dict((k[len(bootstrap_prefix):], v.strip())
+                                 for k, v in options.items()
+                                 if k.startswith(bootstrap_prefix))
+        bootstrap_options.setdefault('version', '2.1.1')
+        forbidden = set(('eggs', 'help', 'find-links'))
+        if not forbidden.isdisjoint(bootstrap_options):
+            raise ValueError(
+                "The following bootstrap options are forbidden: %r" % list(
+                    forbidden))
+
+        known_bootstraps = ('v1', 'v2')
+
+        bootstrap_type = bootstrap_options.pop('type', 'v1').lower()
+        if not bootstrap_type in known_bootstraps:
+            raise ValueError(
+                "Unknown bootstrap type: %r. Known ones are %r" % (
+                    bootstrap_type, known_bootstraps))
+
+        find_links_option = dict(v1='--eggs', v2='--find-links')[bootstrap_type]
+
+        command = ['python', 'bootstrap.py', find_links_option, eggs_cache,
+                   '-c', buildout_slave_path]
+        command.extend('--%s=%s' % (k, v) for k, v in bootstrap_options.items())
+
+        return [ShellCommand(command=command,
+                             description="bootstrapping",
+                             descriptionDone="bootstrapped",
+                             haltOnFailure=True,
+                             **step_kw)
+                ]
+
     def make_factory(self, name, buildout_slave_path, buildout_dl_steps,
                      options):
         """Return a build factory using name and buildout config at cfg_path.
@@ -339,35 +380,8 @@ class BuildoutsConfigurator(object):
                                      name="cachedirs",
                                      description="prepare cache dirs"))
 
-        bootstrap_prefix = 'bootstrap-'
-        bootstrap_options = dict((k[len(bootstrap_prefix):], v.strip())
-                                 for k, v in options.items()
-                                 if k.startswith(bootstrap_prefix))
-        bootstrap_options.setdefault('version', '2.1.1')
-        forbidden = set(('eggs', 'help', 'find-links'))
-        if not forbidden.isdisjoint(bootstrap_options):
-            raise ValueError(
-                "The following bootstrap options are forbidden: %r" % list(
-                    forbidden))
-
-        known_bootstraps = ('v1', 'v2')
-
-        bootstrap_type = bootstrap_options.pop('type', 'v1').lower()
-        if not bootstrap_type in known_bootstraps:
-            raise ValueError(
-                "Unknown bootstrap type: %r. Known ones are %r" % (
-                    bootstrap_type, known_bootstraps))
-
-        find_links_option = dict(v1='--eggs', v2='--find-links')[bootstrap_type]
-
-        command = ['python', 'bootstrap.py', find_links_option, eggs_cache,
-                   '-c', buildout_slave_path]
-        command.extend('--%s=%s' % (k, v) for k, v in bootstrap_options.items())
-
-        factory.addStep(ShellCommand(command=command,
-                                     description="bootstrapping",
-                                     descriptionDone="bootstrapped",
-                                     haltOnFailure=True))
+        map(factory.addStep,
+            self.steps_bootstrap(buildout_slave_path, options, eggs_cache))
 
         factory.addStep(ShellCommand(command=[
             'bin/buildout',
