@@ -288,7 +288,7 @@ def static_analysis(configurator, options, buildout_slave_path, environ=()):
     steps.append(
         ShellCommand(command=['bin/buildout',
                               '-c', buildout_slave_path,
-                              'buildout:eggs-directory',
+                              'buildout:eggs-directory='
                               '../../buildout-caches/eggs',
                               'install',
                               options.get('static-analysis.part',
