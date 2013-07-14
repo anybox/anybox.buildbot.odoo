@@ -235,3 +235,27 @@ class TestBuilders(BaseTestCase):
         prop_step = steps['props_python']
         self.assertEquals(prop_step.args, ('python',))
         self.assertEquals(prop_step.kwargs['capability_version_prop'], None)
+
+    def test_inherit_build_req(self):
+        master = {}
+        conf = self.configurator
+
+        master['slaves'] = conf.make_slaves(
+            self.data_join('slaves_build_requires.cfg'))
+        conf.register_build_factories(
+            self.data_join('manifest_inherit.cfg'))
+        builders = self.configurator.make_builders(master_config=master)
+        builders = dict((b.name, b) for b in builders)
+
+        # we got the same builders as for 'simple', without 9.0, because
+        # no slave has 'private-code-access' capability.
+        self.assertEquals(set(builders.keys()),
+                          set(['simple-postgresql-9.0',
+                               'simple-postgresql-8.4',
+                               'simple-postgresql-9.1-devel',
+                               'inheritor-postgresql-8.4',
+                               'inheritor-postgresql-9.1-devel']))
+
+        # other option are unchanged
+        factory = builders['inheritor-postgresql-8.4'].factory
+        self.assertEquals(factory.options['openerp-addons'], ('stock, crm'))

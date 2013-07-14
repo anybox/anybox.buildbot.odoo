@@ -4,6 +4,7 @@ Changes
 0.9 (unreleased)
 ----------------
 
+ - launchpad #1201138: simple inheritance system
  - added a 'static-analysis' postbuildout subfactory
  - launchpad #1201099: introduce subfactories for cleaner pluggability
                        (post buildout steps, etc)

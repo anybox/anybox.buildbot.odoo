@@ -71,3 +71,11 @@ class TestMultiWatcher(BaseTestCase):
         self.assertEquals(
             chf.interesting,
             {'ssh://hg@mercurial.example/some/repo': ('hg', ('default',))})
+
+    def test_inherit(self):
+        watcher = self.watcher(source='manifest_watch.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('w_hg_inh')
+        self.assertIsNotNone(chf)
+        self.assertEquals(chf.interesting, {
+            'http://mercurial.example/some/repo': ('hg', ('default',))})

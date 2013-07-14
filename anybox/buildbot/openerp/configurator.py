@@ -18,6 +18,7 @@ from buildbot.schedulers.basic import SingleBranchScheduler
 from . import capability
 from . import watch
 from . import subfactories
+from . import buildouts
 
 from .utils import BUILD_UTILS_PATH
 from version import Version
@@ -329,8 +330,8 @@ class BuildoutsConfigurator(object):
 
         manifest_path is interpreted relative to the buildmaster dir.
         """
-        parser = ConfigParser()
-        parser.read(self.path_from_buildmaster(manifest_path))
+        parser = buildouts.parse_manifest(
+            self.path_from_buildmaster(manifest_path))
         manifest_dir = os.path.split(manifest_path)[0]
         registry = self.build_factories
 
