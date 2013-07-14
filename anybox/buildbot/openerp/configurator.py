@@ -328,12 +328,6 @@ class BuildoutsConfigurator(object):
         """Register a build factory per buildout from file at manifest_path.
 
         manifest_path is interpreted relative to the buildmaster dir.
-        For now, only *standalone* buildouts are taken into account, meaning
-        that they are entirely described in one cfg file.
-
-        For easy inclusion of project-specific layouts, we might in the future
-        introduce directory buildouts and even VCS buildouts. For now,
-        developers have to contribute a single file meant for the buildbot.
         """
         parser = ConfigParser()
         parser.read(self.path_from_buildmaster(manifest_path))
