@@ -270,3 +270,55 @@ def functional(configurator, options, buildout_slave_path,
     ))
 
     return steps
+
+
+def static_analysis(configurator, options, buildout_slave_path, environ=()):
+    """Adds static analysis to the build.
+
+    Used options from MANIFEST
+       static-analysis.flake-directories: *mandatory* list of subdirectories to
+           run, e.g., flake8 on (can be dirs created by bin/buildout).
+       static-analysis.part : the buildout part to install to get the tools.
+          (defaults to 'static-analysis')
+       static-analysis.max-line-length : self explanatory
+    """
+
+    steps = []
+
+    steps.append(
+        ShellCommand(command=['bin/buildout',
+                              '-c', buildout_slave_path,
+                              'buildout:eggs-directory'
+                              '../../buildout-caches/eggs',
+                              'install',
+                              options.get('static-analysis.part',
+                                          'static-analysis')
+                              ],
+                     name="analysis tools",
+                     description=['install', 'static', 'analysis', 'tools'],
+                     haltOnFailure=True,
+                     env=environ,
+                     ))
+
+    flake_dirs_opt = 'static-analysis.flake-directories'
+    flake_dirs = options.get(flake_dirs_opt)
+    if flake_dirs is None:
+        # we don't have the name of the build factory this will be used for
+        # dumping the options should help people recognize the wrong config.
+        raise ValueError(
+            "You must provide %s option for static analysis. "
+            "Currently provided options: %r" % (flake_dirs_opt, options))
+
+    steps.extend(
+        ShellCommand(command=['bin/flake8',
+                              '--max-line-length',
+                              options.get('static-analysis.max-line-length',
+                                          '100'),
+                              '--show-source',
+                              d.strip()],
+                     description=['flake8', d],
+                     env=environ,
+                     )
+        for d in flake_dirs.split())
+
+    return steps

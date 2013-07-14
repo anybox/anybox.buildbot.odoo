@@ -13,6 +13,7 @@ post_buildout = {
     'test-openerp': postbuildout.install_modules_test_openerp,
     'nose': postbuildout.install_modules_nose,
     'functional': postbuildout.functional,
+    'static-analysis': postbuildout.static_analysis,
 }
 
 post_download = {'noop': postdownload.noop}
