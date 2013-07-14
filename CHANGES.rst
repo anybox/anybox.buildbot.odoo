@@ -4,6 +4,7 @@ Changes
 0.9 (unreleased)
 ----------------
 
+ - added a 'static-analysis' postbuildout subfactory
  - launchpad #1201099: introduce subfactories for cleaner pluggability
                        (post buildout steps, etc)
  - launchpad #1196310: provide a "post buildout steps" for functional testing
