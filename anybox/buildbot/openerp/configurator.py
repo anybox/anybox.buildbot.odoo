@@ -185,6 +185,11 @@ class BuildoutsConfigurator(object):
 
         find_links_opt = dict(v1='--eggs', v2='--find-links')[bootstrap_type]
 
+        if bootstrap_options.pop('virtualenv', 'false').strip().lower() == 'true':
+            env = dict(PATH=["${HOME}/openerp-env/bin", "${PATH}"])
+        else:
+            env = None
+
         command = ['python', 'bootstrap.py', find_links_opt, eggs_cache,
                    '-c', buildout_slave_path]
         command.extend('--%s=%s' % (k, v)
@@ -194,6 +199,7 @@ class BuildoutsConfigurator(object):
                              description="bootstrapping",
                              descriptionDone="bootstrapped",
                              haltOnFailure=True,
+                             env=env,
                              **step_kw)
                 ]
 
