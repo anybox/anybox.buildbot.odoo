@@ -10,16 +10,6 @@ BUILD_UTILS_PATH = os.path.join(os.path.split(__file__)[0], 'build_utils')
 vcs_binaries = dict(bzr='bzr', hg='hg')
 
 
-def mkdirp(path):
-    """Python equivalent for mkdir -p"""
-    if os.path.isdir(path):
-        return
-    parent, name = os.path.split(path)
-    if not os.path.isdir(parent):
-        mkdirp(parent)
-    os.mkdir(path)
-
-
 def ez_hash(url):
     """Return a uniform hash code meant for source URL."""
     return hashlib.sha1(url).hexdigest()
