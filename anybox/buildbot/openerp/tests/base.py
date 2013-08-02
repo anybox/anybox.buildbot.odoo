@@ -1,3 +1,4 @@
+import sys
 import os
 import unittest
 import shutil
@@ -36,3 +37,16 @@ class BaseTestCase(unittest.TestCase):
         conf.init_watch()
         conf.populate(master)
         return master
+
+
+def assertIsNone(testcase, v, msg=None):
+    return testcase.assertEqual(v, None, msg=msg)
+
+
+def assertIsNotNone(testcase, v, msg=None):
+    return testcase.assertNotEqual(v, None, msg=msg)
+
+
+if sys.version_info < (2, 7):
+    BaseTestCase.assertIsNone = assertIsNone
+    BaseTestCase.assertIsNotNone = assertIsNotNone
