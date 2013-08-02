@@ -105,7 +105,7 @@ class TestMultiWatcher(BaseTestCase):
         watcher = self.watcher(source='manifest_auto_watch.cfg')
         watcher.read_branches()
         chf = watcher.change_filter('hgtag_nowatch')
-        self.assertIsNone(chf)
+        self.assertEqual(chf, None)  # assertIsNone not so widely available
 
     def test_bzr_lp_consistency(self):
         watcher = self.watcher(source='manifest_watch.cfg')
@@ -115,7 +115,7 @@ class TestMultiWatcher(BaseTestCase):
         self.assertTrue(bzr.url.endswith('openobject-server/6.1'))
 
         chf = watcher.change_filter('w_bzr')
-        self.assertIsNotNone(chf)
+        self.assertNotEqual(chf, None)  # assertIsNotNone not universal
         self.assertEqual(chf.interesting[bzr.url], ('bzr', ()))
 
     def test_no_buildout(self):
@@ -129,5 +129,5 @@ class TestMultiWatcher(BaseTestCase):
         self.assertTrue('anybox.buildbot.openerp' in bzr.url)
 
         chf = watcher.change_filter('w_no_buildout')
-        self.assertIsNotNone(chf)
+        self.assertNotEqual(chf, None)  # assertIsNotNone not universal
         self.assertEqual(chf.interesting[bzr.url], ('bzr', ()))
