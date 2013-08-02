@@ -1,8 +1,6 @@
 import os
 import hashlib
 import subprocess
-from ConfigParser import ConfigParser
-from ConfigParser import NoOptionError
 
 BUILD_UTILS_PATH = os.path.join(os.path.split(__file__)[0], 'build_utils')
 

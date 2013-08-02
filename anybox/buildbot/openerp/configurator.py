@@ -185,7 +185,8 @@ class BuildoutsConfigurator(object):
 
         find_links_opt = dict(v1='--eggs', v2='--find-links')[bootstrap_type]
 
-        if bootstrap_options.pop('virtualenv', 'false').strip().lower() == 'true':
+	venv_opt = bootstrap_options.pop('virtualenv', 'false').strip()
+        if venv_opt.lower() == 'true':
             env = dict(PATH=["${HOME}/openerp-env/bin", "${PATH}"])
         else:
             env = None
