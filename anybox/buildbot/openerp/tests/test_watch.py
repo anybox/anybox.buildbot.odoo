@@ -106,3 +106,28 @@ class TestMultiWatcher(BaseTestCase):
         watcher.read_branches()
         chf = watcher.change_filter('hgtag_nowatch')
         self.assertIsNone(chf)
+
+    def test_bzr_lp_consistency(self):
+        watcher = self.watcher(source='manifest_watch.cfg')
+        watcher.read_branches()
+        _, bzr = watcher.make_pollers()
+        # BzrPoller does translation of lp: addresses
+        self.assertTrue(bzr.url.endswith('openobject-server/6.1'))
+
+        chf = watcher.change_filter('w_bzr')
+        self.assertIsNotNone(chf)
+        self.assertEqual(chf.interesting[bzr.url], ('bzr', ()))
+
+    def test_no_buildout(self):
+        """Case of watch, but not a buildout based build."""
+        watcher = self.watcher(source='manifest_watch_nobuildout.cfg')
+        watcher.read_branches()
+        pollers = list(watcher.make_pollers())
+        self.assertEqual(len(pollers), 1)
+        bzr = pollers[0]
+        # BzrPoller does translation of lp: addresses
+        self.assertTrue('anybox.buildbot.openerp' in bzr.url)
+
+        chf = watcher.change_filter('w_no_buildout')
+        self.assertIsNotNone(chf)
+        self.assertEqual(chf.interesting[bzr.url], ('bzr', ()))

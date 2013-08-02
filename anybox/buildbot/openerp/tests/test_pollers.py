@@ -16,4 +16,4 @@ class TestPollers(BaseTestCase):
         self.configurator.init_watch()
         pollers = self.configurator.make_pollers()
         self.assertEquals(len(pollers), 1)
-        self.assertEquals(pollers[0].branch_name, 'lp:openobject-server/6.1')
+        self.assertTrue('openobject-server/6.1' in pollers[0].branch_name)

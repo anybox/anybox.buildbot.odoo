@@ -20,10 +20,13 @@ class TestSchedulers(BaseTestCase):
         self.assertEquals(sch.name, 'simple')
         self.assertEquals(sch.builderNames, ['simple-postgresql-8.4'])
         filt = sch.change_filter
-        self.assertEquals(filt.interesting,
-                          {'lp:openobject-server/6.1': ('bzr', ())})
-        self.assertEquals(repr(filt), "PollerChangeFilter("
-                          "{'lp:openobject-server/6.1': ('bzr', ())})")
+
+        self.assertEqual(len(filt.interesting), 1)
+        url, details = filt.interesting.items()[0]
+        self.assertTrue('openobject-server/6.1' in url)
+        self.assertEqual(details, ('bzr', ()))
+        self.assertEqual(repr(filt),
+                         "PollerChangeFilter(%r)" % filt.interesting)
 
     def test_tree_stable_timer_global(self):
         self.configurator.tree_stable_timer = 123

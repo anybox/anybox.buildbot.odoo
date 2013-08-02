@@ -79,13 +79,6 @@ class MultiWatcher(object):
                                    pollInterval=poll_interval)
             elif vcs == 'bzr':
                 branch_name = url
-                if url.startswith('lp:'):
-                    if LPDIR is None:
-                        raise RuntimeError(
-                            "can't resolve bzr location %r without the "
-                            "launchpad plugin" % url)
-                    url = LPDIR.look_up('', url)
-
                 yield BzrPoller(url, poll_interval=poll_interval,
                                 branch_name=branch_name)
 
@@ -152,6 +145,16 @@ class MultiWatcher(object):
                                                       rewritten_url)
                     rewritten_url = new_prefix + rewritten_url[len(prefix):]
                     self.original_urls[rewritten_url] = ancestor
+
+            if rewritten_url.startswith('lp:'):
+                if LPDIR is None:
+                    raise RuntimeError(
+                        "can't resolve bzr location %r without the "
+                        "launchpad plugin" % url)
+                ancestor = rewritten_url
+                rewritten_url = LPDIR.look_up('', rewritten_url)
+                self.original_urls[rewritten_url] = ancestor
+
             self.rewritten_urls[url] = rewritten_url
         return rewritten_url
 
@@ -191,5 +194,6 @@ class MultiWatcher(object):
         If no watch has been set or buildout is unknown, return None
         """
         interesting = self.buildout_watch.get(buildout)
+
         if interesting:
             return PollerChangeFilter(interesting)
