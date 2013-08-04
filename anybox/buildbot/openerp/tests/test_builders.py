@@ -111,6 +111,23 @@ class TestBuilders(BaseTestCase):
             builders['rabb-sup20-postgresql-9.0'].slavenames,
             ['rabb284'])
 
+    def test_build_requires2(self):
+        master = {}
+        conf = self.configurator
+
+        master['slaves'] = conf.make_slaves(
+            self.data_join('slaves_build_requires.cfg'))
+        conf.register_build_factories(
+            self.data_join('manifest_build_requires2.cfg'))
+        builders = self.configurator.make_builders(master_config=master)
+        builders = dict((b.name, b) for b in builders)
+
+        self.assertEquals(builders.keys(), ['rabb-18-postgresql-9.0'])
+
+        self.assertEquals(
+            builders['rabb-18-postgresql-9.0'].slavenames,
+            ['rabb18'])
+
     def test_build_requires_only_if(self):
         master = {}
         conf = self.configurator
