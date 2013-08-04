@@ -1,3 +1,6 @@
+from buildbot.changes.filter import ChangeFilter
+
+
 class BuildoutsChangeFilter(ChangeFilter):
     """Base class for ChangeFilter based on watched buildouts.
     """
