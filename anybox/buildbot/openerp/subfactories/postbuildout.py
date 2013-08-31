@@ -55,6 +55,12 @@ def update_modules(configurator, options, buildout_slave_path,
     general module list is ignored.
     Otherwise, a raw ``bin/start_openerp -u`` on the declared module list gets
     issued.
+
+    Options:
+
+    ``update.script``: see above.
+    ``update.log_file_option``: name of the option to use for dedicated script
+                                if there is one.
     """
 
     environ = dict(environ)
@@ -67,16 +73,17 @@ def update_modules(configurator, options, buildout_slave_path,
                               ))
     script = options.get('update.script')
     if script is not None:
-        command = [script]
+        command = [script, options.get('update.log_file_option', '--log-file')]
     else:
         command = [
             'bin/start_openerp', '--stop-after-init',
             '-u',
             comma_list_sanitize(options.get('openerp-addons', 'all')),
+            '--logfile',
             ]
     # openerp --logfile does not work with relative paths !
     # (dedicated script may, but uniformity is best)
-    command.append(WithProperties('--logfile=%(workdir)s/build/update.log'))
+    command.append(WithProperties('%(workdir)s/build/update.log'))
 
     steps.append(ShellCommand(command=command,
                               name='updating',
