@@ -47,6 +47,46 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
     return steps
 
 
+def update_modules(configurator, options, buildout_slave_path,
+                   environ=()):
+    """Return steps to run bin/start_openerp -u.
+
+    Could be improved to add some scenarios where a new module must be
+    installed first, etc. Time will tell.
+    """
+
+    environ = dict(environ)
+
+    steps = []
+
+    steps.append(ShellCommand(command=['rm', '-f', 'update.log'],
+                              name="Log cleanup",
+                              descriptionDone=['Cleaned', 'logs'],
+                              ))
+
+    steps.append(ShellCommand(command=[
+        'bin/start_openerp', '--stop-after-init',
+        '-u',
+        comma_list_sanitize(options.get('openerp-addons', 'all')),
+        # openerp --logfile does not work with relative paths !
+        WithProperties('--logfile=%(workdir)s/build/update.log')],
+        name='updating',
+        description='updating modules',
+        descriptionDone='updated',
+        logfiles=dict(update='update.log'),
+        haltOnFailure=True,
+        env=environ,
+    ))
+
+    steps.append(ShellCommand(
+        command=["python", "analyze_oerp_tests.py", "update.log"],
+        name='analyze',
+        description="analyze",
+    ))
+
+    return steps
+
+
 def install_modules_nose(configurator, options, buildout_slave_path,
                          environ=()):
     """Install addons, run nose tests, upload result.

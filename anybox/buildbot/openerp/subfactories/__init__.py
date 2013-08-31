@@ -11,6 +11,7 @@ buildout_download = dict(standalone=download.standalone_buildout,
 
 post_buildout = {
     'test-openerp': postbuildout.install_modules_test_openerp,
+    'update-openerp': postbuildout.update_modules,
     'nose': postbuildout.install_modules_nose,
     'functional': postbuildout.functional,
     'static-analysis': postbuildout.static_analysis,
