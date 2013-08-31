@@ -67,7 +67,7 @@ def update_modules(configurator, options, buildout_slave_path,
                               ))
     script = options.get('update.script')
     if script is not None:
-        command = [script],
+        command = [script]
     else:
         command = [
             'bin/start_openerp', '--stop-after-init',
