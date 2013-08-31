@@ -49,10 +49,12 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
 
 def update_modules(configurator, options, buildout_slave_path,
                    environ=()):
-    """Return steps to run bin/start_openerp -u.
+    """Return steps to update the OpenERP application.
 
-    Could be improved to add some scenarios where a new module must be
-    installed first, etc. Time will tell.
+    If the option "update.script" is specified, that script is used, and the
+    general module list is ignored.
+    Otherwise, a raw ``bin/start_openerp -u`` on the declared module list gets
+    issued.
     """
 
     environ = dict(environ)
@@ -63,20 +65,27 @@ def update_modules(configurator, options, buildout_slave_path,
                               name="Log cleanup",
                               descriptionDone=['Cleaned', 'logs'],
                               ))
+    script = options.get('update.script')
+    if script is not None:
+        command = [script],
+    else:
+        command = [
+            'bin/start_openerp', '--stop-after-init',
+            '-u',
+            comma_list_sanitize(options.get('openerp-addons', 'all')),
+            ]
+    # openerp --logfile does not work with relative paths !
+    # (dedicated script may, but uniformity is best)
+    command.append(WithProperties('--logfile=%(workdir)s/build/update.log'))
 
-    steps.append(ShellCommand(command=[
-        'bin/start_openerp', '--stop-after-init',
-        '-u',
-        comma_list_sanitize(options.get('openerp-addons', 'all')),
-        # openerp --logfile does not work with relative paths !
-        WithProperties('--logfile=%(workdir)s/build/update.log')],
-        name='updating',
-        description='updating modules',
-        descriptionDone='updated',
-        logfiles=dict(update='update.log'),
-        haltOnFailure=True,
-        env=environ,
-    ))
+    steps.append(ShellCommand(command=command,
+                              name='updating',
+                              description='updating application',
+                              descriptionDone='updated',
+                              logfiles=dict(update='update.log'),
+                              haltOnFailure=True,
+                              env=environ,
+                              ))
 
     steps.append(ShellCommand(
         command=["python", "analyze_oerp_tests.py", "update.log"],
