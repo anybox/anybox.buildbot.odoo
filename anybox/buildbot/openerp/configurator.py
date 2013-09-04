@@ -300,27 +300,11 @@ class BuildoutsConfigurator(object):
             env=capability_env,
         ))
 
-        factory.addStep(ShellCommand(command=[
-            'psql', 'postgres', '-c',
-            WithProperties('DROP DATABASE IF EXISTS "%(testing_db)s"'),
-        ],
-            name='dropdb',
-            description=["dropdb", Property('testing_db')],
-            env=capability_env,
-            haltOnFailure=True,
-        ))
-
-        factory.addStep(ShellCommand(command=[
-            'psql', 'postgres', '-c',
-            WithProperties('CREATE DATABASE "%%(testing_db)s" '
-                           'TEMPLATE "%s"' % options.get('db_template',
-                                                         'template1')),
-        ],
-            name='createdb',
-            description=["createdb", Property('testing_db')],
-            env=capability_env,
-            haltOnFailure=True,
-        ))
+        for line in options.get('db-steps',
+                                'standard').split(os.linesep):
+            map(factory.addStep,
+                subfactories.db[line.strip()](
+                    self, options, environ=capability_env))
 
         for line in options.get('post-buildout-steps',
                                 'standard').split(os.linesep):

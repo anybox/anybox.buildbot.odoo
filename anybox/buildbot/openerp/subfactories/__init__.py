@@ -1,12 +1,16 @@
 import download
 import postdownload
 import postbuildout
+import db
 
 buildout_download = dict(standalone=download.standalone_buildout,
                          hgtag=download.hg_tag_buildout,
                          bzr=download.bzr_buildout,
                          hg=download.hg_buildout,
                          )
+
+db = dict(create=db.simple_create,
+          pg_remote_copy=db.pg_remote_copy)
 
 
 post_buildout = {
