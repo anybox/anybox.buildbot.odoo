@@ -277,10 +277,10 @@ class BuildoutsConfigurator(object):
             '-c', buildout_slave_path,
             'buildout:eggs-directory=' + eggs_cache,
             'buildout:openerp-downloads-directory=' + openerp_cache,
-            'openerp:with_devtools=True',
-            'openerp:vcs-clear-locks=True',
-            'openerp:vcs-clear-retry=True',
-            'openerp:clean=True',
+            'openerp:with_devtools=true',
+            'openerp:vcs-clear-locks=true',
+            'openerp:vcs-clear-retry=true',
+            'openerp:clean=true',
             WithProperties(
                 'openerp:options.db_port=%(cap_postgresql_port:-5432)s'),
             WithProperties(
