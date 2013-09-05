@@ -3,7 +3,7 @@ from buildbot.process.properties import WithProperties
 from buildbot.process.properties import Property
 
 
-def simple_create(self, configurator, options, environ=()):
+def simple_create(configurator, options, environ=()):
     steps = []
     steps.append(ShellCommand(
         command=[

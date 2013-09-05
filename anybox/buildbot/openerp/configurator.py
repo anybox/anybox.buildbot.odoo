@@ -12,7 +12,6 @@ from steps import PgSetProperties
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.transfer import FileDownload
 from buildbot.process.properties import WithProperties
-from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
 from . import capability
@@ -301,7 +300,7 @@ class BuildoutsConfigurator(object):
         ))
 
         for line in options.get('db-steps',
-                                'standard').split(os.linesep):
+                                'simple_create').split(os.linesep):
             map(factory.addStep,
                 subfactories.db[line.strip()](
                     self, options, environ=capability_env))

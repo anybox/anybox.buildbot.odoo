@@ -80,7 +80,7 @@ def update_modules(configurator, options, buildout_slave_path,
             '-u',
             comma_list_sanitize(options.get('openerp-addons', 'all')),
             '--logfile',
-            ]
+        ]
     # openerp --logfile does not work with relative paths !
     # (dedicated script may, but uniformity is best)
     command.append(WithProperties('%(workdir)s/build/update.log'))
