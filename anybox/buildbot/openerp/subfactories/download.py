@@ -116,7 +116,7 @@ def bzr_buildout(self, cfg_tokens, manifest_dir, subdir=None):
                      '--force-remove-subdir'],
             description=("Retrieve buildout", "from bzr",),
             haltOnFailure=True,
-            workdir='',
+            workdir='.',
         ))
 
     return conf_path, steps
