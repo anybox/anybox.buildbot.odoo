@@ -69,28 +69,57 @@ def hg_buildout(self, cfg_tokens, manifest_dir):
     )
 
 
-def bzr_buildout(self, cfg_tokens, manifest_dir):
+def bzr_buildout(self, cfg_tokens, manifest_dir, subdir=None):
     """Steps to retrieve the buildout using Bazaar.
 
     See module docstring for signature and return values.
     manifest_dir is not used in this downloader.
-    """
-    if len(cfg_tokens) != 2:
-        raise ValueError(
-            "Wrong standalong buildout specification: %r" % cfg_tokens)
 
-    url, conf_path = cfg_tokens
-    return conf_path, (
+    If subdir is not None, then branch will be set aside and
+    the default workdir, 'build' will be set as a link to subdir in branch.
+    """
+    def conf_error(cfg_tokens):
+        raise ValueError(
+            "Wrong standalong bzr buildout specification: %r" % cfg_tokens)
+
+    subdir = None
+    if len(cfg_tokens) > 2:
+        options = cfg_tokens[2:]
+        for opt in options:
+            split = opt.split('=')
+            if split[0].strip() == 'subdir':
+                subdir = split[1].strip()
+            else:
+                conf_error(cfg_tokens)
+
+    if len(cfg_tokens) < 2:
+        conf_error(cfg_tokens)
+
+    url, conf_path = cfg_tokens[:2]
+    steps = [
         FileDownload(
             mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_bzr_dl.py'),
             slavedest='buildout_bzr_dl.py',
             haltOnFailure=True),
-        ShellCommand(
+    ]
+    if subdir is None:
+        steps.append(ShellCommand(
             command=['python', 'buildout_bzr_dl.py', url],
             description=("Retrieve buildout", "from bzr",),
             haltOnFailure=True,
-        )
-    )
+        ))
+    else:
+        steps.append(ShellCommand(
+            command=['python', 'buildout_bzr_dl.py', url,
+                     '--subdir', subdir,
+                     '--subdir-target', 'build',
+                     '--force-remove-subdir'],
+            description=("Retrieve buildout", "from bzr",),
+            haltOnFailure=True,
+            workdir='',
+        ))
+
+    return conf_path, steps
 
 
 def hg_tag_buildout(self, cfg_tokens, manifest_dir):

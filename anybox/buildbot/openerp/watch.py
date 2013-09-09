@@ -116,8 +116,10 @@ class MultiWatcher(object):
                 else:
                     bsplit = buildout_address.split()
                     if bsplit[0] in self.list_supported_vcs():
-                        # last token is buildout file name
-                        all_watched.append(' '.join(bsplit[:-1]))
+                        # valid tokens are those without '=' in them
+                        # last valid token is the buildout file name
+                        all_watched.append(' '.join(
+                            [t for t in bsplit if not '=' in t][:-1]))
 
                 for watched in all_watched:
                     vcs, url, minor_spec = self.parse_branch_spec(watched)

@@ -190,7 +190,15 @@ class BuildoutsConfigurator(object):
         else:
             env = None
 
-        command = ['python', 'bootstrap.py', find_links_opt, eggs_cache,
+        # bootstrap script path is by default relative to the
+        # build directory, not the buildout config. Indeed, buildouts
+        # bootstrapped from another directory need extra care to work out
+        # of the box, and their needs depend on the exact situation. So
+        # we expect in that case users to issue a proper relative
+        # path in that situation, that is likely to be the simplest of their
+        # tunings
+        command = ['python', bootstrap_options.get('script', 'bootstrap.py'),
+                   find_links_opt, eggs_cache,
                    '-c', buildout_slave_path]
         command.extend('--%s=%s' % (k, v)
                        for k, v in bootstrap_options.items())
