@@ -110,7 +110,7 @@ def bzr_buildout(self, cfg_tokens, manifest_dir, subdir=None):
         ))
     else:
         steps.append(ShellCommand(
-            command=['python', 'buildout_bzr_dl.py', url,
+            command=['python', 'build/buildout_bzr_dl.py', url,
                      '--subdir', subdir,
                      '--subdir-target', 'build',
                      '--force-remove-subdir'],
