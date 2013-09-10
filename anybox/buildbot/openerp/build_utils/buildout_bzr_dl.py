@@ -56,7 +56,8 @@ if arguments.subdir:
             os.unlink(target)
         else:
             sys.stderr.write("Reusing existing symlink %r, "
-                             "that already points to %r\n" % (target, existing))
+                             "that already points to %r\n" % (target,
+                                                              existing))
             sys.exit(0)
     elif os.path.isdir(target):
         if arguments.force_remove_subdir:
