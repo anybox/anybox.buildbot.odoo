@@ -310,7 +310,7 @@ class BuildoutsConfigurator(object):
         for line in options.get('db-steps',
                                 'simple_create').split(os.linesep):
             map(factory.addStep,
-                subfactories.db[line.strip()](
+                subfactories.db_handling[line.strip()](
                     self, options, environ=capability_env))
 
         for line in options.get('post-buildout-steps',

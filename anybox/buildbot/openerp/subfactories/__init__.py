@@ -9,8 +9,8 @@ buildout_download = dict(standalone=download.standalone_buildout,
                          hg=download.hg_buildout,
                          )
 
-db = dict(simple_create=db.simple_create,
-          pg_remote_copy=db.pg_remote_copy)
+db_handling = dict(simple_create=db.simple_create,
+                   pg_remote_copy=db.pg_remote_copy)
 
 
 post_buildout = {
