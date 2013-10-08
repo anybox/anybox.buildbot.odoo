@@ -71,7 +71,7 @@ def update_modules(configurator, options, buildout_slave_path,
                               name="Log cleanup",
                               descriptionDone=['Cleaned', 'logs'],
                               ))
-    script = options.get('update.script')
+    script = options.get('update.script', 'bin/upgrade_openerp')
     if script is not None:
         command = [script, options.get('update.log_file_option', '--log-file')]
     else:
@@ -113,6 +113,13 @@ def install_modules_nose(configurator, options, buildout_slave_path,
     Options:
 
       - openerp-addons: comma-separated list of addons to test
+      - install-as-upgrade: use the upgrade script to install the project
+
+        If this is False, the step will simply issue a start_openerp -i on
+        openerp-addons
+
+      - upgrade.script: name of the upgrade script (defaults to
+        ``bin/upgrade_openerp``)
       - nose.tests: goes directly to command line; list directories to find
         tests here.
       - nose.coverage: boolean, if true, will run coverage for the listed
@@ -136,11 +143,20 @@ def install_modules_nose(configurator, options, buildout_slave_path,
                               ))
     addons = comma_list_sanitize(options.get('openerp-addons', ''))
 
-    steps.append(ShellCommand(command=[
-        'bin/start_openerp', '--stop-after-init', '-i',
-        addons if addons else 'all',
+    if options.get('install-as-upgrade', 'false').lower().strip() == 'true':
+        install_cmd = [
+            options.get('upgrade.script', 'bin/upgrade_openerp').strip(),
+            '--init-load-demo-data',
+            '--log-file', 'install.log']
+    else:
         # openerp --logfile does not work with relative paths !
-        WithProperties('--logfile=%(workdir)s/build/install.log')],
+        install_cmd = ['bin/start_openerp', '--stop-after-init', '-i',
+                       addons if addons else 'all',
+                       WithProperties(
+                           '--logfile=%(workdir)s/build/install.log')]
+
+    steps.append(ShellCommand(
+        command=install_cmd,
         name='install',
         description='install modules',
         descriptionDone='installed modules',
