@@ -7,7 +7,7 @@ BUILD_UTILS_PATH = os.path.join(os.path.split(__file__)[0], 'build_utils')
 
 # can be overridden from command line tools such as update-mirrors,
 # for the version that has the buildbot hooks.
-vcs_binaries = dict(bzr='bzr', hg='hg')
+vcs_binaries = dict(bzr='bzr', hg='hg', git='git')
 
 
 def ez_hash(url):
@@ -66,6 +66,29 @@ def hg_pull(path, source, specs):
         for spec in specs:
             # spec has already been syntactically checked by first attempt
             subprocess.call(base_cmd + ('-b', spec[0]))
+
+
+def git_init_clone(path, source, specs):
+    """clone git repository and checkout branch."""
+    cmd = [vcs_binaries['git'], 'clone', source, path]
+    for spec in specs:
+        if len(spec) != 1:
+            raise ValueError("Invalid branch specification %r in "
+                             "git repo at %r", spec, source)
+        cmd.append('-b')
+        cmd.append(spec[0])
+    subprocess.call(cmd)
+
+
+def git_pull(path, source, specs):
+    """Pull from source to clone at path the specified branches."""
+    cmd = [vcs_binaries['git'], 'pull', source]
+    for spec in specs:
+        if len(spec) != 1:
+            raise ValueError("Invalid branch specification %r in "
+                             "git repo at %r", spec, source)
+        cmd.append(spec[0])
+    subprocess.call(cmd, cwd=path)
 
 
 def comma_list_sanitize(comma_list):

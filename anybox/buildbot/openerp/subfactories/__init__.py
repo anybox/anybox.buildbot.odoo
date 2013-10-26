@@ -7,6 +7,7 @@ buildout_download = dict(standalone=download.standalone_buildout,
                          hgtag=download.hg_tag_buildout,
                          bzr=download.bzr_buildout,
                          hg=download.hg_buildout,
+                         git=download.git_buildout,
                          )
 
 db_handling = dict(simple_create=db.simple_create,

@@ -69,6 +69,30 @@ def hg_buildout(self, cfg_tokens, manifest_dir):
     )
 
 
+def git_buildout(self, cfg_tokens, manifest_dir):
+    """Steps to retruve the buildout using Mercurial.
+
+    See module docstring for signature and return values.
+    manifest_dir is not used in this downloader.
+    """
+    if len(cfg_tokens) != 3:
+        raise ValueError(
+            "Wrong standalong buildout specification: %r" % cfg_tokens)
+
+    url, branch, conf_path = cfg_tokens
+    return conf_path, (
+        FileDownload(
+            mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_git_dl.py'),
+            slavedest='buildout_git_dl.py',
+            haltOnFailure=True),
+        ShellCommand(
+            command=['python', 'buildout_git_dl.py', url, branch],
+            description=("Retrieve buildout", "from git",),
+            haltOnFailure=True,
+        )
+    )
+
+
 def bzr_buildout(self, cfg_tokens, manifest_dir, subdir=None):
     """Steps to retrieve the buildout using Bazaar.
 

@@ -377,9 +377,13 @@ Tweaks, optimization and traps
 
 Contribute
 ~~~~~~~~~~
-Author and contributors:
+Author:
 
- * Georges Racinet
+ * Georges Racinet (Anybox)
+
+Contributors:
+
+ * Stéphane Bidoul (Acsone)
 
 The primary branch is on the launchpad:
 
