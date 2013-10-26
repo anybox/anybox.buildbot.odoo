@@ -6,6 +6,7 @@ from ConfigParser import NoOptionError
 import logging
 
 from buildbot.changes.hgpoller import HgPoller
+from buildbot.changes.gitpoller import GitPoller
 from .bzr_buildbot import BzrPoller
 
 from . import utils
@@ -51,13 +52,15 @@ class MultiWatcher(object):
 
     """
 
-    vcses_branch_spec_length = dict(bzr=1, hg=2)
+    vcses_branch_spec_length = dict(bzr=1, hg=2, git=2)
 
     branch_init_methods = dict(bzr=utils.bzr_init_branch,
-                               hg=utils.hg_init_pull)
+                               hg=utils.hg_init_pull,
+                               git=utils.git_init_clone)
 
     branch_update_methods = dict(bzr=utils.bzr_update_branch,
-                                 hg=utils.hg_pull)
+                                 hg=utils.hg_pull,
+                                 git=utils.git_pull)
 
     def __init__(self, manifest_paths, url_rewrite_rules=()):
         self.manifest_paths = self.check_paths(manifest_paths)
@@ -81,6 +84,11 @@ class MultiWatcher(object):
                 branch_name = url
                 yield BzrPoller(url, poll_interval=poll_interval,
                                 branch_name=branch_name)
+            elif vcs == 'git':
+                for ms in minor_specs:
+                    yield GitPoller(url, branch=ms[0],
+                                   workdir=os.path.join('gitpoller', h),
+                                   pollInterval=poll_interval)
 
     def check_paths(self, paths):
         missing = [path for path in paths if not os.path.isfile(path)]
