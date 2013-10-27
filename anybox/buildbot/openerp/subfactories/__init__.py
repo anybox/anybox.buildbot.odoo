@@ -20,6 +20,7 @@ post_buildout = {
     'nose': postbuildout.install_modules_nose,
     'functional': postbuildout.functional,
     'static-analysis': postbuildout.static_analysis,
+    'openerpcommand-initialize-tests': postbuildout.openerp_command_intialize_tests,
 }
 
 post_download = {'noop': postdownload.noop}

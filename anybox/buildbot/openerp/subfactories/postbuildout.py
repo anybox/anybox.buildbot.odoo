@@ -47,6 +47,37 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
     return steps
 
 
+def openerp_command_intialize_tests(configurator, options, buildout_slave_path,
+                                         environ=()):
+    """Return steps to run bin/openerp_command initialize --tests."""
+
+    environ = dict(environ)
+
+    steps = []
+
+    command = ['bin/openerp_command', 'initialize', 
+               '--no-create', '--tests',
+               '--database', WithProperties('%(testing_db)s')]
+    modules = options.get('openerp-addons', 'all')
+    if modules == 'all':
+        command += ['--all-modules', 
+                    '--exclude', 'auth_ldap',
+                    '--exclude', 'document_ftp']
+    else:
+        for module in comma_list_sanitize(modules):
+            command += ['--module', module]
+
+    steps.append(ShellCommand(command=command,
+        name='testing',
+        description='testing',
+        descriptionDone='tests',
+        haltOnFailure=True,
+        env=environ,
+    ))
+
+    return steps
+
+
 def update_modules(configurator, options, buildout_slave_path,
                    environ=()):
     """Return steps to update the OpenERP application.
