@@ -67,7 +67,7 @@ def pg_remote_copy(configurator, options, environ=()):
         copy_cmd.append(db_name_opt)
     copy_cmd.append(Property('testing_db'))
 
-    pg_remote_copy.extends(options['pg_remote_copy'].split())
+    copy_cmd.extend(options['pg_remote_copy.arguments'].split())
 
     steps.append(ShellCommand(
         command=copy_cmd,
