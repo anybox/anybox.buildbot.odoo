@@ -41,8 +41,12 @@ These steps are for a first setup.
 1. Install this package in a virtualenv. This will install buildbot as
    well.
 2. Create a master in the standard way (see ``buildbot create-master --help``).
-3. Add these lines in ``master.cfg`` right after the definition of
-   ``BuildMasterConfig``::
+3. If you are creating a new buildbot master, the file ``master.cfg.sample`` 
+   included within this package should work out of the box. Just rename it
+   ``master.cfg`` and put it in the master directory.
+
+   If you are extending an existing buildbot master, add these lines in 
+   ``master.cfg`` right after the definition of ``BuildMasterConfig``::
 
       from anybox.buildbot.openerp import configure_from_buildouts
       configure_from_buildouts(basedir, BuildmasterConfig)
