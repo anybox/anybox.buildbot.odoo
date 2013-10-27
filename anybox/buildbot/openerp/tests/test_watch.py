@@ -17,7 +17,8 @@ class TestMultiWatcher(BaseTestCase):
     def test_make_pollers(self):
         updater = self.watcher(source='manifest_watch.cfg')
         updater.read_branches()
-        bzr, git, hg = sorted(updater.make_pollers(), key=lambda o: o.__class__.__name__)
+        bzr, git, hg = sorted(updater.make_pollers(),
+                              key=lambda o: o.__class__.__name__)
         self.assertEquals(hg.repourl, 'http://mercurial.example/some/repo')
         self.assertEquals(hg.branch, 'default')
         # BzrPoller does translation of lp: addresses
@@ -112,7 +113,8 @@ class TestMultiWatcher(BaseTestCase):
     def test_bzr_lp_consistency(self):
         watcher = self.watcher(source='manifest_watch.cfg')
         watcher.read_branches()
-        bzr, _, _ = sorted(watcher.make_pollers(), key=lambda o: o.__class__.__name__)
+        bzr, _, _ = sorted(watcher.make_pollers(),
+                           key=lambda o: o.__class__.__name__)
         # BzrPoller does translation of lp: addresses
         self.assertTrue(bzr.url.endswith('openobject-server/6.1'))
 
