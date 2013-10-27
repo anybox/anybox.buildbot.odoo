@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from .base import BaseTestCase
 
 from anybox.buildbot.openerp.watch import MultiWatcher
@@ -92,6 +93,23 @@ class TestMultiWatcher(BaseTestCase):
         self.assertEquals(chf.interesting, {
             'http://mercurial.example/buildout': ('hg', ('somebranch',)),
             'http://mercurial.example/some/repo': ('hg', ('default',))})
+
+    def test_auto_buildout_bzr_lp(self):
+        """A VCS-based buildout must be automatically watched (bzr lp: case).
+        """
+        watcher = self.watcher(source='manifest_auto_watch.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('bzr_buildout')
+        self.assertIsNotNone(chf)
+        interesting = deepcopy(chf.interesting)
+        self.assertEqual(interesting.pop('http://mercurial.example/some/repo'),
+                         ('hg', ('default',)))
+        self.assertEqual(len(interesting), 1)
+        repo, details = interesting.items()[0]
+
+        # lp: syntax is interpreted
+        self.assertTrue(repo.endswith('anybox.recipe.openerp/trunk'))
+        self.assertEqual(details, ('bzr', ()))
 
     def test_auto_buildout_precedence(self):
         """A VCS-based buildout must be automatically watched."""
