@@ -3,6 +3,7 @@ import logging
 
 from ConfigParser import ConfigParser
 from ConfigParser import NoOptionError
+from twisted.python import log
 from buildbot.buildslave import BuildSlave
 from buildbot.config import BuilderConfig
 
@@ -452,5 +453,7 @@ class BuildoutsConfigurator(object):
                 change_filter=change_filter,
                 treeStableTimer=tree_stable_timer,
                 builderNames=builders))
+            log.msg("Scheduler %r is for builders %r "
+                    "with %r" % (factory_name, builders, change_filter))
 
         return schedulers
