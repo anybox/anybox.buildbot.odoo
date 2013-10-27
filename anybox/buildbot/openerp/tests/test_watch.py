@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from .base import BaseTestCase
 
 from anybox.buildbot.openerp.watch import MultiWatcher
@@ -17,7 +18,8 @@ class TestMultiWatcher(BaseTestCase):
     def test_make_pollers(self):
         updater = self.watcher(source='manifest_watch.cfg')
         updater.read_branches()
-        bzr, git, hg = sorted(updater.make_pollers(), key=lambda o: o.__class__.__name__)
+        bzr, git, hg = sorted(updater.make_pollers(),
+                              key=lambda o: o.__class__.__name__)
         self.assertEquals(hg.repourl, 'http://mercurial.example/some/repo')
         self.assertEquals(hg.branch, 'default')
         # BzrPoller does translation of lp: addresses
@@ -92,6 +94,23 @@ class TestMultiWatcher(BaseTestCase):
             'http://mercurial.example/buildout': ('hg', ('somebranch',)),
             'http://mercurial.example/some/repo': ('hg', ('default',))})
 
+    def test_auto_buildout_bzr_lp(self):
+        """A VCS-based buildout must be automatically watched (bzr lp: case).
+        """
+        watcher = self.watcher(source='manifest_auto_watch.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('bzr_buildout')
+        self.assertIsNotNone(chf)
+        interesting = deepcopy(chf.interesting)
+        self.assertEqual(interesting.pop('http://mercurial.example/some/repo'),
+                         ('hg', ('default',)))
+        self.assertEqual(len(interesting), 1)
+        repo, details = interesting.items()[0]
+
+        # lp: syntax is interpreted
+        self.assertTrue(repo.endswith('anybox.recipe.openerp/trunk'))
+        self.assertEqual(details, ('bzr', ()))
+
     def test_auto_buildout_precedence(self):
         """A VCS-based buildout must be automatically watched."""
         watcher = self.watcher(source='manifest_auto_watch.cfg')
@@ -112,7 +131,8 @@ class TestMultiWatcher(BaseTestCase):
     def test_bzr_lp_consistency(self):
         watcher = self.watcher(source='manifest_watch.cfg')
         watcher.read_branches()
-        bzr, _, _ = sorted(watcher.make_pollers(), key=lambda o: o.__class__.__name__)
+        bzr, _, _ = sorted(watcher.make_pollers(),
+                           key=lambda o: o.__class__.__name__)
         # BzrPoller does translation of lp: addresses
         self.assertTrue(bzr.url.endswith('openobject-server/6.1'))
 
