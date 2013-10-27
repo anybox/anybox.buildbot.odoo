@@ -47,8 +47,8 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
     return steps
 
 
-def openerp_command_intialize_tests(configurator, options, buildout_slave_path,
-                                         environ=()):
+def openerp_command_initialize_tests(configurator, options, buildout_slave_path,
+                                     environ=()):
     """Return steps to run bin/openerp_command initialize --tests."""
 
     environ = dict(environ)
