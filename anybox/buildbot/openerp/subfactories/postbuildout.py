@@ -51,14 +51,14 @@ def update_modules(configurator, options, buildout_slave_path,
                    environ=()):
     """Return steps to update the OpenERP application.
 
-    If the option "update.script" is specified, that script is used, and the
+    If the option "upgrade.script" is specified, that script is used, and the
     general module list is ignored.
     Otherwise, a raw ``bin/start_openerp -u`` on the declared module list gets
     issued.
 
     Options:
 
-    ``update.script``: see above.
+    ``upgrade.script``: see above.
     ``update.log_file_option``: name of the option to use for dedicated script
                                 if there is one.
     """
@@ -71,7 +71,7 @@ def update_modules(configurator, options, buildout_slave_path,
                               name="Log cleanup",
                               descriptionDone=['Cleaned', 'logs'],
                               ))
-    script = options.get('update.script', 'bin/upgrade_openerp')
+    script = options.get('upgrade.script', 'bin/upgrade_openerp')
     if script is not None:
         command = [script, options.get('update.log_file_option', '--log-file')]
     else:
