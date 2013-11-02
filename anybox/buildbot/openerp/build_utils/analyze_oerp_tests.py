@@ -16,6 +16,8 @@ FAILURE_REGEXPS = {
     'Error init db': re.compile(r'Failed to initialize database'),
     'Tests failed to excute': re.compile(
         r'openerp.modules.loading: Tests failed to execute'),
+    'At least one test failed when loading the modules': re.compile(
+        r'openerp.modules.loading: At least one test failed when loading the modules.'),
 }
 
 test_log = open(sys.argv[1], 'r')
