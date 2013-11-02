@@ -17,7 +17,8 @@ FAILURE_REGEXPS = {
     'Tests failed to excute': re.compile(
         r'openerp.modules.loading: Tests failed to execute'),
     'At least one test failed when loading the modules': re.compile(
-        r'openerp.modules.loading: At least one test failed when loading the modules.'),
+        r'openerp.modules.loading: At least one test '
+        r'failed when loading the modules.'),
 }
 
 test_log = open(sys.argv[1], 'r')
