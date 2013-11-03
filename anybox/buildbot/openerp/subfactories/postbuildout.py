@@ -300,6 +300,11 @@ def functional(configurator, options, buildout_slave_path,
         env=environ,
     ))
 
+    steps.append(ShellCommand(command=['rm', '-f', 'server-functional.log'],
+                              name="Log cleanup",
+                              descriptionDone=['Cleaned', 'logs'],
+                              ))
+
     steps.append(ShellCommand(
         command=['/sbin/start-stop-daemon',
                  '--pidfile', WithProperties('%(workdir)s/openerp.pid'),
@@ -308,7 +313,8 @@ def functional(configurator, options, buildout_slave_path,
                  '--background',
                  '--make-pidfile', '-v', '--start',
                  '--', '--xmlrpc-port', Property('openerp_port'),
-                 WithProperties('--logfile=%(workdir)s/build/install.log')],
+                 WithProperties('--logfile=%(workdir)s/build/'
+                                'server-functional.log')],
         name='start',
         description='starting openerp',
         descriptionDone='openerp started',
@@ -327,6 +333,7 @@ def functional(configurator, options, buildout_slave_path,
         descriptionDone="ran %s" % cmd,
         flunkOnFailure=True,
         haltOnFailure=False,
+        logfiles=dict(server='server-functional.log'),
         env=environ)
         for cmd in options.get('functional.commands').split())
 
