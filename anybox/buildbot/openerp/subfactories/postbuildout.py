@@ -236,6 +236,12 @@ def install_modules_nose(configurator, options, buildout_slave_path,
         if restrict:
             nose_cmd.extend(('--profile-restrict', restrict))
 
+    if bool_opt(options, 'nose.cprofile'):
+        upload = True
+        nose_cmd.extend(('--with-cprofile', '--cprofile-stats-erase',
+                         '--cprofile-stats-file',
+                         os.path.join(nose_output_dir, 'cprofile.stats')))
+
     if upload:
         steps.append(ShellCommand(command=['mkdir', '-p', nose_output_dir],
                                   name='mkdir',
