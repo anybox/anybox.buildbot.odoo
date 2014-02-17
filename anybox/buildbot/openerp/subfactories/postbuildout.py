@@ -512,7 +512,7 @@ def sphinx_doc(configurator, options,
         'doc.version', '$(buildout-tag:-current)s').replace('$', '%')
     if upload_dir:
         sub_path = '/'.join((upload_dir.rstrip('/'), version))
-        waterfall_url = '/'.join(base_url, sub_path) if base_url else None
+        waterfall_url = '/'.join((base_url, sub_path)) if base_url else None
         upload_dir = upload_dir.rstrip('/')
         master_doc_path = '/'.join((base_dir, sub_path))
         steps.append(
