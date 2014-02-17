@@ -454,7 +454,7 @@ def sphinx_doc(configurator, options,
        doc.upload-dir : subdirectory of buildmaster's main doc
           directory (see ``doc.upload_root`` below) to put that
           documentation in. If missing, no upload shall be done
-       doc.upload_root : base directory on buildmaster's host relative to
+       doc.upload-root : base directory on buildmaster's host relative to
            which  ``doc.upload_dir`` is evaluated. It is typically set
            globally by a [DEFAULT] section (hence the separation, and the
            fact that its presence alone does not trigger the upload)
@@ -465,37 +465,37 @@ def sphinx_doc(configurator, options,
            with $ instead of % (in order not to confuse ConfigParser)
        doc.base-url : doc base URL (example: http://docs.anybox.eu)
 
-       doc.sphinx_sourcedir: if specified, then the build will use the standard
+       doc.sphinx-sourcedir: if specified, then the build will use the standard
                              buildbot Sphinx step with the value as
                              `sourcedir``. Otherwise
                              it will issue a simple ``bin/sphinx``, which is
                              what collective.recipe.sphinxbuilder provides
                              (encapsulation with no need of specifying
                              source/build dirs)
-       doc.sphinx_builddir: *only if* doc.sourcedir is specified: Sphinx build
+       doc.sphinx-builddir: *only if* doc.sourcedir is specified: Sphinx build
                             directory, defaults to ``${doc.sourcedir}/_build``
-       doc.sphinx_bin: *only if* doc.sourcedir is specified: Sphinx executable,
+       doc.sphinx-bin: *only if* doc.sourcedir is specified: Sphinx executable,
                        relative to buildout directory, defaults to
                        ``bin/sphinx-build``
-       doc.sphinx_mode: (optional) String, one of ``'full'`` or
+       doc.sphinx-mode: (optional) String, one of ``'full'`` or
                         ``'incremental'`` (the default). If set to
                         ``'full'``, indicates to Sphinx to rebuild
                         everything without re-using the previous build results.
     """
     steps = []
-    sphinx_sourcedir = options.get('doc.sphinx_sourcedir')
+    sphinx_sourcedir = options.get('doc.sphinx-sourcedir')
     if sphinx_sourcedir is None:
         steps.append(ShellCommand(command=['sh', 'bin/sphinx'],
                                   description=['build', 'doc'],
                                   env=environ))
         html_builddir = 'doc/_build/html'
     else:
-        sphinx_builddir = options.get('doc.builddir',
+        sphinx_builddir = options.get('doc.sphinx-builddir',
                                       os.path.join(sphinx_sourcedir, '_build'))
         html_builddir = sphinx_builddir  # TODO GR, might want to change
                                          #that for non-html builds
-        sphinx_mode = options.get('doc.sphinx_mode', 'incremental')
-        sphinx_bin = options.get('doc.sphinx_bin', 'bin/sphinx-build')
+        sphinx_mode = options.get('doc.sphinx-mode', 'incremental')
+        sphinx_bin = options.get('doc.sphinx-bin', 'bin/sphinx-build')
         steps.append(Sphinx(sphinx_builddir=sphinx_builddir,
                             sphinx_sourcedir=sphinx_sourcedir,
                             sphinx=sphinx_bin,
@@ -505,7 +505,7 @@ def sphinx_doc(configurator, options,
                             env=environ,
                             haltOnFailure=False))
 
-    base_dir = options.get('doc.upload_root', '')
+    base_dir = options.get('doc.upload-root', '')
     upload_dir = options.get('doc.upload-dir', '')
     base_url = options.get('doc.base-url')
     version = options.get(
