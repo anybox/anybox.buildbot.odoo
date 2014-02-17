@@ -22,6 +22,7 @@ post_buildout = {
     'static-analysis': postbuildout.static_analysis,
     'openerpcommand-initialize-tests':
     postbuildout.openerp_command_initialize_tests,
+    'doc': postbuildout.sphinx_doc,
 }
 
 post_download = {'noop': postdownload.noop}

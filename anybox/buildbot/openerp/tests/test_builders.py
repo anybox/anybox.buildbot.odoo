@@ -37,6 +37,18 @@ class TestBuilders(BaseTestCase):
 
         self.assertEquals(addons, 'stock,crm')
 
+    def test_default_section(self):
+        """Test that a [DEFAULT] section in MANIFEST does not become a builder.
+
+        Useful for suggested usage pattern in steps with upload (doc,
+        packaging) that need a base_dir etc.
+        """
+        self.configurator.register_build_factories(
+            self.data_join('manifest_1.cfg'))
+
+        factories = self.configurator.build_factories
+        self.assertFalse('DEFAULT' in factories)
+
     def test_build_category(self):
         """The ``build_category`` option becomes builders categories."""
         master = {}

@@ -2,6 +2,7 @@ import os
 from buildbot import locks
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.shell import SetProperty
+from buildbot.steps.python import Sphinx
 from buildbot.steps.transfer import FileDownload
 from buildbot.steps.transfer import DirectoryUpload
 from buildbot.steps.master import MasterShellCommand
@@ -437,5 +438,108 @@ def static_analysis(configurator, options, buildout_slave_path, environ=()):
                      env=environ,
                      )
         for d in flake_dirs.split())
+
+    return steps
+
+
+def sphinx_doc(configurator, options,
+               buildout_slave_path, environ=()):
+    """Adds sphinx doc to the build.
+
+    For more information, especially about api/autodoc with OpenERP, see
+    http://anybox.fr/blog/sphinx-autodoc-et-modules-openerp (in French, sorry).
+
+    Used options from MANIFEST:
+
+       doc.upload-dir : subdirectory of buildmaster's main doc
+          directory (see ``doc.upload_root`` below) to put that
+          documentation in. If missing, no upload shall be done
+       doc.upload_root : base directory on buildmaster's host relative to
+           which  ``doc.upload_dir`` is evaluated. It is typically set
+           globally by a [DEFAULT] section (hence the separation, and the
+           fact that its presence alone does not trigger the upload)
+       doc.version : defaults to a property-based string that uses the
+          'buildout-tag' property and defaults to 'current''current'.
+           Used as a sub directory of upload-dir.
+           Can use properties in the same way WithProperty does,
+           with $ instead of % (in order not to confuse ConfigParser)
+       doc.base-url : doc base URL (example: http://docs.anybox.eu)
+
+       doc.sphinx_sourcedir: if specified, then the build will use the standard
+                             buildbot Sphinx step with the value as
+                             `sourcedir``. Otherwise
+                             it will issue a simple ``bin/sphinx``, which is
+                             what collective.recipe.sphinxbuilder provides
+                             (encapsulation with no need of specifying
+                             source/build dirs)
+       doc.sphinx_builddir: *only if* doc.sourcedir is specified: Sphinx build
+                            directory, defaults to ``${doc.sourcedir}/_build``
+       doc.sphinx_bin: *only if* doc.sourcedir is specified: Sphinx executable,
+                       relative to buildout directory, defaults to
+                       ``bin/sphinx-build``
+       doc.sphinx_mode: (optional) String, one of ``'full'`` or
+                        ``'incremental'`` (the default). If set to
+                        ``'full'``, indicates to Sphinx to rebuild
+                        everything without re-using the previous build results.
+    """
+    steps = []
+    sphinx_sourcedir = options.get('doc.sphinx_sourcedir')
+    if sphinx_sourcedir is None:
+        steps.append(ShellCommand(command=['sh', 'bin/sphinx'],
+                                  description=['build', 'doc'],
+                                  env=environ))
+        html_builddir = 'doc/_build/html'
+    else:
+        sphinx_builddir = options.get('doc.builddir',
+                                      os.path.join(sphinx_sourcedir, '_build'))
+        html_builddir = sphinx_builddir  # TODO GR, might want to change
+                                         #that for non-html builds
+        sphinx_mode = options.get('doc.sphinx_mode', 'incremental')
+        sphinx_bin = options.get('doc.sphinx_bin', 'bin/sphinx-build')
+        steps.append(Sphinx(sphinx_builddir=sphinx_builddir,
+                            sphinx_sourcedir=sphinx_sourcedir,
+                            sphinx=sphinx_bin,
+                            mode=sphinx_mode,
+                            description=['Sphinx'],
+                            name='sphinx',
+                            env=environ,
+                            haltOnFailure=False))
+
+    base_dir = options.get('doc.upload_root', '')
+    upload_dir = options.get('doc.upload-dir', '')
+    base_url = options.get('doc.base-url')
+    version = options.get(
+        'doc.version', '$(buildout-tag:-current)s').replace('$', '%')
+    if upload_dir:
+        sub_path = '/'.join((upload_dir.rstrip('/'), version))
+        waterfall_url = '/'.join(base_url, sub_path) if base_url else None
+        upload_dir = upload_dir.rstrip('/')
+        master_doc_path = '/'.join((base_dir, sub_path))
+        steps.append(
+            DirectoryUpload(
+                slavesrc=html_builddir,
+                haltOnFailure=True,
+                compress='gz',
+                masterdest=WithProperties(master_doc_path),
+                url=WithProperties(waterfall_url) if waterfall_url else None))
+
+        # Fixing perms on uploaded files. Yes we could have unmask = 022 in
+        # all slaves,
+        # see note at the end of
+        #  <http://buildbot.net/buildbot/docs/0.8.7/full.html
+        #   #buildbot.steps.source.buildbot.steps.transfer.DirectoryUpload>
+        # but it's less work to fix the perms from here than to check all of
+        # them
+        steps.append(
+            MasterShellCommand(
+                description=["doc", "read", "permissions"],
+                command=['chmod', '-R', 'a+r',
+                         WithProperties(master_doc_path)]))
+        steps.append(
+            MasterShellCommand(
+                description=["doc", "dirx", "permissions"],
+                command=['find', WithProperties(master_doc_path),
+                         '-type', 'd', '-exec',
+                         'chmod', '755', '{}', ';']))
 
     return steps
