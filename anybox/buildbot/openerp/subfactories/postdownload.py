@@ -25,8 +25,8 @@ def packaging(configurator, options,
                          will be uploaded (possibly for several different
                          buildouts). The separation of this option is meant
                          to allow for different scopes (e.g, use only one
-                         ``root_dir`` value for a whole ``MANIFEST.cfg`` file in
-                         a ``DEFAULT`` section)
+                         ``root_dir`` value for a whole ``MANIFEST.cfg`` file
+                         in a ``DEFAULT`` section)
     :packaging.upload-dir: subdirectory, relative to ``packaging.root-dir``
                            where artifacts will be uploaded.
     :packaging.prefix: prefix for the artifact name. Tag name will be appended
@@ -77,7 +77,8 @@ def packaging(configurator, options,
     steps.append(
         ShellCommand(command=['bin/buildout', '-c', buildout_slave_path,
                               'buildout:eggs-directory=' + eggs_cache,
-                              'buildout:openerp-downloads-directory=' + openerp_cache,
+                              'buildout:openerp-downloads-'
+                              'directory=' + openerp_cache,
                               'install'] + parts,
                      description=["buildout", "install"],
                      workdir='./src',
