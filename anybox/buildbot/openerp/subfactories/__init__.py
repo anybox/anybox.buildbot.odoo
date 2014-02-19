@@ -23,9 +23,12 @@ post_buildout = {
     'openerpcommand-initialize-tests':
     postbuildout.openerp_command_initialize_tests,
     'doc': postbuildout.sphinx_doc,
+    'packaging': postbuildout.packaging,
 }
 
-post_download = {'noop': postdownload.noop}
+post_download = {'noop': postdownload.noop,
+                 'packaging': postdownload.packaging,
+                 }
 
 # deprecated compatibility aliases
 post_buildout['standard'] = post_buildout['test-openerp']

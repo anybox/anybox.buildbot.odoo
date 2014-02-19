@@ -18,6 +18,7 @@ Changes
  - launchpad #1154673: treeStableTimer scheduler parameter now
    configurable on a per-buildout basis
  - launchpad #1281136: subfactory for sphinx doc compilation & upload
+ - launchpad #1281137: subfactories for packaging of hg versioned buildouts
 
 0.8.1
 -----

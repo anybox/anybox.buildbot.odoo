@@ -4,6 +4,7 @@ from buildbot.steps.shell import ShellCommand
 from buildbot.steps.shell import SetProperty
 from buildbot.steps.python import Sphinx
 from buildbot.steps.transfer import FileDownload
+from buildbot.steps.transfer import FileUpload
 from buildbot.steps.transfer import DirectoryUpload
 from buildbot.steps.master import MasterShellCommand
 from buildbot.process.properties import WithProperties
@@ -543,3 +544,33 @@ def sphinx_doc(configurator, options,
                          'chmod', '755', '{}', ';']))
 
     return steps
+
+
+def packaging(configurator, options,
+              buildout_slave_path, environ=()):
+    """Final steps for upload after testing of tarball.
+
+    See :fun:`postdownload.packaging` for explanation of options.
+    """
+
+    archive_name_interp = options['packaging.prefix'] + '-%(buildout-tag)s'
+    upload_dir = options['packaging.upload-dir']
+    master_dir = os.path.join('/var/www/livraison', upload_dir)
+    master_path = os.path.join(master_dir, archive_name_interp + '.tar.bz2')
+    base_url = options['packaging.base-url']
+    return [
+        FileUpload(
+            slavesrc=WithProperties(
+                '../dist/' + archive_name_interp + '.tar.bz2'),
+            masterdest=WithProperties(master_path),
+            url='/'.join((base_url, upload_dir)),
+            mode=0644,
+        ),
+        FileUpload(
+            slavesrc=WithProperties(
+                '../dist/' + archive_name_interp + '.tar.bz2.md5'),
+            masterdest=WithProperties(master_path + '.md5'),
+            url='/'.join((base_url, upload_dir)),
+            mode=0644,
+        ),
+    ]
