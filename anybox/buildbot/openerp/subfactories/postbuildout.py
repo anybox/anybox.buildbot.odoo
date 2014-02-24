@@ -67,8 +67,8 @@ def openerp_command_initialize_tests(configurator, options,
                     '--exclude', 'auth_ldap',
                     '--exclude', 'document_ftp']
     else:
-        for module in comma_list_sanitize(modules):
-            command += ['--module', module]
+        for module in modules.split(','):
+            command += ['--module', module.strip()]
 
     steps.append(ShellCommand(command=command,
                               name='testing',
