@@ -85,10 +85,10 @@ class MultiWatcher(object):
                 yield BzrPoller(url, poll_interval=poll_interval,
                                 branch_name=branch_name)
             elif vcs == 'git':
-                for ms in minor_specs:
-                    yield GitPoller(url, branch=ms[0],
-                                    workdir=os.path.join('gitpoller', h),
-                                    pollInterval=poll_interval)
+                branches = [ms[0] for ms in minor_specs]
+                yield GitPoller(url, branches=branches,
+                                workdir=os.path.join('gitpoller', h),
+                                pollInterval=poll_interval)
 
     def check_paths(self, paths):
         missing = [path for path in paths if not os.path.isfile(path)]

@@ -25,7 +25,7 @@ class TestMultiWatcher(BaseTestCase):
         # BzrPoller does translation of lp: addresses
         self.assertTrue(bzr.url.endswith('openobject-server/6.1'))
         self.assertEquals(git.repourl, 'user@git.example:my/repo')
-        self.assertEquals(git.branches[0], 'master')
+        self.assertEquals(sorted(git.branches), ['develop', 'master'])
 
     def test_url_rewrite(self):
         updater = self.watcher(
