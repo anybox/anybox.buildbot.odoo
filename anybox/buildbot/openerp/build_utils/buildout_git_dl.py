@@ -15,7 +15,4 @@ revspec = arguments.revspec
 if not os.path.exists(os.path.join('.git')):
     check_call(['git', 'init'])
 
-check_call(['git', 'pull', url])
-
-print "Updating to %r" % revspec
-check_call(['git', 'checkout', revspec])
+check_call(['git', 'pull', url, revspec])
