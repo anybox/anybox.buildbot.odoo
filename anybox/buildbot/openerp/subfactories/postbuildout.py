@@ -590,6 +590,7 @@ def autocommit(configurator, options, buildout_slave_path, environ=()):
         ShellCommand(
             command=[
                 options.get('autocommit.script', 'bin/autocommit_openerp'),
+                '-c', buildout_slave_path,
                 '--push',
                 '-m',
                 options.get('autocommit.message', "Commit by buildbot"),
