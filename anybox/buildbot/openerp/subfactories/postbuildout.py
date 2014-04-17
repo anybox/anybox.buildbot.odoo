@@ -23,7 +23,8 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
     steps = []
 
     steps.append(ShellCommand(command=['rm', '-f', 'test.log'],
-                              name="Log cleanup",
+                              name="clean_log",
+                              description=["Log", "cleanup"],
                               descriptionDone=['Cleaned', 'logs'],
                               ))
 
@@ -102,7 +103,8 @@ def update_modules(configurator, options, buildout_slave_path,
     steps = []
 
     steps.append(ShellCommand(command=['rm', '-f', 'update.log'],
-                              name="Log cleanup",
+                              name="clean_log",
+                              description=['Log', 'Cleanup'],
                               descriptionDone=['Cleaned', 'logs'],
                               ))
     script = options.get('upgrade.script', 'bin/upgrade_openerp')
@@ -428,17 +430,17 @@ def static_analysis(configurator, options, buildout_slave_path, environ=()):
             "You must provide %s option for static analysis. "
             "Currently provided options: %r" % (flake_dirs_opt, options))
 
-    steps.extend(
-        ShellCommand(command=['bin/flake8',
-                              '--max-line-length',
-                              options.get('static-analysis.max-line-length',
-                                          '100'),
-                              '--show-source',
-                              d.strip()],
-                     description=['flake8', d],
-                     env=environ,
-                     )
-        for d in flake_dirs.split())
+    flake_dirs = flake_dirs.split()
+    steps.append(ShellCommand(
+        command=['bin/flake8',
+                 '--max-line-length',
+                 options.get('static-analysis.max-line-length', '100'),
+                 '--show-source',
+                 ] + flake_dirs,
+        name='flake8',
+        description=['flake8'] + flake_dirs,
+        env=environ,
+        ))
 
     return steps
 
