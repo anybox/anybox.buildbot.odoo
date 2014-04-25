@@ -24,6 +24,7 @@ post_buildout = {
     postbuildout.openerp_command_initialize_tests,
     'doc': postbuildout.sphinx_doc,
     'packaging': postbuildout.packaging,
+    'autocommit': postbuildout.autocommit,
 }
 
 post_download = {'noop': postdownload.noop,

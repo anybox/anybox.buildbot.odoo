@@ -576,3 +576,28 @@ def packaging(configurator, options,
             mode=0644,
         ),
     ]
+
+
+def autocommit(configurator, options, buildout_slave_path, environ=()):
+    """Invoke recipe's autocommit script.
+
+    Options:
+
+    :autocommit.script: autocommit script
+                        name, defaults to ``bin/autocommit_openerp``.
+    :autocommit.message: message used for generated commits.
+                         Defaults to "Commit made by buildbot
+    """
+    return [
+        ShellCommand(
+            command=[
+                options.get('autocommit.script', 'bin/autocommit_openerp'),
+                '-c', buildout_slave_path,
+                '--push',
+                '-m',
+                options.get('autocommit.message', "Commit by buildbot"),
+            ],
+            description=['auto', 'commit/push'],
+            name='autocommit',
+            env=environ),
+    ]
