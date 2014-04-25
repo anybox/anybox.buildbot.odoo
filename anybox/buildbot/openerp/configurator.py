@@ -205,6 +205,7 @@ class BuildoutsConfigurator(object):
                        for k, v in bootstrap_options.items())
 
         return [ShellCommand(command=command,
+                             name='bootstrap',
                              description="bootstrapping",
                              descriptionDone="bootstrapped",
                              haltOnFailure=True,
