@@ -1,6 +1,11 @@
 Changes
 ~~~~~~~
 
+1.0 (unreleased)
+----------------
+
+ - 
+
 0.9 (2015-05-15)
 ----------------
  - Git support (buildbout repo + watch) (several issues on launchpad)
