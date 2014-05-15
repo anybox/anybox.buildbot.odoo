@@ -1,7 +1,7 @@
 Changes
 ~~~~~~~
 
-0.9 (unreleased)
+0.9 (2015-05-15)
 ----------------
  - Git support (buildbout repo + watch) (several issues on launchpad)
  - launchpad #1201138: simple inheritance system
