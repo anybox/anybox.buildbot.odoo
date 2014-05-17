@@ -4,7 +4,8 @@ Changes
 1.0 (unreleased)
 ----------------
 
- - 
+ - launchpad #1320321: port reservation and binding for ``test_openerp``
+   (requires PhantomJS to actually run)
 
 0.9 (2015-05-15)
 ----------------

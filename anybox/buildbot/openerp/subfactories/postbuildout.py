@@ -13,10 +13,48 @@ from ..utils import comma_list_sanitize
 from ..utils import bool_opt
 from ..utils import BUILD_UTILS_PATH
 
+port_lock = locks.SlaveLock("port-reserve")
+
+
+def steps_odoo_port_reservation(configurator, options, environ=()):
+    """Return steps for port reservation.
+
+    The chosen port is stored in ``openerp_port`` property.
+
+    Options:
+      :odoo.http-port-min: minimal value for the HTTP port (defaults to 6069)
+      :odoo.http-port-max: maximal value for the HTTP port (defaults to 7069)
+      :odoo.http-port-step: increment value for the HTTP port (defaults to 5)
+    """
+
+    return (
+        FileDownload(
+            mastersrc=os.path.join(BUILD_UTILS_PATH, 'port_reserve.py'),
+            slavedest='port_reserve.py'),
+
+        SetProperty(
+            property='openerp_port',
+            description=['Port', 'reservation'],
+            locks=[port_lock.access('exclusive')],
+            command=[
+                'python', 'port_reserve.py',
+                '--port-min=' + options.get('odoo.http-port-min', '6069'),
+                '--port-max=' + options.get('odoo.http-port-max', '7068'),
+                '--step=' + options.get('odoo.http-port-step', '5'),
+                ])
+        )
+
 
 def install_modules_test_openerp(configurator, options, buildout_slave_path,
                                  environ=()):
-    """Return steps to run bin/test_openerp -i MODULES."""
+    """Return steps to run bin/test_openerp -i MODULES.
+
+
+    Options:
+
+      :odoo.use-port: if set to ``true``, necessary free ports will be chosen,
+                      and used in the test run.
+    """
 
     environ = dict(environ)
 
@@ -27,19 +65,27 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
                               description=["Log", "cleanup"],
                               descriptionDone=['Cleaned', 'logs'],
                               ))
+    with_port = options.get('odoo.use-port', '').strip().lower() == 'true'
+    if with_port:
+        steps.extend(steps_odoo_port_reservation(configurator, options,
+                                                 environ=environ))
 
-    steps.append(ShellCommand(command=[
-        'bin/test_openerp', '-i',
-        comma_list_sanitize(options.get('openerp-addons', 'all')),
-        # openerp --logfile does not work with relative paths !
-        WithProperties('--logfile=%(workdir)s/build/test.log')],
-        name='testing',
-        description='testing',
-        descriptionDone='tests',
-        logfiles=dict(test='test.log'),
-        haltOnFailure=True,
-        env=environ,
-    ))
+    test_cmd = ['bin/test_openerp', '-i',
+                comma_list_sanitize(options.get('openerp-addons', 'all')),
+                # openerp --logfile does not work with relative paths !
+                WithProperties('--logfile=%(workdir)s/build/test.log')]
+
+    if with_port:
+        test_cmd.append(WithProperties('--xmlrpc-port=%(openerp_port)s'))
+
+    steps.append(ShellCommand(command=test_cmd,
+                              name='test',
+                              description=['installing', 'testing'],
+                              descriptionDone=['installed', 'tested'],
+                              logfiles=dict(test='test.log'),
+                              haltOnFailure=True,
+                              env=environ,
+                              ))
 
     steps.append(ShellCommand(
         command=["python", "analyze_oerp_tests.py", "test.log"],
@@ -53,7 +99,8 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
 def openerp_command_initialize_tests(configurator, options,
                                      buildout_slave_path,
                                      environ=()):
-    """Return steps to run bin/openerp_command initialize --tests."""
+    """Return steps to run bin/openerp_command initialize --tests.
+    """
 
     environ = dict(environ)
 
@@ -287,9 +334,6 @@ def install_modules_nose(configurator, options, buildout_slave_path,
                      '-type', 'd', '-exec',
                      'chmod', '755', '{}', ';']))
     return steps
-
-
-port_lock = locks.SlaveLock("port-reserve")
 
 
 def functional(configurator, options, buildout_slave_path,
