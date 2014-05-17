@@ -198,7 +198,7 @@ class BuildoutsConfigurator(object):
         # we expect in that case users to issue a proper relative
         # path in that situation, that is likely to be the simplest of their
         # tunings
-        command = ['python', bootstrap_options.get('script', 'bootstrap.py'),
+        command = ['python', bootstrap_options.pop('script', 'bootstrap.py'),
                    find_links_opt, eggs_cache,
                    '-c', buildout_slave_path]
         command.extend('--%s=%s' % (k, v)
