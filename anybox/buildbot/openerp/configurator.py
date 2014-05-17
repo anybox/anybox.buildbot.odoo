@@ -349,10 +349,11 @@ class BuildoutsConfigurator(object):
                 raise ValueError("Buildout type %r in %r not supported" % (
                     btype, name))
 
-            conf_slave_path, dl_steps = buildout_downloader(self, buildout[1:],
-                                                            manifest_dir)
+            options = dict(parser.items(name))
+            conf_slave_path, dl_steps = buildout_downloader(
+                self, options, buildout[1:], manifest_dir)
             registry[name] = factory = self.make_factory(
-                name, conf_slave_path, dl_steps, dict(parser.items(name)))
+                name, conf_slave_path, dl_steps, options)
             factory.manifest_path = manifest_path  # change filter will need it
 
     def make_builders(self, master_config=None):

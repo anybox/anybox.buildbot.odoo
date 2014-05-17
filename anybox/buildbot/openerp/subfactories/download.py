@@ -4,13 +4,17 @@ bootstrap.py is considered to be part of the configuration.
 Depending on the subfactory, it may be specific to that buildout or not.
 
 These functions have a common signature:
-       ``f(configurator, cfg_tokens, manifest_dir)``
+       ``f(configurator, options, cfg_tokens, manifest_dir)``
 
-  where configurator is a configurator object
-        cfg_tokens are taken for the 'buildout' option in conf
-        manifest_dir is the path (interpreted from buildmaster dir) to the
-                     directory in with the manifest file sits.
+where:
 
+  :configurator: is an instance of
+           :class:`anybox.buildbot.openerp.configurator.BuildoutsConfigurator`
+  :options: is a :class:`dict` of options, read from the MANIFEST
+  :cfg_tokens: are taken from the parsing of the ``buildout`` (also in
+              ``options``)
+  :manifest_dir: is the path (interpreted from buildmaster dir) to the
+                 directory in with the manifest file sits.
 
 They must return:
       - the main buildout config file path (from build directory)
@@ -25,10 +29,16 @@ from buildbot.process.properties import Property
 from ..utils import BUILD_UTILS_PATH
 
 
-def standalone_buildout(configurator, cfg_tokens, manifest_dir):
+def standalone_buildout(configurator, options, cfg_tokens, manifest_dir):
     """Simple download from master of a self-contained buildout conf file.
 
     See module docstring for signature and return values.
+
+    Options:
+
+    :bootstrap-script: name of the bootstrap script to download (defaults to
+                       ``bootstrap.py``). Applies to both source and
+                       destination.
     """
     if len(cfg_tokens) != 1:
         raise ValueError(
@@ -37,16 +47,17 @@ def standalone_buildout(configurator, cfg_tokens, manifest_dir):
     conf_path = cfg_tokens[0]
     conf_name = os.path.split(conf_path)[-1]
     conf_path = os.path.join(manifest_dir, conf_path)
-    bootstrap_path = os.path.join(manifest_dir, 'bootstrap.py')
+    script_name = options.get('bootstrap-script', 'bootstrap.py')
+    bootstrap_path = os.path.join(manifest_dir, script_name)
     return conf_name, (FileDownload(mastersrc=bootstrap_path,
-                                    slavedest='bootstrap.py'),
+                                    slavedest=script_name),
                        FileDownload(mastersrc=conf_path,
                                     slavedest=conf_name),
                        )
 
 
-def hg_buildout(self, cfg_tokens, manifest_dir):
-    """Steps to retruve the buildout using Mercurial.
+def hg_buildout(self, options, cfg_tokens, manifest_dir):
+    """Steps to retrieve the buildout using Mercurial.
 
     See module docstring for signature and return values.
     manifest_dir is not used in this downloader.
@@ -69,7 +80,7 @@ def hg_buildout(self, cfg_tokens, manifest_dir):
     )
 
 
-def git_buildout(self, cfg_tokens, manifest_dir):
+def git_buildout(self, options, cfg_tokens, manifest_dir):
     """Steps to retruve the buildout using Mercurial.
 
     See module docstring for signature and return values.
@@ -93,7 +104,7 @@ def git_buildout(self, cfg_tokens, manifest_dir):
     )
 
 
-def bzr_buildout(self, cfg_tokens, manifest_dir, subdir=None):
+def bzr_buildout(self, options, cfg_tokens, manifest_dir, subdir=None):
     """Steps to retrieve the buildout using Bazaar.
 
     See module docstring for signature and return values.
@@ -146,7 +157,7 @@ def bzr_buildout(self, cfg_tokens, manifest_dir, subdir=None):
     return conf_path, steps
 
 
-def hg_tag_buildout(self, cfg_tokens, manifest_dir):
+def hg_tag_buildout(self, options, cfg_tokens, manifest_dir):
     """Steps to retrieve the buildout dir as a Mercurial tag.
 
     Useful for release/packaging oriented builds.
