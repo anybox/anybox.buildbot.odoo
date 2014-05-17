@@ -54,6 +54,8 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
 
       :odoo.use-port: if set to ``true``, necessary free ports will be chosen,
                       and used in the test run.
+                      See :fun:`steps_odoo_port_reservation` for port
+                      selection tuning options.
     """
 
     environ = dict(environ)
@@ -65,17 +67,14 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
                               description=["Log", "cleanup"],
                               descriptionDone=['Cleaned', 'logs'],
                               ))
-    with_port = options.get('odoo.use-port', '').strip().lower() == 'true'
-    if with_port:
-        steps.extend(steps_odoo_port_reservation(configurator, options,
-                                                 environ=environ))
-
     test_cmd = ['bin/test_openerp', '-i',
                 comma_list_sanitize(options.get('openerp-addons', 'all')),
                 # openerp --logfile does not work with relative paths !
                 WithProperties('--logfile=%(workdir)s/build/test.log')]
 
-    if with_port:
+    if options.get('odoo.use-port', '').strip().lower() == 'true':
+        steps.extend(steps_odoo_port_reservation(configurator, options,
+                                                 environ=environ))
         test_cmd.append(WithProperties('--xmlrpc-port=%(openerp_port)s'))
 
     steps.append(ShellCommand(command=test_cmd,
@@ -100,7 +99,11 @@ def openerp_command_initialize_tests(configurator, options,
                                      buildout_slave_path,
                                      environ=()):
     """Return steps to run bin/openerp_command initialize --tests.
-    """
+
+      :odoo.use-port: if set to ``true``, necessary free ports will be chosen,
+                      and used in the test run.
+                      See :fun:`steps_odoo_port_reservation` for port
+                      selection tuning options.    """
 
     environ = dict(environ)
 
@@ -117,6 +120,11 @@ def openerp_command_initialize_tests(configurator, options,
     else:
         for module in modules.split(','):
             command += ['--module', module.strip()]
+
+    if options.get('odoo.use-port', 'false').strip().lower() == 'true':
+        steps.extend(steps_odoo_port_reservation(configurator, options,
+                                                 environ=environ))
+        command.append(WithProperties('--port=%(openerp_port)s'))
 
     steps.append(ShellCommand(command=command,
                               name='testing',
