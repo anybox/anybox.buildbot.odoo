@@ -4,6 +4,7 @@ Changes
 1.0 (unreleased)
 ----------------
 
+ - launchpad #1323234: introduced wkhtmltopdf capability, with display option
  - launchpad #1320321: port reservation and binding for
    ``test-openerp``, and ``openerpcommand-initialize-tests``.
    (requires PhantomJS to actually run).

@@ -48,6 +48,8 @@ class BuildoutsConfigurator(object):
     """
 
     cap2environ = dict(
+        wkhtmltopdf=dict(version_prop='wkhtml2pdf_version',
+                         environ={'DISPLAY': '%(cap(display):-:0)s'}),
         postgresql=dict(version_prop='pg_version',
                         environ={'PGPORT': '%(cap(port):-)s',
                                  'PGHOST': '%(cap(host):-)s',
