@@ -1,6 +1,7 @@
 import os
 import logging
 
+import json
 from ConfigParser import ConfigParser
 from ConfigParser import NoOptionError
 from twisted.python import log
@@ -158,12 +159,18 @@ class BuildoutsConfigurator(object):
         return slaves
 
     def steps_bootstrap(self, buildout_slave_path, options, eggs_cache,
+                        dump_options_to=None,
                         **step_kw):
         """return a list of steps for buildout bootstrap.
 
-        step_kw will be passed to the step constructor. Known use-case:
-        change workdir in packaging step.
         options prefixed with 'bootstrap-' are applied
+
+        :param dump_options_to: (directory path). If specified,
+                                a 'bootstrap.ini' file will be put in there,
+                                giving installers the means to reproduce the
+                                bootstrap identically.
+        :param step_kw: will be passed to the step constructor. Known use-case:
+                        change workdir in packaging step.
         """
 
         bootstrap_prefix = 'bootstrap-'
@@ -176,11 +183,11 @@ class BuildoutsConfigurator(object):
             raise ValueError(
                 "The following bootstrap options are forbidden: %r" % list(
                     forbidden))
-
+        as_json = json.dumps(bootstrap_options)
         known_bootstraps = ('v1', 'v2')
 
         bootstrap_type = bootstrap_options.pop('type', 'v1').lower()
-        if not bootstrap_type in known_bootstraps:
+        if bootstrap_type not in known_bootstraps:
             raise ValueError(
                 "Unknown bootstrap type: %r. Known ones are %r" % (
                     bootstrap_type, known_bootstraps))
@@ -206,14 +213,43 @@ class BuildoutsConfigurator(object):
         command.extend('--%s=%s' % (k, v)
                        for k, v in bootstrap_options.items())
 
-        return [ShellCommand(command=command,
-                             name='bootstrap',
-                             description="bootstrapping",
-                             descriptionDone="bootstrapped",
-                             haltOnFailure=True,
-                             env=env,
-                             **step_kw)
-                ]
+        steps = [ShellCommand(command=command,
+                              name='bootstrap',
+                              description="bootstrapping",
+                              descriptionDone="bootstrapped",
+                              haltOnFailure=True,
+                              env=env,
+                              **step_kw)]
+
+        if dump_options_to is not None:
+            dumper = 'dump_bootstrap_options.py'
+            # here it's important not to put the dumper script
+            # in the build/ directory
+            # because some builds (release) expect build/ not to be created
+            # at this point. So we'll use the same workdir as for the bootstrap
+            # itself
+            dump_kw = dict((k, v) for k, v in step_kw.items()
+                           if k in ['workdir'])
+
+            steps.extend((
+                FileDownload(
+                    mastersrc=os.path.join(BUILD_UTILS_PATH, dumper),
+                    slavedest=dumper,
+                    haltOnFailure=True,
+                    **dump_kw),
+                ShellCommand(
+                    command=['python', 'dump_bootstrap_options.py',
+                             dump_options_to, as_json],
+                    name='bootstrap_ini',
+                    description=['dump', 'bootstrap',
+                                 'options'],
+                    descriptionDone=['dumped', 'bootstrap',
+                                     'options'],
+                    haltOnFailure=True,
+                    env=env,
+                    **dump_kw)))
+
+        return steps
 
     def make_factory(self, name, buildout_slave_path, buildout_dl_steps,
                      options):

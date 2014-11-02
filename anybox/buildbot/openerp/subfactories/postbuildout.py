@@ -547,8 +547,8 @@ def sphinx_doc(configurator, options,
     else:
         sphinx_builddir = options.get('doc.sphinx-builddir',
                                       os.path.join(sphinx_sourcedir, '_build'))
-        html_builddir = sphinx_builddir  # TODO GR, might want to change
-                                         #that for non-html builds
+        # TODO GR, might want to change that for non-html builds
+        html_builddir = sphinx_builddir
         sphinx_mode = options.get('doc.sphinx-mode', 'incremental')
         sphinx_bin = options.get('doc.sphinx-bin', 'bin/sphinx-build')
         steps.append(Sphinx(sphinx_builddir=sphinx_builddir,

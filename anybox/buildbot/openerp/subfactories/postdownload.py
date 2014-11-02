@@ -57,11 +57,6 @@ def packaging(configurator, options,
     cache = '../../buildout-caches'  # lame duplication
     eggs_cache = cache + '/eggs'
     openerp_cache = cache + '/openerp'
-
-    steps.extend(configurator.steps_bootstrap(buildout_slave_path,
-                                              options, eggs_cache,
-                                              workdir='./src'))
-
     archive_name_interp = options['packaging.prefix'] + '-%(buildout-tag)s'
 
     steps.append(
@@ -73,6 +68,10 @@ def packaging(configurator, options,
             workdir='./src'))
 
     parts = options.get('packaging.parts').split()
+
+    steps.extend(configurator.steps_bootstrap(
+        buildout_slave_path, options, eggs_cache, workdir='./src',
+        dump_options_to=WithProperties('../dist/' + archive_name_interp)))
 
     steps.append(
         ShellCommand(command=['bin/buildout', '-c', buildout_slave_path,

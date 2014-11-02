@@ -4,6 +4,9 @@ Changes
 1.0 (unreleased)
 ----------------
 
+ - launchpad #1388566: dump bootstrap options to a separate file, with
+                       format expected by anybox-oe-tarball-deploy
+                       (part of anybox-openerp-host package)
  - launchpad #1323234: introduced wkhtmltopdf capability, with display option
  - launchpad #1320321: port reservation and binding for
    ``test-openerp``, and ``openerpcommand-initialize-tests``.
