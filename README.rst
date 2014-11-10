@@ -115,6 +115,12 @@ Options are:
    for preload of PostgreSQL extensions, such as postgis, but can be
    used for testing data as well. Should be paired with a conventional
    requirement expressing that the template exists and can be used.
+ * buildout-part: name of the expected main part driving Odoo/OpenERP
+   (defaults to ``openerp`` for backwards compatibility)
+ * start-command: name of the main server command (defaults to
+   ``start_<PART>``
+ * test-command: name of the main test command (defaults to
+   ``test_<PART>``
  * bootstrap options: any option of the form ``bootstrap-foo`` will
    give rise to a command-line option ``--foo`` with the same value
    for the bootstrap. Example::

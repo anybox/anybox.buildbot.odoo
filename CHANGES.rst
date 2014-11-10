@@ -4,6 +4,9 @@ Changes
 1.0 (unreleased)
 ----------------
 
+ - launchpad #1391227: introduced a ``buildout-part`` option in
+   MANIFEST, defaulting to the previously hardcoded ``openerp`` value.
+   Also introduced options ``start-command`` and ``test-command``
  - launchpad #1388566: dump bootstrap options to a separate file, with
                        format expected by anybox-oe-tarball-deploy
                        (part of anybox-openerp-host package)
