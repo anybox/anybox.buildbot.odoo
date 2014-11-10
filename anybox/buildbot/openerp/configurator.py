@@ -22,6 +22,7 @@ from . import subfactories
 from . import buildouts
 
 from .utils import BUILD_UTILS_PATH
+from .constants import DEFAULT_BUILDOUT_PART
 from version import Version
 from version import VersionFilter
 
@@ -308,6 +309,7 @@ class BuildoutsConfigurator(object):
             name="pg_cluster_props",
         ))
 
+        buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
         cache = '../../buildout-caches'
         eggs_cache = cache + '/eggs'
         openerp_cache = cache + '/openerp'
@@ -324,21 +326,20 @@ class BuildoutsConfigurator(object):
             '-c', buildout_slave_path,
             'buildout:eggs-directory=' + eggs_cache,
             'buildout:openerp-downloads-directory=' + openerp_cache,
-            'openerp:with_devtools=true',
-            'openerp:vcs-clear-locks=true',
-            'openerp:vcs-clear-retry=true',
-            'openerp:clean=true',
-            'openerp:vcs-revert=on-merge',
-            WithProperties(
-                'openerp:options.db_port=%(cap_postgresql_port:-5432)s'),
-            WithProperties(
-                'openerp:options.db_host=%(cap_postgresql_host:-False)s'),
-            WithProperties(
-                'openerp:options.db_user=%(cap_postgresql_user:-False)s'),
-            WithProperties(
-                'openerp:options.db_password='
-                '%(cap_postgresql_passwd:-False)s'),
-            WithProperties('openerp:options.db_name=%(testing_db)s')
+            buildout_part + ':with_devtools=true',
+            buildout_part + ':vcs-clear-locks=true',
+            buildout_part + ':vcs-clear-retry=true',
+            buildout_part + ':clean=true',
+            buildout_part + ':vcs-revert=on-merge',
+            WithProperties(buildout_part +
+                           ':options.db_port=%(cap_postgresql_port:-5432)s'),
+            WithProperties(buildout_part +
+                           ':options.db_host=%(cap_postgresql_host:-False)s'),
+            WithProperties(buildout_part +
+                           ':options.db_user=%(cap_postgresql_user:-False)s'),
+            WithProperties(buildout_part + ':options.db_password='
+                           '%(cap_postgresql_passwd:-False)s'),
+            WithProperties(':options.db_name=%(testing_db)s')
         ],
             name="buildout",
             description="buildout",
@@ -388,6 +389,7 @@ class BuildoutsConfigurator(object):
                     btype, name))
 
             options = dict(parser.items(name))
+
             conf_slave_path, dl_steps = buildout_downloader(
                 self, options, buildout[1:], manifest_dir)
             registry[name] = factory = self.make_factory(

@@ -12,6 +12,7 @@ from buildbot.process.properties import Property
 from ..utils import comma_list_sanitize
 from ..utils import bool_opt
 from ..utils import BUILD_UTILS_PATH
+from ..constants import DEFAULT_BUILDOUT_PART
 
 port_lock = locks.SlaveLock("port-reserve")
 
@@ -47,7 +48,7 @@ def steps_odoo_port_reservation(configurator, options, environ=()):
 
 def install_modules_test_openerp(configurator, options, buildout_slave_path,
                                  environ=()):
-    """Return steps to run bin/test_openerp -i MODULES.
+    """Return steps to run bin/test_<PART> -i MODULES.
 
 
     Options:
@@ -67,7 +68,10 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
                               description=["Log", "cleanup"],
                               descriptionDone=['Cleaned', 'logs'],
                               ))
-    test_cmd = ['bin/test_openerp', '-i',
+    buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
+    test_cmd = [options.get('test-command',
+                            'bin/test_' + buildout_part),
+                '-i',
                 comma_list_sanitize(options.get('openerp-addons', 'all')),
                 # openerp --logfile does not work with relative paths !
                 WithProperties('--logfile=%(workdir)s/build/test.log')]
@@ -98,7 +102,7 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
 def openerp_command_initialize_tests(configurator, options,
                                      buildout_slave_path,
                                      environ=()):
-    """Return steps to run bin/openerp_command initialize --tests.
+    """Return steps to run bin/<PART>_command initialize --tests.
 
       :odoo.use-port: if set to ``true``, necessary free ports will be chosen,
                       and used in the test run.
@@ -109,7 +113,8 @@ def openerp_command_initialize_tests(configurator, options,
 
     steps = []
 
-    command = ['bin/openerp_command', 'initialize',
+    buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
+    command = ['bin/%s_command' % buildout_part, 'initialize',
                '--no-create', '--tests',
                '--database', WithProperties('%(testing_db)s')]
     modules = options.get('openerp-addons', 'all')
@@ -143,7 +148,7 @@ def update_modules(configurator, options, buildout_slave_path,
 
     If the option "upgrade.script" is specified, that script is used, and the
     general module list is ignored.
-    Otherwise, a raw ``bin/start_openerp -u`` on the declared module list gets
+    Otherwise, a raw ``bin/start_<PART> -u`` on the declared module list gets
     issued.
 
     Options:
@@ -162,12 +167,15 @@ def update_modules(configurator, options, buildout_slave_path,
                               description=['Log', 'Cleanup'],
                               descriptionDone=['Cleaned', 'logs'],
                               ))
-    script = options.get('upgrade.script', 'bin/upgrade_openerp')
+    buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
+    script = options.get('upgrade.script',
+                         'bin/upgrade_' + buildout_part)
     if script is not None:
         command = [script, options.get('update.log_file_option', '--log-file')]
     else:
         command = [
-            'bin/start_openerp', '--stop-after-init',
+            options.get('start-command', 'bin/start_' + buildout_part),
+            '--stop-after-init',
             '-u',
             comma_list_sanitize(options.get('openerp-addons', 'all')),
             '--logfile',
@@ -206,11 +214,11 @@ def install_modules_nose(configurator, options, buildout_slave_path,
       - openerp-addons: comma-separated list of addons to test
       - install-as-upgrade: use the upgrade script to install the project
 
-        If this is False, the step will simply issue a start_openerp -i on
+        If this is False, the step will simply issue a start_<PART> -i on
         openerp-addons
 
       - upgrade.script: name of the upgrade script (defaults to
-        ``bin/upgrade_openerp``)
+        ``bin/upgrade_<PART>``)
       - nose.tests: goes directly to command line; list directories to find
         tests here.
       - nose.coverage: boolean, if true, will run coverage for the listed
@@ -234,17 +242,21 @@ def install_modules_nose(configurator, options, buildout_slave_path,
                               ))
     addons = comma_list_sanitize(options.get('openerp-addons', ''))
 
+    buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
     if options.get('install-as-upgrade', 'false').lower().strip() == 'true':
         install_cmd = [
-            options.get('upgrade.script', 'bin/upgrade_openerp').strip(),
+            options.get('upgrade.script',
+                        'bin/upgrade_' + buildout_part).strip(),
             '--init-load-demo-data',
             '--log-file', 'install.log']
     else:
         # openerp --logfile does not work with relative paths !
-        install_cmd = ['bin/start_openerp', '--stop-after-init', '-i',
-                       addons if addons else 'all',
-                       WithProperties(
-                           '--logfile=%(workdir)s/build/install.log')]
+        install_cmd = [
+            options.get('start-command', 'bin/start_' + buildout_part),
+            '--stop-after-init', '-i',
+            addons if addons else 'all',
+            WithProperties(
+                '--logfile=%(workdir)s/build/install.log')]
 
     steps.append(ShellCommand(
         command=install_cmd,
@@ -399,19 +411,23 @@ def functional(configurator, options, buildout_slave_path,
                               descriptionDone=['Cleaned', 'logs'],
                               ))
 
+    buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
     steps.append(ShellCommand(
         command=['/sbin/start-stop-daemon',
                  '--pidfile', WithProperties('%(workdir)s/openerp.pid'),
                  '--exec',
-                 WithProperties('%(workdir)s/build/bin/start_openerp'),
+                 WithProperties(
+                     '%(workdir)s/build/' +
+                     options.get('start-command',
+                                 'bin/start_' + buildout_part)),
                  '--background',
                  '--make-pidfile', '-v', '--start',
                  '--', '--xmlrpc-port', Property('openerp_port'),
                  WithProperties('--logfile=%(workdir)s/build/'
                                 'server-functional.log')],
         name='start',
-        description='starting openerp',
-        descriptionDone='openerp started',
+        description=['starting', 'application'],
+        descriptionDone=['application', 'started'],
         haltOnFailure=True,
         env=environ,
     ))
@@ -636,14 +652,16 @@ def autocommit(configurator, options, buildout_slave_path, environ=()):
     Options:
 
     :autocommit.script: autocommit script
-                        name, defaults to ``bin/autocommit_openerp``.
+                        name, defaults to ``bin/autocommit_<PART>``.
     :autocommit.message: message used for generated commits.
                          Defaults to "Commit made by buildbot
     """
+    buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
     return [
         ShellCommand(
             command=[
-                options.get('autocommit.script', 'bin/autocommit_openerp'),
+                options.get('autocommit.script',
+                            'bin/autocommit_' + buildout_part),
                 '-c', buildout_slave_path,
                 '--push',
                 '-m',
