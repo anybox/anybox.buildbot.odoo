@@ -339,7 +339,7 @@ class BuildoutsConfigurator(object):
                            ':options.db_user=%(cap_postgresql_user:-False)s'),
             WithProperties(buildout_part + ':options.db_password='
                            '%(cap_postgresql_passwd:-False)s'),
-            WithProperties(':options.db_name=%(testing_db)s')
+            WithProperties(buildout_part + ':options.db_name=%(testing_db)s')
         ],
             name="buildout",
             description="buildout",
