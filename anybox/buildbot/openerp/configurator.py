@@ -329,6 +329,7 @@ class BuildoutsConfigurator(object):
             buildout_part + ':with_devtools=true',
             buildout_part + ':vcs-clear-locks=true',
             buildout_part + ':vcs-clear-retry=true',
+            buildout_part + ':git-depth=1',
             buildout_part + ':clean=true',
             buildout_part + ':vcs-revert=on-merge',
             WithProperties(buildout_part +
