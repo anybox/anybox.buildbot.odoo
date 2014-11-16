@@ -17,6 +17,8 @@ Changes
    Introduction of ``test-odoo`` as an alias (for now) of ``test-openerp``
  - launchpad #1320507: bootstrap script now configurable in standalone
    buildouts
+ - new download subfactory: archive from buildmaster (for further packaging
+   and test builds)
 
 0.9 (2015-05-15)
 ----------------

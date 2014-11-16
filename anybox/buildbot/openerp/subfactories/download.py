@@ -26,6 +26,7 @@ import os
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.transfer import FileDownload
 from buildbot.process.properties import Property
+from buildbot.process.properties import Interpolate
 from ..utils import BUILD_UTILS_PATH
 
 
@@ -186,3 +187,68 @@ def hg_tag_buildout(self, options, cfg_tokens, manifest_dir):
             haltOnFailure=True,
         )
     )
+
+
+def archive_buildout(self, options, cfg_tokens, manifest_dir):
+    """Steps to retrieve an archive (tarball, zip...) buildout from the master.
+
+    Currently only .tar.bz2 is supported.
+
+    The path of the archive to retrieve is made of:
+         - a base directory from the same option as upload options for
+           packaging subfactory (``packaging.upload_dir``)
+         - a subdir and an archive name property, both specified as tokens in
+           the buildout option. Archive name MUST NOT contain the archive type
+           suffix (e.g, '.tar.bz2')
+
+    Therefore, this is meant to work on a wide range of archives, not tied
+    to a particular project
+
+    Typically this would be for a triggered build that would do some
+    further packaging or testing.
+
+    For example, one could use this for a generic binary builder that produces
+    a docker image based on debian:7.7 for any archive produced by this master.
+    """
+    archive_type = '.tar.bz2'
+    subdir_prop, archive_prop, conf_name = cfg_tokens
+    master_path = os.path.join(options['packaging.root-dir'],
+                               '%%(prop:%s)s' % subdir_prop,
+                               '%%(prop:%s)s' % archive_prop + archive_type)
+    slave_name_unpacked = '%%(prop:%s)s' % archive_prop
+    slave_fname = slave_name_unpacked + archive_type
+    slave_path = '../' + slave_fname
+    return conf_name, [
+        ShellCommand(
+            command=['rm', '-f', '*' + archive_type + '*'],
+            workdir='.',
+            name='clean_arch',
+            description=['remove', 'prev', 'download']),
+        FileDownload(slavedest=Interpolate(slave_path),
+                     mastersrc=Interpolate(master_path)),
+        FileDownload(slavedest=Interpolate(slave_path + '.md5'),
+                     mastersrc=Interpolate(master_path + '.md5')),
+        ShellCommand(
+            command=['md5sum', '-c', Interpolate(slave_fname + '.md5')],
+            workdir='.',
+            name="checksum",
+            haltOnFailure=True),
+        ShellCommand(
+            command=['tar', 'xjf', Interpolate(slave_fname)],
+            workdir='.',
+            name="untar",
+            description=['unpacking', 'archive'],
+            descriptionDone=['unpacked', 'archive'],
+            haltOnFailure=True),
+        ShellCommand(
+            command=['rm', '-rf', 'build'],
+            workdir='.',
+            name='clean',
+            description=['removing', 'previous', 'build'],
+            descriptionDone=['removed', 'previous', 'build']),
+        ShellCommand(
+            command=['mv', Interpolate(slave_name_unpacked), 'build'],
+            workdir='.',
+            name='mv',
+            description=['setting', 'at', 'build/'])
+    ]
