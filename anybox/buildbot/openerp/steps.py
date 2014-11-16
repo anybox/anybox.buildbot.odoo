@@ -95,7 +95,10 @@ class SetCapabilityProperties(DescriptionBuildStep):
         options = None
         if self.capability_version_prop:
             cap_version = self.getProperty(self.capability_version_prop)
-            if cap_version is not None:
+            if cap_version == 'not-used':
+                self.finished(SUCCESS)
+                return
+            elif cap_version is not None:
                 options = cap_details[cap_version]
 
         if options is None:

@@ -19,6 +19,8 @@ Changes
    buildouts
  - new download subfactory: archive from buildmaster (for further packaging
    and test builds)
+ - shortcut postgresql distribution of builds with the 'not-used'
+   special version filter
 
 0.9 (2015-05-15)
 ----------------

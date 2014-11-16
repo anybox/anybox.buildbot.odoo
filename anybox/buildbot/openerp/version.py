@@ -132,6 +132,13 @@ class VersionFilter(object):
       >>> try: vf = VersionFilter.parse('pg 8.4')
       ... except VersionParseError, exc: exc.args[0]
       '8.4'
+
+    special case where we want to indicate that we actually won't be using
+    the given capability.
+
+      >>> vf = VersionFilter.parse('postgresql not-used')
+      >>> vf
+      VersionFilter('postgresql', (None,))
     """
 
     def __init__(self, capability, criteria):
@@ -156,6 +163,9 @@ class VersionFilter(object):
 
     @classmethod
     def boolean_parse(cls, reqline):
+        if reqline == 'not-used':
+            return (None, )
+
         ors = reqline.split('OR', 1)
         if len(ors) == 2:
             return ('OR', cls.boolean_parse(ors[0].strip()),

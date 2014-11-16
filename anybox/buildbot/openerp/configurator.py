@@ -352,12 +352,18 @@ class BuildoutsConfigurator(object):
 
         for line in options.get('db-steps',
                                 'simple_create').split(os.linesep):
+            if not line:
+                continue
+
             map(factory.addStep,
                 subfactories.db_handling[line.strip()](
                     self, options, environ=capability_env))
 
         for line in options.get('post-buildout-steps',
                                 'standard').split(os.linesep):
+            if not line:
+                continue
+
             map(factory.addStep,
                 subfactories.post_buildout[line](
                     self, options, buildout_slave_path,
@@ -447,17 +453,31 @@ class BuildoutsConfigurator(object):
                         ]
                 if meet:
                     meet_requires[pg] = meet
-
-            builders = [
-                BuilderConfig(
-                    name='%s-postgresql-%s' % (factory_name,
-                                               pg_version),
-                    properties=dict(pg_version=pg_version),
-                    category=factory.options.get('build-category', '').strip(),
-                    factory=factory, slavenames=slavenames)
-                for pg_version, slavenames in meet_requires.items()
-                if pgvf is None or pgvf.match(Version.parse(pg_version))
-            ]
+            build_category = factory.options.get('build-category', '').strip()
+            if pgvf is not None and pgvf.criteria == (None,):
+                # The build does not actually use PG
+                builders = [
+                    BuilderConfig(
+                        name=factory_name,
+                        properties=dict(pg_version='not-used'),
+                        category=build_category,
+                        factory=factory,
+                        slavenames=list(set(
+                            sn for each_pg in meet_requires.values()
+                            for sn in each_pg))
+                    )]
+            else:
+                builders = [
+                    BuilderConfig(
+                        name='%s-postgresql-%s' % (factory_name,
+                                                   pg_version),
+                        properties=dict(pg_version=pg_version),
+                        category=build_category,
+                        factory=factory,
+                        slavenames=slavenames)
+                    for pg_version, slavenames in meet_requires.items()
+                    if pgvf is None or pgvf.match(Version.parse(pg_version))
+                ]
 
             fact_to_builders[factory_name] = [b.name for b in builders]
             all_builders.extend(builders)
