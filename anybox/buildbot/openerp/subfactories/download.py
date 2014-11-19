@@ -220,10 +220,12 @@ def archive_buildout(self, options, cfg_tokens, manifest_dir):
     slave_path = '../' + slave_fname
     return conf_name, [
         ShellCommand(
-            command=['rm', '-f', '*' + archive_type + '*'],
+            command=['find', '.', '-maxdepth', '1',
+                     '-name',
+                     '*' + archive_type + '*', '-delete'],
             workdir='.',
             name='clean_arch',
-            description=['remove', 'prev', 'download']),
+            description=['remove', 'prev', 'downloads']),
         FileDownload(slavedest=Interpolate(slave_path),
                      mastersrc=Interpolate(master_path)),
         FileDownload(slavedest=Interpolate(slave_path + '.md5'),

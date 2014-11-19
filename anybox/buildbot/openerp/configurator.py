@@ -456,15 +456,21 @@ class BuildoutsConfigurator(object):
             build_category = factory.options.get('build-category', '').strip()
             if pgvf is not None and pgvf.criteria == (None,):
                 # The build does not actually use PG
+                slavenames = list(set(
+                    sn for each_pg in meet_requires.values()
+                    for sn in each_pg))
+                if not slavenames:
+                    # buildbot does not allow builders with empty list of
+                    # slaves
+                    continue
+
                 builders = [
                     BuilderConfig(
                         name=factory_name,
                         properties=dict(pg_version='not-used'),
                         category=build_category,
                         factory=factory,
-                        slavenames=list(set(
-                            sn for each_pg in meet_requires.values()
-                            for sn in each_pg))
+                        slavenames=slavenames
                     )]
             else:
                 builders = [

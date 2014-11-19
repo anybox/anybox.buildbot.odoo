@@ -140,6 +140,25 @@ class TestBuilders(BaseTestCase):
             builders['rabb-18-postgresql-9.0'].slavenames,
             ['rabb18'])
 
+    def test_build_requires_pg_not_used(self):
+        """Builder generation for builds that don't use PG."""
+        master = {}
+        conf = self.configurator
+
+        master['slaves'] = conf.make_slaves(
+            self.data_join('slaves_build_requires.cfg'))
+        conf.register_build_factories(
+            self.data_join('manifest_build_requires_pg_not_used.cfg'))
+        builders = self.configurator.make_builders(master_config=master)
+        builders = dict((b.name, b) for b in builders)
+
+        # in particular, the 'rabb-23' gave no builder
+        self.assertEquals(builders.keys(), ['priv-pgall'])
+
+        # PG did not matter but 'requires' filtering as been applied
+        self.assertEquals(builders['priv-pgall'].slavenames,
+                          ['privcode', 'privcode-91', 'privcode-84'])
+
     def test_build_requires_only_if(self):
         master = {}
         conf = self.configurator
