@@ -112,7 +112,7 @@ def git_buildout(self, options, cfg_tokens, manifest_dir, subdir=None):
         )
     else:
         steps.append(ShellCommand(
-            command=['python', 'build/buildout_git_dl.py', url,
+            command=['python', 'build/buildout_git_dl.py', url, branch,
                      '--subdir', subdir,
                      '--subdir-target', 'build',
                      '--force-remove-subdir'],
