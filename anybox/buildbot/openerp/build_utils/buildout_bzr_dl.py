@@ -35,7 +35,7 @@ subdir = arguments.subdir
 if subdir and not arguments.subdir_target:
     parser.error("--subdir option requires --subdir-target option")
 
-if arguments.subdir:
+if subdir:
     branch_dir = arguments.bzr_branch_dir
 else:
     branch_dir = '.'
@@ -45,7 +45,7 @@ if not os.path.exists(os.path.join(branch_dir, '.bzr')):
 
 check_call(['bzr', 'pull', url, '-d', branch_dir])
 
-if arguments.subdir:
+if subdir:
     src = os.path.join(branch_dir, subdir)
     target = arguments.subdir_target
     if os.path.islink(target):

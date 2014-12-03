@@ -81,28 +81,47 @@ def hg_buildout(self, options, cfg_tokens, manifest_dir):
     )
 
 
-def git_buildout(self, options, cfg_tokens, manifest_dir):
+def git_buildout(self, options, cfg_tokens, manifest_dir, subdir=None):
     """Steps to retruve the buildout using Mercurial.
 
     See module docstring for signature and return values.
     manifest_dir is not used in this downloader.
+
+    :param subdir: if not ``None``, then branch will be set aside and
+                   the default workdir, 'build' will be set as a link
+                   to the specified subdir in branch.
     """
     if len(cfg_tokens) != 3:
         raise ValueError(
             "Wrong standalong buildout specification: %r" % cfg_tokens)
 
     url, branch, conf_path = cfg_tokens
-    return conf_path, (
+    steps = [
         FileDownload(
             mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_git_dl.py'),
             slavedest='buildout_git_dl.py',
             haltOnFailure=True),
-        ShellCommand(
-            command=['python', 'buildout_git_dl.py', url, branch],
-            description=("Retrieve buildout", "from git",),
-            haltOnFailure=True,
+    ]
+    if subdir is None:
+        steps.append(
+            ShellCommand(
+                command=['python', 'buildout_git_dl.py', url, branch],
+                description=("Retrieve buildout", "from git",),
+                haltOnFailure=True,
+            )
         )
-    )
+    else:
+        steps.append(ShellCommand(
+            command=['python', 'build/buildout_git_dl.py', url,
+                     '--subdir', subdir,
+                     '--subdir-target', 'build',
+                     '--force-remove-subdir'],
+            description=("Retrieve buildout", "from git",),
+            descriptionDown=("retrieved", "buildout", "from git"),
+            haltOnFailure=True,
+            workdir='.',
+        ))
+    return conf_path, steps
 
 
 def bzr_buildout(self, options, cfg_tokens, manifest_dir, subdir=None):
@@ -111,8 +130,9 @@ def bzr_buildout(self, options, cfg_tokens, manifest_dir, subdir=None):
     See module docstring for signature and return values.
     manifest_dir is not used in this downloader.
 
-    If subdir is not None, then branch will be set aside and
-    the default workdir, 'build' will be set as a link to subdir in branch.
+    :param subdir: if not ``None``, then branch will be set aside and
+                   the default workdir, 'build' will be set as a link
+                   to the specified subdir in branch.
     """
     def conf_error(cfg_tokens):
         raise ValueError(

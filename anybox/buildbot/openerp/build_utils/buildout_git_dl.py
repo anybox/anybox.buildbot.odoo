@@ -1,18 +1,62 @@
 """Utility to retrieve the buildout dir from git."""
 
 import os
+import sys
+import shutil
 from subprocess import check_call
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument('url')
 parser.add_argument('revspec')
+parser.add_argument('--subdir',
+                    help="Subdirectory of the repo in which the buildout "
+                    " config and bootstrap script actually sit")
+parser.add_argument('--subdir-target',
+                    help="Full path, relative to current working directory "
+                    "for the target buildout (mandatory if --subdir option "
+                    "is in use)")
+parser.add_argument('--force-remove-subdir', action='store_true',
+                    help="In --subdir-target situation, "
+                    "remove any previous subdir directory sitting in the way.")
+parser.add_argument('--git-repo-dir', help="(used only with --subdir): "
+                    "path to the produced git repo, relative to current "
+                    "working directory", default="git_buildout_repo")
 
 arguments = parser.parse_args()
 url = arguments.url
 revspec = arguments.revspec
 
+subdir = arguments.subdir
+repo_dir = arguments.git_repo_dir if subdir else '.'
+
 if not os.path.exists(os.path.join('.git')):
-    check_call(['git', 'init'])
+    check_call(['git', 'init', repo_dir])
 
 check_call(['git', 'pull', url, revspec])
+
+if subdir:
+    src = os.path.join(repo_dir, subdir)
+    target = arguments.subdir_target
+    if os.path.islink(target):
+        existing = os.path.realpath(target)
+        if existing != os.path.realpath(src):
+            sys.stderr.write("Removing stale symlink %r pointing to %r\n" % (
+                target, existing))
+            os.unlink(target)
+        else:
+            sys.stderr.write("Reusing existing symlink %r, "
+                             "that already points to %r\n" % (target,
+                                                              existing))
+            sys.exit(0)
+    elif os.path.isdir(target):
+        if arguments.force_remove_subdir:
+            sys.stderr.write("--force-remove-subdir: removing previously "
+                             "existing directory %r\n" % target)
+            shutil.rmtree(target, ignore_errors=True)
+        else:
+            sys.stderr.write("Existing directory: %r. You may rerun with "
+                             "--force-remove-subdir\n" % target)
+            sys.exit(1)
+
+    os.symlink(os.path.relpath(src), target)
