@@ -376,7 +376,8 @@ def functional(configurator, options, buildout_slave_path,
         steps.append(ShellCommand(
             command=['bin/buildout',
                      '-c', buildout_slave_path,
-                     'buildout:eggs-directory=../../buildout-caches/eggs',
+                     WithProperties('buildout:eggs-directory='
+                                    '$(builddir)s/../buildout-caches/eggs'),
                      'install'] + buildout_parts,
             name="functional tools",
             description=['install', 'functional', 'buildout', 'parts'],
@@ -477,8 +478,9 @@ def static_analysis(configurator, options, buildout_slave_path, environ=()):
     steps.append(
         ShellCommand(command=['bin/buildout',
                               '-c', buildout_slave_path,
-                              'buildout:eggs-directory='
-                              '../../buildout-caches/eggs',
+                              WithProperties(
+                                  'buildout:eggs-directory='
+                                  '$(builddir)s/../buildout-caches/eggs'),
                               'install',
                               options.get('static-analysis.part',
                                           'static-analysis')

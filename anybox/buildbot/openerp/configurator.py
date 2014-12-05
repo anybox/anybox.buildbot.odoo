@@ -209,7 +209,7 @@ class BuildoutsConfigurator(object):
         # path in that situation, that is likely to be the simplest of their
         # tunings
         command = ['python', bootstrap_options.pop('script', 'bootstrap.py'),
-                   find_links_opt, eggs_cache,
+                   find_links_opt, WithProperties(eggs_cache),
                    '-c', buildout_slave_path]
         command.extend('--%s=%s' % (k, v)
                        for k, v in bootstrap_options.items())
@@ -280,12 +280,13 @@ class BuildoutsConfigurator(object):
             factory.build_requires = set(VersionFilter.parse(r)
                                          for r in requires.split(os.linesep))
 
-        factory.addStep(ShellCommand(command=['bzr', 'init-repo', '../..'],
+        factory.addStep(ShellCommand(command=['bzr', 'init-repo', '..'],
                                      name="bzr repo",
                                      description="init bzr repo",
                                      flunkOnFailure=False,
                                      warnOnFailure=False,
                                      hideStepIf=True,
+                                     workdir='.',
                                      ))
         map(factory.addStep, buildout_dl_steps)
 
@@ -310,12 +311,14 @@ class BuildoutsConfigurator(object):
         ))
 
         buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
-        cache = '../../buildout-caches'
+        cache = '%(builddir)s/../buildout-caches'
         eggs_cache = cache + '/eggs'
         openerp_cache = cache + '/openerp'
         factory.addStep(ShellCommand(command=['mkdir', '-p',
-                                              eggs_cache, openerp_cache],
+                                              WithProperties(eggs_cache),
+                                              WithProperties(openerp_cache)],
                                      name="cachedirs",
+                                     workdir='.',
                                      description="prepare cache dirs"))
 
         map(factory.addStep,
@@ -324,8 +327,9 @@ class BuildoutsConfigurator(object):
         factory.addStep(ShellCommand(command=[
             'bin/buildout',
             '-c', buildout_slave_path,
-            'buildout:eggs-directory=' + eggs_cache,
-            'buildout:openerp-downloads-directory=' + openerp_cache,
+            WithProperties('buildout:eggs-directory=' + eggs_cache),
+            WithProperties('buildout:openerp-downloads-directory='
+                           + openerp_cache),
             buildout_part + ':with_devtools=true',
             buildout_part + ':vcs-clear-locks=true',
             buildout_part + ':vcs-clear-retry=true',

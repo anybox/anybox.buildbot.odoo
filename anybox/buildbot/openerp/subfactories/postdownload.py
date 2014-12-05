@@ -54,7 +54,7 @@ def packaging(configurator, options,
                               description="cleaning",
                               workdir='.'))
 
-    cache = '../../buildout-caches'  # lame duplication
+    cache = '%{builddir)s/../buildout-caches'  # lame duplication
     eggs_cache = cache + '/eggs'
     openerp_cache = cache + '/openerp'
     archive_name_interp = options['packaging.prefix'] + '-%(buildout-tag)s'
@@ -75,9 +75,10 @@ def packaging(configurator, options,
 
     steps.append(
         ShellCommand(command=['bin/buildout', '-c', buildout_slave_path,
-                              'buildout:eggs-directory=' + eggs_cache,
-                              'buildout:openerp-downloads-'
-                              'directory=' + openerp_cache,
+                              WithProperties('buildout:eggs-directory='
+                                             + eggs_cache),
+                              WithProperties('buildout:openerp-downloads-'
+                                             'directory=' + openerp_cache),
                               'install'] + parts,
                      description=["buildout", "install"],
                      workdir='./src',
@@ -85,8 +86,9 @@ def packaging(configurator, options,
                      ))
 
     extract_cmd = ['bin/buildout', '-o', '-c', buildout_slave_path,
-                   'buildout:eggs-directory=' + eggs_cache,
-                   'buildout:openerp-downloads-directory=' + openerp_cache,
+                   WithProperties('buildout:eggs-directory=' + eggs_cache),
+                   WithProperties('buildout:openerp-downloads-directory='
+                                  + openerp_cache),
                    ]
     extract_cmd.extend(WithProperties(
         ('%s:extract-downloads-to=../dist/' % part) + archive_name_interp)
