@@ -91,33 +91,44 @@ def git_buildout(self, options, cfg_tokens, manifest_dir, subdir=None):
                    the default workdir, 'build' will be set as a link
                    to the specified subdir in branch.
     """
-    if len(cfg_tokens) != 3:
+    if len(cfg_tokens) < 3:
         raise ValueError(
             "Wrong standalong buildout specification: %r" % cfg_tokens)
+    
+    subdir = None
+    if len(cfg_tokens) > 3:
+        options = cfg_tokens[3:]
+        for opt in options:
+            split = opt.split('=')
+            if split[0].strip() == 'subdir':
+                subdir = split[1].strip()
+            else:
+                conf_error(cfg_tokens)
 
-    url, branch, conf_path = cfg_tokens
+    url, branch, conf_path = cfg_tokens[:3]
     steps = [
         FileDownload(
             mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_git_dl.py'),
             slavedest='buildout_git_dl.py',
+            workdir='.',  # not inside what could be a stale symlink
             haltOnFailure=True),
     ]
     if subdir is None:
         steps.append(
             ShellCommand(
-                command=['python', 'buildout_git_dl.py', url, branch],
+                command=['python', 'buildout_git_dl.py', url, branch, 'build'],
                 description=("Retrieve buildout", "from git",),
+                workdir='.',
                 haltOnFailure=True,
             )
         )
     else:
         steps.append(ShellCommand(
-            command=['python', 'build/buildout_git_dl.py', url, branch,
+            command=['python', 'buildout_git_dl.py', url, branch, 'build',
                      '--subdir', subdir,
-                     '--subdir-target', 'build',
                      '--force-remove-subdir'],
             description=("Retrieve buildout", "from git",),
-            descriptionDown=("retrieved", "buildout", "from git"),
+            descriptionDone=("retrieved", "buildout", "from git"),
             haltOnFailure=True,
             workdir='.',
         ))

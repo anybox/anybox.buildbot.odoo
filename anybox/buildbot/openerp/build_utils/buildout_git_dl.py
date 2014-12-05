@@ -8,14 +8,13 @@ from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument('url')
-parser.add_argument('revspec')
+parser.add_argument('branch')
+parser.add_argument('target',
+                    help="Full path, relative to current working directory "
+                    "for the target buildout")
 parser.add_argument('--subdir',
                     help="Subdirectory of the repo in which the buildout "
                     " config and bootstrap script actually sit")
-parser.add_argument('--subdir-target',
-                    help="Full path, relative to current working directory "
-                    "for the target buildout (mandatory if --subdir option "
-                    "is in use)")
 parser.add_argument('--force-remove-subdir', action='store_true',
                     help="In --subdir-target situation, "
                     "remove any previous subdir directory sitting in the way.")
@@ -25,19 +24,23 @@ parser.add_argument('--git-repo-dir', help="(used only with --subdir): "
 
 arguments = parser.parse_args()
 url = arguments.url
-revspec = arguments.revspec
+revspec = arguments.branch
 
+target = arguments.target
 subdir = arguments.subdir
-repo_dir = arguments.git_repo_dir if subdir else '.'
+repo_dir = arguments.git_repo_dir if subdir else target
 
-if not os.path.exists(os.path.join('.git')):
-    check_call(['git', 'init', repo_dir])
+if os.path.exists(repo_dir) and not os.path.exists(
+        os.path.join(repo_dir, '.git')):
+   shutil.rmtree(repo_dir)
 
-check_call(['git', 'pull', url, revspec])
+if not os.path.exists(repo_dir):
+    check_call(['git', 'clone', '--branch', revspec, url, repo_dir])
+else:
+    check_call(['git', 'pull', '--ff-only', url, revspec], cwd=repo_dir)
 
 if subdir:
     src = os.path.join(repo_dir, subdir)
-    target = arguments.subdir_target
     if os.path.islink(target):
         existing = os.path.realpath(target)
         if existing != os.path.realpath(src):
