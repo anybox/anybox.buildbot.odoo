@@ -74,7 +74,7 @@ def install_modules(configurator, options, buildout_slave_path,
                    WithProperties('--logfile=%(workdir)s/build/install.log')]
     with_demo = options.get('install.demo-data', 'true').lower()
     if with_demo == 'false':
-        install_cmd.append('--without-demo')
+        install_cmd.append('--without-demo=true')
     elif with_demo != 'true':
         raise ValueError("install.demo-data must be either 'true' or 'false'")
 
