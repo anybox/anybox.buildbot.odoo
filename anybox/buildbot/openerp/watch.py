@@ -127,7 +127,7 @@ class MultiWatcher(object):
                         # valid tokens are those without '=' in them
                         # last valid token is the buildout file name
                         all_watched.append(' '.join(
-                            [t for t in bsplit if not '=' in t][:-1]))
+                            [t for t in bsplit if '=' not in t][:-1]))
 
                 for watched in all_watched:
                     vcs, url, minor_spec = self.parse_branch_spec(watched)

@@ -91,10 +91,13 @@ def git_buildout(self, options, cfg_tokens, manifest_dir, subdir=None):
                    the default workdir, 'build' will be set as a link
                    to the specified subdir in branch.
     """
-    if len(cfg_tokens) < 3:
+    def conf_error(cfg_tokens):
         raise ValueError(
-            "Wrong standalong buildout specification: %r" % cfg_tokens)
-    
+            "Wrong git buildout specification: %r" % cfg_tokens)
+
+    if len(cfg_tokens) < 3:
+        conf_error(cfg_tokens)
+
     subdir = None
     if len(cfg_tokens) > 3:
         options = cfg_tokens[3:]
@@ -147,7 +150,7 @@ def bzr_buildout(self, options, cfg_tokens, manifest_dir, subdir=None):
     """
     def conf_error(cfg_tokens):
         raise ValueError(
-            "Wrong standalong bzr buildout specification: %r" % cfg_tokens)
+            "Wrong bzr buildout specification: %r" % cfg_tokens)
 
     subdir = None
     if len(cfg_tokens) > 2:

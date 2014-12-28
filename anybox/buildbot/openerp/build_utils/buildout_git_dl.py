@@ -32,7 +32,7 @@ repo_dir = arguments.git_repo_dir if subdir else target
 
 if os.path.exists(repo_dir) and not os.path.exists(
         os.path.join(repo_dir, '.git')):
-   shutil.rmtree(repo_dir)
+    shutil.rmtree(repo_dir)
 
 if not os.path.exists(repo_dir):
     check_call(['git', 'clone', '--branch', revspec, url, repo_dir])
