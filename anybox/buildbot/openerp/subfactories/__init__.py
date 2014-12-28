@@ -18,6 +18,7 @@ db_handling = dict(simple_create=db.simple_create,
 post_buildout = {
     'test-openerp': postbuildout.install_modules_test_openerp,
     'test-odoo': postbuildout.install_modules_test_openerp,
+    'install-modules': postbuildout.install_modules,
     'update-openerp': postbuildout.update_modules,
     'nose': postbuildout.install_modules_nose,
     'functional': postbuildout.functional,

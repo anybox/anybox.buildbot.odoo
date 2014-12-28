@@ -46,6 +46,56 @@ def steps_odoo_port_reservation(configurator, options, environ=()):
         )
 
 
+def install_modules(configurator, options, buildout_slave_path,
+                    environ=()):
+    """Return steps to just install modules
+
+
+    Options:
+
+      :install.demo-data: (case-insensitive, ``'false'`` or ``'true'``,
+                           default=``'true'``), if true, install with demo data
+    """
+
+    environ = dict(environ)
+    steps = []
+
+    steps.append(ShellCommand(command=['rm', '-f', 'install.log'],
+                              name="clean_log",
+                              description=["Log", "cleanup"],
+                              descriptionDone=['Cleaned', 'logs'],
+                              ))
+    buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
+    install_cmd = [options.get('start-command',
+                               'bin/start_' + buildout_part),
+                   '-i',
+                   comma_list_sanitize(options['openerp-addons']),
+                   # openerp --logfile does not work with relative paths !
+                   WithProperties('--logfile=%(workdir)s/build/install.log')]
+    with_demo = options.get('install.demo-data', 'true').lower()
+    if with_demo == 'false':
+        install_cmd.append('--without-demo')
+    elif with_demo != 'true':
+        raise ValueError("install.demo-data must be either 'true' or 'false'")
+
+    steps.append(ShellCommand(command=install_cmd,
+                              name='install',
+                              description=['installing', 'modules'],
+                              descriptionDone=['modules', 'installed'],
+                              logfiles=dict(install='install.log'),
+                              haltOnFailure=True,
+                              env=environ,
+                              ))
+
+    steps.append(ShellCommand(
+        command=["python", "analyze_oerp_tests.py", "install.log"],
+        name='analyze',
+        description="analyze",
+    ))
+
+    return steps
+
+
 def install_modules_test_openerp(configurator, options, buildout_slave_path,
                                  environ=()):
     """Return steps to run bin/test_<PART> -i MODULES.
