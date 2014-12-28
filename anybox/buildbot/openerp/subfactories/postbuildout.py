@@ -70,6 +70,7 @@ def install_modules(configurator, options, buildout_slave_path,
                                'bin/start_' + buildout_part),
                    '-i',
                    comma_list_sanitize(options['openerp-addons']),
+                   '--stop-after-init',
                    # openerp --logfile does not work with relative paths !
                    WithProperties('--logfile=%(workdir)s/build/install.log')]
     with_demo = options.get('install.demo-data', 'true').lower()
