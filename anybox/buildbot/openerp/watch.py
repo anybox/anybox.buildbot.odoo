@@ -2,9 +2,11 @@
 """
 
 import os
+import json
 from ConfigParser import NoOptionError
 import logging
 
+from buildbot.util import safeTranslate
 from buildbot.changes.hgpoller import HgPoller
 from buildbot.changes.gitpoller import GitPoller
 from .bzr_buildbot import BzrPoller
@@ -29,6 +31,21 @@ else:
         return
     lp_account.get_login = lp_get_login
     LPDIR = LaunchpadDirectory()
+
+
+def watchfile_path(buildmaster_dir, build_name):
+    """Deduce from build (factory) name the path to its watchfile.
+
+    This function is normalized here for consistency accross the application.
+    It has the side effect of creating intermediate directories, again for
+    simple consistency.
+
+    :return: absolute path from buildmaster dir
+    """
+    watch_dir = os.path.join(buildmaster_dir, 'watch')
+    if not os.path.exists(watch_dir):
+        os.makedirs(watch_dir)
+    return os.path.join(watch_dir, safeTranslate(build_name))
 
 
 class MultiWatcher(object):
@@ -62,7 +79,8 @@ class MultiWatcher(object):
                                  hg=utils.hg_pull,
                                  git=utils.git_pull)
 
-    def __init__(self, manifest_paths, url_rewrite_rules=()):
+    def __init__(self, buildmaster_dir, manifest_paths, url_rewrite_rules=()):
+        self.buildmaster_dir = buildmaster_dir
         self.manifest_paths = self.check_paths(manifest_paths)
         self.hashes = {}  # (vcs, url) -> hash
         self.repos = {}  # hash -> (vcs, url, branch minor specs)
@@ -110,13 +128,25 @@ class MultiWatcher(object):
 
                 bw = self.buildout_watch[buildout] = {}
                 try:
+                    auto = parser.get(buildout, 'auto-watch')
+                    auto = auto.strip().lower() == 'true'
+                except:
+                    auto = False  # for now False is the default
+
+                # with auto watch, an existing watch directive will
+                # supplement the auto watch
+                try:
                     all_watched = parser.get(buildout, 'watch')
                 except NoOptionError:
-                    continue
+                    # GR: while working on auto watch, noticed a minor bug:
+                    # the 'continue' that was here forbad watching only
+                    # the main buildout itself if no watch directive.
+                    all_watched = ''
 
                 all_watched = [w for w in (
-                    w.strip() for w in all_watched.split(os.linesep)) if w]
+                    w.strip() for w in all_watched.splitlines()) if w]
 
+                first_pass = {}
                 try:
                     buildout_address = parser.get(buildout, 'buildout')
                 except NoOptionError:
@@ -131,6 +161,24 @@ class MultiWatcher(object):
 
                 for watched in all_watched:
                     vcs, url, minor_spec = self.parse_branch_spec(watched)
+                    first_pass[url] = vcs, minor_spec
+
+                if auto:
+                    build_watch_conf = watchfile_path(self.buildmaster_dir,
+                                                      buildout)
+                    try:
+                        with open(build_watch_conf) as conf:
+                            auto_conf = json.loads(conf.read())
+                    except IOError:
+                        logger.info("separate watch conf file %r for build "
+                                    "factory %r does not exist yet",
+                                    build_watch_conf, buildout)
+                    else:
+                        for w in auto_conf:
+                            first_pass[w['url']] = w['vcs'], (w['revspec'], )
+
+                # final housekeeping
+                for url, (vcs, minor_spec) in first_pass.iteritems():
                     h = utils.ez_hash(url)  # non rewritten continuity of state
                     self.hashes[vcs, url] = h
 

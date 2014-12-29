@@ -1,8 +1,9 @@
 import os
+import json
 from copy import deepcopy
 from .base import BaseTestCase
 
-from anybox.buildbot.openerp.watch import MultiWatcher
+from ..watch import MultiWatcher, watchfile_path
 
 
 class TestMultiWatcher(BaseTestCase):
@@ -10,7 +11,7 @@ class TestMultiWatcher(BaseTestCase):
     def watcher(self, source, **kw):
         buildouts_dir = os.path.join(self.bm_dir, 'buildouts')
         os.mkdir(buildouts_dir)
-        return MultiWatcher([self.data_join(source)], **kw)
+        return MultiWatcher(self.bm_dir, [self.data_join(source)], **kw)
 
     def test_not_found(self):
         self.assertRaises(ValueError, self.watcher, source='doesnt-exist')
@@ -128,6 +129,59 @@ class TestMultiWatcher(BaseTestCase):
         chf = watcher.change_filter('hgtag_nowatch')
         self.assertIsNone(chf)
 
+    def write_separate_watch_conf(self, build_name):
+        with open(watchfile_path(self.bm_dir, build_name), 'w') as conf:
+            conf.write(json.dumps([dict(vcs='git',
+                                        url='user@git.example:direct/dep',
+                                        revspec='master')]))
+
+    def test_auto_watch_option(self):
+        """Watches specified in separate file."""
+        self.write_separate_watch_conf('w_pure_auto')
+        watcher = self.watcher(source='manifest_auto_watch_option.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('w_pure_auto')
+        self.assertEquals(chf.interesting, {
+            'user@git.example:direct/dep': ('git', ('master',))
+        })
+
+    def test_auto_watch_option_and_buildout(self):
+        """Watches specified in separate file, and VCS buildout"""
+        self.write_separate_watch_conf('w_auto_opt_and_buildout')
+        watcher = self.watcher(source='manifest_auto_watch_option.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('w_auto_opt_and_buildout')
+        self.assertEquals(chf.interesting, {
+            'user@git.example:direct/dep': ('git', ('master',)),
+            'http://mercurial.example/buildout': ('hg', ('somebranch',))
+        })
+
+    def test_auto_watch_option_no_file(self):
+        """auto-watch must not fail if file is not there yet"""
+        watcher = self.watcher(source='manifest_auto_watch_option.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('w_auto_mixed')
+        self.assertEquals(chf.interesting, {
+            'user@git.example:indirect/dep': ('git', ('develop',)),
+        })
+
+        # but directory is ready to welcome uploaded files
+        # yes I had to re-harcode it here. Shouldn't be too hard to maintain
+        # test will protest in case of change, that's all
+        self.assertTrue(os.path.isdir(os.path.join(self.bm_dir, 'watch')))
+
+    def test_auto_watch_mixed(self):
+        """auto-watch must not fail if file is not there yet"""
+        self.write_separate_watch_conf('w_auto_mixed')
+        watcher = self.watcher(source='manifest_auto_watch_option.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('w_auto_mixed')
+        self.assertEquals(chf.interesting, {
+            'user@git.example:indirect/dep': ('git', ('develop',)),
+            'user@git.example:direct/dep': ('git', ('master',)),
+        })
+
+
     def test_bzr_lp_consistency(self):
         watcher = self.watcher(source='manifest_watch.cfg')
         watcher.read_branches()
@@ -153,3 +207,4 @@ class TestMultiWatcher(BaseTestCase):
         chf = watcher.change_filter('w_no_buildout')
         self.assertIsNotNone(chf)
         self.assertEqual(chf.interesting[bzr.url], ('bzr', ()))
+
