@@ -2,10 +2,14 @@
 
 To be run in a context where zc.buildout and a.r.{odoo,openerp} are importable
 Typically, the ``bin/python_part`` installed by default by the recipe is
-such an environment
+such an environment.
+
+This is meant to be run once all sources have been properlly fetched, i.e.,
+bin/buildout has been run. Otherwise, mostly impredictable results can occur.
 """
 import os
 import argparse
+import json
 from zc.buildout.buildout import Buildout
 try:
     import anybox.recipe.odoo.base as arobase
@@ -13,6 +17,7 @@ try:
 except ImportError:
     import anybox.recipe.openerp.base as arobase  # noqa
     from anybox.recipe.openerp.utils import working_directory_keeper
+
 
 def git_to_watch(repo, refspec):
     with working_directory_keeper:
@@ -62,9 +67,12 @@ def main():
                         help="Buildout configuration to analyze")
     parser.add_argument('--part', default='openerp',
                         help="Buildout part to analyze")
+    parser.add_argument('dest', help="File to save watch configuration in")
     parsed_args = parser.parse_args()
-    for source in read_sources(parsed_args.config, parsed_args.part):
-        print repr(source)
+    with open(parsed_args.dest, 'w') as outfile:
+        outfile.write(json.dumps(
+            [dict(vcs=w[0], url=w[1], revspec=w[2])
+             for w in read_sources(parsed_args.config, parsed_args.part)]))
 
 if __name__ == '__main__':
     main()
