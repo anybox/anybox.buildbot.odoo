@@ -13,6 +13,7 @@ from buildbot.process.factory import BuildFactory
 from steps import PgSetProperties
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.transfer import FileDownload
+from buildbot.steps.transfer import FileUpload
 from buildbot.process.properties import WithProperties
 from buildbot.schedulers.basic import SingleBranchScheduler
 
@@ -103,6 +104,7 @@ class BuildoutsConfigurator(object):
 
     def init_watch(self):
         self.watcher = watch.MultiWatcher(
+            self.buildmaster_dir,
             self.manifest_paths,
             url_rewrite_rules=self.vcs_master_url_rewrite_rules)
         self.watcher.read_branches()
@@ -353,6 +355,32 @@ class BuildoutsConfigurator(object):
             locks=[buildout_lock.access('exclusive')],
             env=capability_env,
         ))
+
+        if options.get('auto-watch', 'false').lower() == 'true':
+            dumped_watches = 'buildbot_watch.json'
+            factory.addStep(FileDownload(
+                haltOnFailure=False,
+                mastersrc=os.path.join(
+                    BUILD_UTILS_PATH, 'buildbot_dump_watch.py'),
+                slavedest='buildbot_dump_watch.py'))
+            factory.addStep(ShellCommand(
+                command=[
+                    'bin/python_' + buildout_part,
+                    '-c', buildout_slave_path,
+                    '--part', buildout_part,
+                    dumped_watches],
+                description=['introspect', 'watches'],
+                descriptionDone=['introspected', 'watches'],
+                haltOnFailure=False,
+                env=capability_env))
+
+            # the mere fact to call watchfile_path() from here guarantees
+            # that intermediate dirs are created master-side during init
+            factory.addStep(FileUpload(
+                haltOnFailure=False,
+                slavesrc=dumped_watches,
+                masterdest=watch.watchfile_path(self.buildmaster_dir, name),
+                mode=0644))
 
         for line in options.get('db-steps',
                                 'simple_create').split(os.linesep):
