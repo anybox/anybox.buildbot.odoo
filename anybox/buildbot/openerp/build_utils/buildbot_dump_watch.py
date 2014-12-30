@@ -14,9 +14,25 @@ from zc.buildout.buildout import Buildout
 try:
     import anybox.recipe.odoo.base as arobase
     from anybox.recipe.odoo.utils import working_directory_keeper
+    from anybox.recipe.odoo.vcs import bzr
 except ImportError:
     import anybox.recipe.openerp.base as arobase  # noqa
     from anybox.recipe.openerp.utils import working_directory_keeper
+    from anybox.recipe.openerp.vcs import bzr  # noqa
+
+
+class FakeLaunchpadDirectory():
+    """Fake resolving of lp: bzr locations.
+
+    1. we don't really need them
+    2. we don't want them to be rewritten, the watch should stay in unresolved
+       form: that's what the buildbot expects.
+    """
+
+    def look_up(self, name, url):
+        return url
+
+bzr.LPDIR = FakeLaunchpadDirectory()
 
 
 def git_to_watch(repo, refspec):
@@ -47,6 +63,9 @@ def read_sources(confpath, part):
     version for which this works.
     """
     buildout = Buildout(confpath, {})
+    # this will not resolve extra requirements, such as (currently the only
+    # one) bzr. But we don't really need the latter. Actually we are better
+    # off with our FakeLaunchpadDirectory
     recipe = arobase.BaseRecipe(buildout, part, buildout[part])
     for target, (loc_type, loc, options) in recipe.sources.iteritems():
         if target is arobase.main_software:
