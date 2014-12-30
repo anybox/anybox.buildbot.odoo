@@ -28,8 +28,8 @@ class PollerChangeFilter(BuildoutsChangeFilter):
             return False
 
         vcs, minor_spec = details
-        if vcs == 'hg':  # TODO less hardcoding
-            # in hg, a minor spec is a singleton holding branch name
+        if vcs in ('hg', 'git'):  # TODO less hardcoding
+            # in hg and git, a minor spec is a singleton holding branch name
             assert(len(minor_spec) == 1)
             if minor_spec[0] != change.branch:
                 return False
