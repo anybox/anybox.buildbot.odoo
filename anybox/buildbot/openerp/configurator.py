@@ -366,6 +366,7 @@ class BuildoutsConfigurator(object):
             factory.addStep(ShellCommand(
                 command=[
                     'bin/python_' + buildout_part,
+                    'buildbot_dump_watch.py',
                     '-c', buildout_slave_path,
                     '--part', buildout_part,
                     dumped_watches],
