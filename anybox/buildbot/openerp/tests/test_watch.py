@@ -1,6 +1,8 @@
 import os
 import json
 from copy import deepcopy
+
+from buildbot.changes.changes import Change
 from .base import BaseTestCase
 
 from ..watch import MultiWatcher, watchfile_path
@@ -13,10 +15,15 @@ class TestMultiWatcher(BaseTestCase):
         os.mkdir(buildouts_dir)
         return MultiWatcher(self.bm_dir, [self.data_join(source)], **kw)
 
+    def change(self, repo, branch):
+        return Change("GR <gracinet@anybox.fr", ['README.txt'],
+                      "An important step !",
+                      repository=repo, branch=branch)
+
     def test_not_found(self):
         self.assertRaises(ValueError, self.watcher, source='doesnt-exist')
 
-    def test_make_pollers(self):
+    def test_make_pollers_change_filters(self):
         updater = self.watcher(source='manifest_watch.cfg')
         updater.read_branches()
         bzr, git, hg = sorted(updater.make_pollers(),
@@ -27,6 +34,30 @@ class TestMultiWatcher(BaseTestCase):
         self.assertTrue(bzr.url.endswith('openobject-server/6.1'))
         self.assertEquals(git.repourl, 'user@git.example:my/repo')
         self.assertEquals(sorted(git.branches), ['develop', 'master'])
+
+        chf = updater.change_filter('w_hg')
+        self.assertTrue(chf.filter_change(
+            self.change('http://mercurial.example/some/repo', 'default')))
+        self.assertFalse(chf.filter_change(
+            self.change('http://mercurial.example/some/repo', 'other')))
+
+        chf = updater.change_filter('w_git')
+        self.assertTrue(chf.filter_change(
+            self.change('user@git.example:my/repo', 'master')))
+        self.assertFalse(chf.filter_change(
+            self.change('user@git.example:my/repo', 'develop')))
+
+        chf = updater.change_filter('w_git_develop')
+        self.assertTrue(chf.filter_change(
+            self.change('user@git.example:my/repo', 'develop')))
+        self.assertFalse(chf.filter_change(
+            self.change('user@git.example:my/repo', 'master')))
+
+        chf = updater.change_filter('w_bzr')
+        self.assertTrue(chf.filter_change(
+            self.change(None, bzr.url)))
+        self.assertFalse(chf.filter_change(
+            self.change(None, 'bzr+ssh://illusion.test')))
 
     def test_url_rewrite(self):
         updater = self.watcher(
@@ -71,11 +102,15 @@ class TestMultiWatcher(BaseTestCase):
         watcher.read_branches()
         chf = watcher.change_filter('w_hg')
 
-        # would make even more sense to ignore the details and test behaviour
-        # of chf.filter_change
         self.assertEquals(
             chf.interesting,
             {'ssh://hg@mercurial.example/some/repo': ('hg', ('default',))})
+
+        # this is one of the few tests for PollerChangeFilter
+        self.assertTrue(chf.filter_change(
+            self.change(r'ssh://hg@mercurial.example/some/repo', 'default')))
+        self.assertFalse(chf.filter_change(
+            self.change('ssh://hg@mercurial.example/some/repo', 'other')))
 
     def test_inherit(self):
         watcher = self.watcher(source='manifest_watch.cfg')
