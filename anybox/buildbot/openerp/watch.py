@@ -173,6 +173,10 @@ class MultiWatcher(object):
                         logger.info("separate watch conf file %r for build "
                                     "factory %r does not exist yet",
                                     build_watch_conf, buildout)
+                    except ValueError:
+                        logger.error("separate watch conf file %r for build "
+                                     "factory %r is not valid JSON",
+                                     build_watch_conf, buildout)
                     else:
                         for w in auto_conf:
                             first_pass[w['url']] = w['vcs'], (w['revspec'], )

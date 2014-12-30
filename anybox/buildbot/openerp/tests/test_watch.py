@@ -129,11 +129,14 @@ class TestMultiWatcher(BaseTestCase):
         chf = watcher.change_filter('hgtag_nowatch')
         self.assertIsNone(chf)
 
-    def write_separate_watch_conf(self, build_name):
-        with open(watchfile_path(self.bm_dir, build_name), 'w') as conf:
-            conf.write(json.dumps([dict(vcs='git',
+    def write_separate_watch_conf(self, build_name, contents=None):
+        if contents is None:
+            contents = json.dumps([dict(vcs='git',
                                         url='user@git.example:direct/dep',
-                                        revspec='master')]))
+                                        revspec='master')])
+
+        with open(watchfile_path(self.bm_dir, build_name), 'w') as conf:
+            conf.write(contents)
 
     def test_auto_watch_option(self):
         """Watches specified in separate file."""
@@ -169,6 +172,16 @@ class TestMultiWatcher(BaseTestCase):
         # yes I had to re-harcode it here. Shouldn't be too hard to maintain
         # test will protest in case of change, that's all
         self.assertTrue(os.path.isdir(os.path.join(self.bm_dir, 'watch')))
+
+    def test_auto_watch_option_corrupted_file(self):
+        """auto-watch must not fail if file is corrupted not there yet"""
+        self.write_separate_watch_conf('w_auto_mixed', contents='')
+        watcher = self.watcher(source='manifest_auto_watch_option.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('w_auto_mixed')
+        self.assertEquals(chf.interesting, {
+            'user@git.example:indirect/dep': ('git', ('develop',)),
+        })
 
     def test_auto_watch_mixed(self):
         """auto-watch must not fail if file is not there yet"""
