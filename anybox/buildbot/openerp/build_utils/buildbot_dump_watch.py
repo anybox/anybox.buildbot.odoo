@@ -8,8 +8,10 @@ This is meant to be run once all sources have been properlly fetched, i.e.,
 bin/buildout has been run. Otherwise, mostly impredictable results can occur.
 """
 import os
+import sys
 import argparse
 import json
+import logging
 from zc.buildout.buildout import Buildout
 try:
     import anybox.recipe.odoo.base as arobase
@@ -19,6 +21,8 @@ except ImportError:
     import anybox.recipe.openerp.base as arobase  # noqa
     from anybox.recipe.openerp.utils import working_directory_keeper
     from anybox.recipe.openerp.vcs import bzr  # noqa
+
+logger = logging.getLogger(os.path.basename(sys.argv[0]))
 
 
 class FakeLaunchpadDirectory():
@@ -36,18 +40,22 @@ bzr.LPDIR = FakeLaunchpadDirectory()
 
 
 def git_to_watch(repo, refspec):
+    logger.info("Instropecting Git repo at %r", repo.target_dir)
     with working_directory_keeper:
         os.chdir(repo.target_dir)
         return repo._is_a_branch(refspec)
+
 arobase.vcs.GitRepo.buildbot_to_watch = git_to_watch
 
 
 def hg_to_watch(repo, revstr):
+    logger.info("Instropecting Hg repo at %r", repo.target_dir)
     return not repo.have_fixed_revision(revstr)
 arobase.vcs.HgRepo.buildbot_to_watch = hg_to_watch
 
 
 def bzr_to_watch(branch, revstr):
+    logger.info("Instropecting Bzr branch at %r", branch.target_dir)
     return not branch.is_fixed_revision(revstr)
 arobase.vcs.BzrBranch.buildbot_to_watch = bzr_to_watch
 
@@ -86,8 +94,12 @@ def main():
                         help="Buildout configuration to analyze")
     parser.add_argument('--part', default='openerp',
                         help="Buildout part to analyze")
+    parser.add_argument('--logging-level', default='info',
+                        help="Logging level")
     parser.add_argument('dest', help="File to save watch configuration in")
     parsed_args = parser.parse_args()
+    logging.basicConfig(level=getattr(logging,
+                                      parsed_args.logging_level.upper()))
     with open(parsed_args.dest, 'w') as outfile:
         outfile.write(json.dumps(
             [dict(vcs=w[0], url=w[1], revspec=w[2])
