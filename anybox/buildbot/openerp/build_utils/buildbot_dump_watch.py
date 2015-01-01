@@ -60,6 +60,34 @@ def bzr_to_watch(branch, revstr):
 arobase.vcs.BzrBranch.buildbot_to_watch = bzr_to_watch
 
 
+def fix_standalone_magic(vcs_cls, target_dir):
+    """Correct target directory for pre a.r.o 1.9 behaviour
+
+    Before anybox.recipe.openerp 1.9, standalone addons were automatically
+    shifted one directory deeper, in order to be registrable by OpenERP.
+
+    Although 1.9 is currently the stable series (1.8 being obsoleted), it's
+    nicer to understand this pattern from here, so that buildouts don't have
+    to be updated.
+
+    :returns: fixed target directory
+    """
+
+    is_versioned = getattr(vcs_cls, 'is_versioned', None)
+    if is_versioned is None:
+        # not implemented, but the magic depended on it
+        # either it's been removed because not needed, or never was implemented
+        # for this VCS. In any case we are safe returning unchanged
+        return target_dir
+
+    basename = os.path.basename(target_dir)
+    switched = os.path.join(target_dir, basename)
+    if not is_versioned(target_dir) and is_versioned(switched):
+        return switched
+    else:
+        return target_dir
+
+
 def read_sources(confpath, part):
     """Return the list of sources the buildout configuration file is about.
 
@@ -83,6 +111,7 @@ def read_sources(confpath, part):
         if vcs_cls is None:  # probably not a VCS location at all
             continue
         url, rev = loc
+        target = fix_standalone_magic(vcs_cls, target)
         repo = vcs_cls(target, url, options)
         if repo.buildbot_to_watch(rev):
             yield loc_type, url, rev
