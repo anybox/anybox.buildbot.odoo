@@ -12,6 +12,8 @@ import sys
 import argparse
 import json
 import logging
+import subprocess
+
 from zc.buildout.buildout import Buildout
 try:
     import anybox.recipe.odoo.base as arobase
@@ -43,7 +45,12 @@ def git_to_watch(repo, refspec):
     logger.info("Instropecting Git repo at %r", repo.target_dir)
     with working_directory_keeper:
         os.chdir(repo.target_dir)
-        return repo._is_a_branch(refspec)
+        if hasattr(repo, '_is_a_branch'):
+            return repo._is_a_branch(refspec)
+        else:  # a.r.o < 1.9, reimplementing what's in 1.9.0
+            gitbr = subprocess.Popen(['git', 'branch'], stdout=subprocess.PIPE)
+            out = gitbr.communicate()[0]
+            return gitbr.poll() == 0 and refspec in out.split()
 
 arobase.vcs.GitRepo.buildbot_to_watch = git_to_watch
 
