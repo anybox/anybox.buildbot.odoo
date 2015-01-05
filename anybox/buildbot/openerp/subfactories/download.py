@@ -212,7 +212,8 @@ def hg_tag_buildout(self, options, cfg_tokens, manifest_dir):
     return conf_path, (
         FileDownload(
             mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_hg_dl.py'),
-            slavedest='../src/buildout_hg_dl.py',
+            slavedest='buildout_hg_dl.py',
+            workdir='src',
             haltOnFailure=True),
         ShellCommand(
             command=['python', 'buildout_hg_dl.py', '-t', 'tag', url, tag],
