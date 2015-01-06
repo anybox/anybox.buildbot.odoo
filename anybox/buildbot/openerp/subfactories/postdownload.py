@@ -19,6 +19,10 @@ def packaging(configurator, options,
     This takes care of creating the tarball and preparing the buildmaster
     to get the upload.
 
+    Side-effect: totally disables the 'auto-watch' option, so that the main
+    testing, that runs on the extracted code, does not try to introspect live
+    repos on it.
+
     Options:
 
     :packaging.root-dir: the root directory in master into which all artifacts
@@ -36,6 +40,7 @@ def packaging(configurator, options,
                          display in the waterfall.
     """
 
+    options['auto-watch'] = 'false'
     steps = []
     master_dir = os.path.join(options['packaging.root-dir'],
                               options['packaging.upload-dir'])
