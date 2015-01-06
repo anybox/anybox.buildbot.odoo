@@ -258,4 +258,4 @@ class MultiWatcher(object):
         interesting = self.buildout_watch.get(buildout)
 
         if interesting:
-            return PollerChangeFilter(interesting)
+            return PollerChangeFilter(buildout, interesting)
