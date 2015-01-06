@@ -216,7 +216,13 @@ class BuildoutsConfigurator(object):
         command.extend('--%s=%s' % (k, v)
                        for k, v in bootstrap_options.items())
 
-        steps = [ShellCommand(command=command,
+        # rm -rf does not fail if directory does not exist
+        steps = [ShellCommand(command=['rm', '-rf', 'develop-eggs'],
+                              name='cleanup',
+                              description=["cleaning", 'develop-eggs'],
+                              descriptionDone=["cleaning", 'develop-eggs'],
+                              ),
+                 ShellCommand(command=command,
                               name='bootstrap',
                               description="bootstrapping",
                               descriptionDone="bootstrapped",
