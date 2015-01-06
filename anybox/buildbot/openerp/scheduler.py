@@ -1,4 +1,3 @@
-from twisted.python import log
 from buildbot.changes.filter import ChangeFilter
 
 

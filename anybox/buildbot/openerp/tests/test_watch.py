@@ -229,7 +229,6 @@ class TestMultiWatcher(BaseTestCase):
             'user@git.example:direct/dep': ('git', ('master',)),
         })
 
-
     def test_bzr_lp_consistency(self):
         watcher = self.watcher(source='manifest_watch.cfg')
         watcher.read_branches()
@@ -255,4 +254,3 @@ class TestMultiWatcher(BaseTestCase):
         chf = watcher.change_filter('w_no_buildout')
         self.assertIsNotNone(chf)
         self.assertEqual(chf.interesting[bzr.url], ('bzr', ()))
-
