@@ -1,3 +1,4 @@
+from twisted.python import log
 from buildbot.changes.filter import ChangeFilter
 
 
@@ -5,13 +6,15 @@ class BuildoutsChangeFilter(ChangeFilter):
     """Base class for ChangeFilter based on watched buildouts.
     """
 
-    def __init__(self, interesting):
+    def __init__(self, name, interesting):
         """Initialisation: the interesting dict is url -> (vcs, minor_spec).
         """
         self.interesting = interesting
+        self.name = name
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.interesting)
+        return '%s(%r, %r)' % (self.__class__.__name__, self.name,
+                               self.interesting)
 
 
 class PollerChangeFilter(BuildoutsChangeFilter):
