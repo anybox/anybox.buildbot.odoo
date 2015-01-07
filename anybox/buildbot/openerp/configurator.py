@@ -221,7 +221,7 @@ class BuildoutsConfigurator(object):
                               name='cleanup',
                               description=["cleaning", 'develop-eggs'],
                               descriptionDone=["cleaning", 'develop-eggs'],
-                              ),
+                              **step_kw),
                  ShellCommand(command=command,
                               name='bootstrap',
                               description="bootstrapping",
