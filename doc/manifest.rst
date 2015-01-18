@@ -100,6 +100,13 @@ Options are:
    for preload of PostgreSQL extensions, such as postgis, but can be
    used for testing data as well. Should be paired with a conventional
    requirement expressing that the template exists and can be used.
+ * ``build-category``: defines the category to set on the resulting builder(s).
+                       See `buildbot's builders doc
+                       <http://docs.buildbot.net/current/manual/cfg-builders.html#builder-configuration>`_
+                       for more details. At the time of this writing
+                       (buildbot, 0.8.10) categories are used to
+                       control notifications (status clients) and
+                       filtering in the waterfall display.
  * ``buildout-part``: name of the expected main part driving Odoo/OpenERP
    (defaults to ``openerp`` for backwards compatibility)
  * ``start-command``: name of the main server command (defaults to
