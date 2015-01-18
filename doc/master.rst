@@ -1,6 +1,3 @@
-anybox.buildbot.openerp
-=======================
-
 Introduction
 ~~~~~~~~~~~~
 
@@ -71,23 +68,3 @@ These steps are for a first setup.
 
 Then check the main package documentation for intructions about
 referencing your buildouts and the numerous options.
-
-
-Credits
-~~~~~~~
-Author:
-
- * Georges Racinet (Anybox)
-
-Contributors:
-
- * Stéphane Bidoul (Acsone)
-
-.. note:: this project is currently in the process of being renamed to
-          ``anybox.buildbot.odoo``.
-
- * Code repository and bug tracker:
-   https://github.com/anybox.buildbot.odoo
- * PyPI page: http://pypi.python.org/pypi/anybox.buildbot.openerp
-
-Please use GitHub to report any bug or ask for a new feature.
