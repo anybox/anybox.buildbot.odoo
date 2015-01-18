@@ -53,19 +53,27 @@ class MultiWatcher(object):
 
     It supports several VCS systems.
 
-    It works for a set of watched branches, currently described by manifest
-    files (usually at buildouts/MANIFEST.cfg). Branch specification vary
-    according to the given VCS. Currently::
+    It works for a set of watched branches, which are read from two sources:
+
+    * the manifest files (usually at ``buildouts/MANIFEST.cfg``) and
+    * for those buildouts that have the ``auto-watch`` option set to ``true``,
+      the per-buildout files at ``watch/<BUILDOUT_NAME>``, which are
+      typically uploaded during the builds execution themselves.
+
+    While the latter are not meant for direct human specification, and use a
+    direct JSON format, he former are specified through
+    the ``watch`` multiline option, with a format that varies according
+    to the given VCS. Currently, it looks like::
 
        watch = bzr URL
                hg PULL-URL BRANCH-NAME
                git PULL-URL BRANCH-NAME
 
-    in all cases, that'll be::
+    In all cases, that'll be::
 
        VCS SOURCE_URL [[BRANCH MINOR SPECS]]
 
-    There is a capability for URL rewriting, through the
+    On top of that, there is support for URL rewriting, through the
     :attr:`url_rewrite_rules` attribute, which must be a list of pairs
     ``(original_prefix, rewritten prefix)``.
 
