@@ -65,9 +65,11 @@ class PgSetProperties(DescriptionBuildStep):
 class SetCapabilityProperties(DescriptionBuildStep):
     """Set capability related properties.
 
-    From all capability options
+    Example behaviour::
+
           capa_name 1.3 port=1234
-    will produce a property 'capability_capa_name_port' with value 1234.
+
+    will produce a property ``capability_capa_name_port`` with value ``1234``.
     """
 
     def __init__(self, capability_name,

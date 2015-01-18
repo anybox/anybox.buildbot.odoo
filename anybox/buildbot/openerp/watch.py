@@ -55,15 +55,20 @@ class MultiWatcher(object):
 
     It works for a set of watched branches, currently described by manifest
     files (usually at buildouts/MANIFEST.cfg). Branch specification vary
-    according to the given VCS. Currently:
-       bzr URL
-       hg PULL-URL BRANCH-NAME
+    according to the given VCS. Currently::
 
-    in all cases, that'll be:
+       watch = bzr URL
+               hg PULL-URL BRANCH-NAME
+               git PULL-URL BRANCH-NAME
+
+    in all cases, that'll be::
+
        VCS SOURCE_URL [[BRANCH MINOR SPECS]]
 
-    There is a capability for URL rewriting, through the url_rewrite_rules
-    attribute (a list of pairs (original_prefix, rewritten prefix).
+    There is a capability for URL rewriting, through the
+    :attr:`url_rewrite_rules` attribute, which must be a list of pairs
+    ``(original_prefix, rewritten prefix)``.
+
     The original URLs are stored in a translation dict for
     quick comparison.
 

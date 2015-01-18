@@ -99,8 +99,7 @@ class Version(object):
 class VersionFilter(object):
     """Represent a simple version filter.
 
-    The simplest way to instantiate is to call the ``parse`` classmethod
-    (see also its docstring)::
+    The simplest way to instantiate is to call the :meth:`parse` classmethod::
 
       >>> vf = VersionFilter.parse('pg >= 9.1 < 9.3')
 
@@ -114,6 +113,7 @@ class VersionFilter(object):
       True
 
     With more complicated criteria::
+
       >>> vf = VersionFilter.parse('pg >= 9.2-devel OR == 8.4-special')
       >>> vf.match(Version.parse('9.2'))
       True
@@ -124,21 +124,24 @@ class VersionFilter(object):
 
     For uniformity, absence of criteria is also accepted, and of course matches
     any version::
+
       >>> vf = VersionFilter.parse('rabbitmq')
       >>> vf.match(Version.parse('6.6.6-any'))
       True
 
-    With errors:
+    With errors::
+
       >>> try: vf = VersionFilter.parse('pg 8.4')
       ... except VersionParseError, exc: exc.args[0]
       '8.4'
 
     special case where we want to indicate that we actually won't be using
-    the given capability.
+    the given capability::
 
       >>> vf = VersionFilter.parse('postgresql not-used')
       >>> vf
       VersionFilter('postgresql', (None,))
+
     """
 
     def __init__(self, capability, criteria):
