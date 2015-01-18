@@ -7,7 +7,6 @@ Subpackages
 .. toctree::
 
     anybox.buildbot.openerp.subfactories
-    anybox.buildbot.openerp.tests
 
 Submodules
 ----------

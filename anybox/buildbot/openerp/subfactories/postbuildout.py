@@ -22,7 +22,8 @@ def steps_odoo_port_reservation(configurator, options, environ=()):
 
     The chosen port is stored in ``openerp_port`` property.
 
-    Options:
+    Available manifest file options:
+
       :odoo.http-port-min: minimal value for the HTTP port (defaults to 6069)
       :odoo.http-port-max: maximal value for the HTTP port (defaults to 7069)
       :odoo.http-port-step: increment value for the HTTP port (defaults to 5)
@@ -51,10 +52,11 @@ def install_modules(configurator, options, buildout_slave_path,
     """Return steps to just install modules
 
 
-    Options:
+    Available manifest file options:
 
       :install.demo-data: (case-insensitive, ``'false'`` or ``'true'``,
-                           default=``'true'``), if true, install with demo data
+                           default=``'true'``). If ``'true'``, install with
+                           demo data.
     """
 
     environ = dict(environ)
@@ -102,11 +104,11 @@ def install_modules_test_openerp(configurator, options, buildout_slave_path,
     """Return steps to run bin/test_<PART> -i MODULES.
 
 
-    Options:
+    Available manifest file options:
 
       :odoo.use-port: if set to ``true``, necessary free ports will be chosen,
                       and used in the test run.
-                      See :fun:`steps_odoo_port_reservation` for port
+                      See :func:`steps_odoo_port_reservation` for port
                       selection tuning options.
     """
 
@@ -155,9 +157,11 @@ def openerp_command_initialize_tests(configurator, options,
                                      environ=()):
     """Return steps to run bin/<PART>_command initialize --tests.
 
+    Available manifest file options:
+
       :odoo.use-port: if set to ``true``, necessary free ports will be chosen,
                       and used in the test run.
-                      See :fun:`steps_odoo_port_reservation` for port
+                      See :func:`steps_odoo_port_reservation` for port
                       selection tuning options.    """
 
     environ = dict(environ)
@@ -197,16 +201,17 @@ def update_modules(configurator, options, buildout_slave_path,
                    environ=()):
     """Return steps to update the OpenERP application.
 
-    If the option "upgrade.script" is specified, that script is used, and the
-    general module list is ignored.
-    Otherwise, a raw ``bin/start_<PART> -u`` on the declared module list gets
-    issued.
+    This is especially useful in conjunction with initialisation of the
+    database with a reference one, to test upgrade procedures.
 
-    Options:
+    Available manifest file options:
 
-    ``upgrade.script``: see above.
-    ``update.log_file_option``: name of the option to use for dedicated script
-                                if there is one.
+    :upgrade.script: if specified, that script is used, and the
+                     general module list is ignored.
+                     Otherwise, a raw ``bin/start_<PART> -u``
+                     on the declared module list gets issued.
+    :update.log_file_option: name of the option to use for dedicated script
+                             if there is one.
     """
 
     environ = dict(environ)
@@ -260,7 +265,7 @@ def install_modules_nose(configurator, options, buildout_slave_path,
     Warning: this works only for addons that use the trick in main
     __init__ that avoids executing the models definition twice.
 
-    Options:
+    Available manifest file options:
 
       - openerp-addons: comma-separated list of addons to test
       - install-as-upgrade: use the upgrade script to install the project
@@ -411,13 +416,16 @@ def functional(configurator, options, buildout_slave_path,
                environ=()):
     """Reserve a port, start openerp, launch testing commands, stop openerp.
 
-    Options:
-    - functional.commands: whitespace separated list of scripts to launch.
-      Each of them must accept two arguments: port and db_name
-    - functional.parts: buildout parts to install to get the commands to
-      work
-    - functional.wait: time (in seconds) to wait for the server to be ready
-      for functional testing after starting up (defaults to 30s)
+    Available manifest file options:
+
+      :functional.commands: whitespace separated list of scripts to launch.
+                            Each of them must accept two arguments:
+                            ``port`` and ``db_name``
+      :functional.parts: buildout parts to install to get the commands to
+                         work
+      :functional.wait: time (in seconds) to wait for the server to be ready
+                        for functional testing after starting up
+                        (defaults to 30s)
     """
 
     steps = []
@@ -516,12 +524,15 @@ def functional(configurator, options, buildout_slave_path,
 def static_analysis(configurator, options, buildout_slave_path, environ=()):
     """Adds static analysis to the build.
 
-    Used options from MANIFEST
-       static-analysis.flake-directories: *mandatory* list of subdirectories to
-           run, e.g., flake8 on (can be dirs created by bin/buildout).
-       static-analysis.part : the buildout part to install to get the tools.
-          (defaults to 'static-analysis')
-       static-analysis.max-line-length : self explanatory
+    Available manifest file options:
+
+       :static-analysis.flake-directories: *mandatory* list of subdirectories
+                                           to run, e.g., flake8 on (can be
+                                           dirs created by bin/buildout).
+       :static-analysis.part: the buildout part to install to get the tools.
+                              (defaults to 'static-analysis')
+       :static-analysis.max-line-length: self explanatory
+
     """
 
     steps = []
@@ -573,38 +584,42 @@ def sphinx_doc(configurator, options,
     For more information, especially about api/autodoc with OpenERP, see
     http://anybox.fr/blog/sphinx-autodoc-et-modules-openerp (in French, sorry).
 
-    Used options from MANIFEST:
+    Available manifest file options:
 
-       doc.upload-dir : subdirectory of buildmaster's main doc
+       :doc.upload-dir: subdirectory of buildmaster's main doc
           directory (see ``doc.upload_root`` below) to put that
           documentation in. If missing, no upload shall be done
-       doc.upload-root : base directory on buildmaster's host relative to
+       :doc.upload-root: base directory on buildmaster's host relative to
            which  ``doc.upload_dir`` is evaluated. It is typically set
-           globally by a [DEFAULT] section (hence the separation, and the
+           globally by a ``[DEFAULT]`` section (hence the separation, and the
            fact that its presence alone does not trigger the upload)
-       doc.version : defaults to a property-based string that uses the
-          'buildout-tag' property and defaults to 'current''current'.
-           Used as a sub directory of upload-dir.
-           Can use properties in the same way WithProperty does,
-           with $ instead of % (in order not to confuse ConfigParser)
-       doc.base-url : doc base URL (example: http://docs.anybox.eu)
-
-       doc.sphinx-sourcedir: if specified, then the build will use the standard
-                             buildbot Sphinx step with the value as
-                             `sourcedir``. Otherwise
-                             it will issue a simple ``bin/sphinx``, which is
-                             what collective.recipe.sphinxbuilder provides
-                             (encapsulation with no need of specifying
-                             source/build dirs)
-       doc.sphinx-builddir: *only if* doc.sourcedir is specified: Sphinx build
-                            directory, defaults to ``${doc.sourcedir}/_build``
-       doc.sphinx-bin: *only if* doc.sourcedir is specified: Sphinx executable,
-                       relative to buildout directory, defaults to
-                       ``bin/sphinx-build``
-       doc.sphinx-mode: (optional) String, one of ``'full'`` or
-                        ``'incremental'`` (the default). If set to
-                        ``'full'``, indicates to Sphinx to rebuild
-                        everything without re-using the previous build results.
+       :doc.version: defaults to a property-based string that uses the
+                     ``buildout-tag`` property and defaults itself to
+                     ``'current'`` if that property is missing.
+                     The resulting string gets used as a sub directory of
+                     ``upload-dir``, and can use properties in the same way as
+                     ``:class:`WithProperties` does,
+                     albeit with ``$`` instead of ``%``
+                     (in order not to confuse :mod:`ConfigParser`,
+                     that's used to parse the manifest file)
+       :doc.base-url: doc base URL (example: http://docs.anybox.eu)
+       :doc.sphinx-sourcedir: if specified, then the build will use the
+                              standard buildbot Sphinx step with the value as
+                              ``sourcedir``. Otherwise,
+                              it will issue a simple ``bin/sphinx``, which is
+                              what collective.recipe.sphinxbuilder provides
+                              (encapsulation with no need of specifying
+                              source/build dirs)
+       :doc.sphinx-builddir: *only if* doc.sourcedir is specified: Sphinx build
+                             directory, defaults to ``${doc.sourcedir}/_build``
+       :doc.sphinx-bin: *only if* doc.sourcedir is specified: Sphinx
+                        executable, relative to buildout directory; defaults
+                        to ``bin/sphinx-build``.
+       :doc.sphinx-mode: (optional) String, one of ``'full'`` or
+                         ``'incremental'`` (the default). If set to
+                         ``'full'``, indicates to Sphinx to rebuild
+                         everything without re-using the previous build
+                         results.
     """
     steps = []
     sphinx_sourcedir = options.get('doc.sphinx-sourcedir')
@@ -673,7 +688,7 @@ def packaging(configurator, options,
               buildout_slave_path, environ=()):
     """Final steps for upload after testing of tarball.
 
-    See :fun:`postdownload.packaging` for explanation of options.
+    See :func:`postdownload.packaging` for explanation of options.
     """
 
     archive_name_interp = options['packaging.prefix'] + '-%(buildout-tag)s'
@@ -702,12 +717,12 @@ def packaging(configurator, options,
 def autocommit(configurator, options, buildout_slave_path, environ=()):
     """Invoke recipe's autocommit script.
 
-    Options:
+    Available manifest file options:
 
-    :autocommit.script: autocommit script
-                        name, defaults to ``bin/autocommit_<PART>``.
-    :autocommit.message: message used for generated commits.
-                         Defaults to "Commit made by buildbot
+      :autocommit.script: autocommit script
+                          name, defaults to ``bin/autocommit_<PART>``.
+      :autocommit.message: message used for generated commits.
+                           Defaults to "Commit made by buildbot
     """
     buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
     return [

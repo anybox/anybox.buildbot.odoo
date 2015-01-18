@@ -13,29 +13,37 @@ RE_PROP_CAP_OPT = re.compile(r'cap\((\w*)\)')
 def set_properties_make_environ(cap2environ, factory):
     """Return env usable in steps after adding suitable prop steps to factory.
 
-    the returned env dict is filled with WithProperties arguments that
-    leverage the properties set by some SetCapabilityProperties steps.
+    the returned env dict is filled with :class:`WithProperties` arguments that
+    leverage the properties set by some :class:`SetCapabilityProperties` steps.
 
-    factory is expected to be a BuildFactory with 'build_for' and
-    'build_requires' attributes.
+    :param factory: a :class:`BuildFactory` instance with ``build_for`` and
+                    ``build_requires`` attributes.
 
-    cap2environ is a dict expressing how to derive environment variables from
-    capability options. Sample format:
+    :param cap2environ: a :class:`dict` expressing how to derive environment
+                        variables from capability options. Sample format::
 
-       'cap_name' : dict(version_prop='the_cap_version',
-                         environ={'CAPABIN': '%(cap(bin))s/program'})
+                         'cap_name' : dict(version_prop='the_cap_version',
+                                           environ={
+                                               'CAPABIN': '%(cap(bin))s/prog'
+                                           })
 
-    With this setup, and a capability named 'cap_name' with an option
-    bin=/usr/local/capname/bin for a slave you'd get on that slave
-             CAPABIN=/usr/local/capname/bin/program
+                        With this setup, on a slave with the following
+                        declaration::
 
-    This demonstrates in particular how values of the 'environ' subdicts
-    are meant for WithProperties, with substitution of cap(<option>) by
+                          capability = cap_name x.y bin=/usr/local/capname/bin
+
+                        one gets the following environment value::
+
+                          CAPABIN=/usr/local/capname/bin/prog
+
+    This demonstrates in particular how values of the ``environ`` subdicts
+    are meant for :class:`WithProperties`, with substitution of
+    ``cap(<option>)`` by
     the property that will hold the value of this capability option.
-    Apart from that, the full expressivity of the WithProperties class still
-    applies.
+    Apart from that, the full expressivity of the :class:`WithProperties`
+    class still applies.
 
-    During the build slave selection, the 'capability' dict property value
+    During the build slave selection, the ``capability`` dict property value
     gets set from the slave definition. The build steps set by this method
     will extract them as regular properties, which are tailored to be used
     by the returned environ dict.

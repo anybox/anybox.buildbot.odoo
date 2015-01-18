@@ -17,10 +17,18 @@ Contents:
    subfactories
    contributing
 
+Code documentation
+------------------
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   apidoc/anybox.buildbot.openerp
+
 
 Indices and tables
 ==================
-
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
