@@ -30,7 +30,7 @@ Applying changes
 Like a change in ``master.cfg``, to have your modifications taken into
 account, you must run at least::
 
-  ``buildbot reconfig <PATH_TO_BUILDMASTER>``
+  buildbot reconfig <PATH_TO_BUILDMASTER>
 
 A full restart is needed in order to apply changes in
 ``anybox.odoo.buildbot`` itself, or any auxiliary python module that
@@ -54,13 +54,13 @@ it is called a *standalone* buildout
 Options are:
 
  * ``buildout = TYPE SPECIFICATION``,
-   where ``TYPE`` can be ``standalone`` or indicate a VCS (currently
-   ``hg`` only is supported).
+   where ``TYPE`` can be ``standalone`` or indicate a VCS (``bzr``,
+   ``hg`` or ``git``).
    For standalone buildouts, ``SPECIFICATION`` is a path from the buildmaster
    directory.
    For buildouts from VCSes, ``SPECIFICATION`` takes the form
-   ``URL BRANCH PATH``,
-   where ``PATH`` is the path from a clone of ``URL`` on branch
+   ``URL BRANCH PATH`` (or ``URL PATH`` in the case of ``bzr)
+   where ``PATH`` is the path from a clone of repo ``URL`` on branch
    ``BRANCH`` to the wished buildout configuration. This allows to use
    configuration files with ``extends`` and to track the buildout configuration
    itself, and to reduce duplication. Buildouts from VCSes are always
