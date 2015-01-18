@@ -26,7 +26,7 @@ class TestSchedulers(BaseTestCase):
         self.assertTrue('openobject-server/6.1' in url)
         self.assertEqual(details, ('bzr', ()))
         self.assertEqual(repr(filt),
-                         "PollerChangeFilter(%r)" % filt.interesting)
+                         "PollerChangeFilter('simple', %r)" % filt.interesting)
 
     def test_tree_stable_timer_global(self):
         self.configurator.tree_stable_timer = 123
