@@ -1,11 +1,17 @@
 Buildouts specification: the manifest file
 ==========================================
 
+Buildouts subdirectory
+~~~~~~~~~~~~~~~~~~~~~~
 The buildouts to install and test are stored in the ``buildouts``
 directory; they must be declared with appropriated options in the
 ``buildouts/MANIFEST.cfg``. The ones included with this package
 are run by `Anybox's public buildbot <http://buildbot.anybox.fr>`_,
-which thus also serves as a showcase for this package.
+which thus also serves as a showcase for the buildbot configurator.
+
+.. note:: An interesting practice for buildbotting of in-house custom projects
+          is to put the ``buildouts`` subdirectory itself under version control
+          with your preferred VCS, and let the developpers push on it.
 
 Alternatively, one can specify several manifest files, to aggregate from
 several sources. `Anybox's public buildbot
@@ -16,6 +22,7 @@ several sources. `Anybox's public buildbot
 * `other combinations
   <https://bitbucket.org/anybox/public_buildbot_buildouts>`_ of OpenERP
   versions and community addons that are of interest for Anybox.
+
 
 Applying changes
 ~~~~~~~~~~~~~~~~

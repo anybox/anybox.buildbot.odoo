@@ -16,8 +16,9 @@ Its main features are:
 * execution of the buildout and scheduling according to the VCS
   sources it holds
 * installation of Odoo modules and various way to run the tests
-* capability-based attachment of buildslaves and in particular
-  PostgreSQL version filtering and demultiplication of builds
+* capability-based dispatching to buildslaves and in particular
+  PostgreSQL version filtering and/or building against several
+  PostgreSQL versions
 * build of project documentation (with Sphinx)
 * creation and upload of extracted releases in tarball format
 
@@ -29,10 +30,6 @@ master is just a matter of copying the corresponding buildout in the
 It is also possible to reference a remote buildout definition from a
 version control system (VCS) in the manifest file.
 
-An interesting practice for buildbotting of in-house custom projects
-is to put this ``buildouts`` subdirectory itself under version control
-with your preferred VCS, and let the developpers push on it.
-
 It is designed not to be too intrusive to buildbot itself, so that
 buildbot users can tweak their configuration in the normal buildbot
 way, and even add more builds, possibly not even related to
@@ -41,6 +38,20 @@ OpenERP.
 The real-time scheduling works by polling the remote VCS systems
 (currently for Bazaar, Git and Mercurial). There is a basic URL
 rewritting capability to ease make this polling efficient.
+
+Documentation
+~~~~~~~~~~~~~
+
+The full documentation is written with `Sphinx
+<http://sphinx-doc.org>`_, built continuously and
+uploaded to http://docs.anybox.fr/anybox.buildbot.openerp by Anybox' public
+buildbot.
+The Sphinx source tree is to be found under the ``doc`` subdirectory
+of this project.
+
+The latest released version of the documentation *will be* uploaded to PyPI
+alongside with the package. See `PyPIDocumentationHosting
+<https://wiki.python.org/moin/PyPiDocumentationHosting>`_ for details.
 
 
 Quick master setup
