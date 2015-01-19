@@ -57,6 +57,7 @@ class MultiWatcher(object):
 
     * the manifest files (usually at ``buildouts/MANIFEST.cfg``) and
     * for those buildouts that have the ``auto-watch`` option set to ``true``,
+      (that's the default),
       the per-buildout files at ``watch/<BUILDOUT_NAME>``, which are
       typically uploaded during the builds execution themselves.
 
@@ -144,7 +145,7 @@ class MultiWatcher(object):
                     auto = parser.get(buildout, 'auto-watch')
                     auto = auto.strip().lower() == 'true'
                 except:
-                    auto = False  # for now False is the default
+                    auto = True
 
                 # with auto watch, an existing watch directive will
                 # supplement the auto watch

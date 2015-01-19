@@ -70,7 +70,8 @@ Options are:
    occurrences of this buildout will be rebuilt/retested if any change
    in them). If you use a VCS buildout type, you need to register it here also
    to build if the buildout itself has changed in the remote VCS.
- * ``auto-watch = true|false``: (currently defaults to ``false``). If
+   If this option is empty, no scheduling based on commits is made.
+ * ``auto-watch = true|false``: (defaults to ``true``). If
    ``true``, the buildmaster will watch all live VCS sources found in
    the buildout. The list of sources to watch is updated after each
    build, and will be applied on next buildbot ``reconfig`` or
@@ -78,7 +79,8 @@ Options are:
    See also `on GitHub
    <https://github.com/anybox/anybox.buildbot.odoo/issues/1>`_ for
    details of this process. Auto-watched VCS sources are merged with
-   the ones specified in the ``watch`` directive, unless in the
+   the ones specified in the ``watch`` directive (the latter being
+   applied after the auto-watch), unless in the
    special case of an empty ``watch``, which always mean not to do any
    commit-driven scheduling (useful, e.g, for release builders that
    are meant to be launched manually).
