@@ -4,6 +4,8 @@ Changes
 1.0 (unreleased)
 ----------------
 
+ - GitHub #1: auto-watch
+ - GitHub #8: transversal buildslave priority
  - launchpad #1391227: introduced a ``buildout-part`` option in
    MANIFEST, defaulting to the previously hardcoded ``openerp`` value.
    Also introduced options ``start-command`` and ``test-command``

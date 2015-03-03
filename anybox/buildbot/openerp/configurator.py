@@ -24,12 +24,17 @@ from . import buildouts
 
 from .utils import BUILD_UTILS_PATH
 from .constants import DEFAULT_BUILDOUT_PART
+from .buildslave import priorityAwareNextSlave
 from version import Version
 from version import VersionFilter
 
 BUILDSLAVE_KWARGS = {  # name -> validating callable
     'max_builds': int,
     'notify_on_missing': str,
+}
+
+BUILDSLAVE_PROPERTIES = {  # name -> validating callable (only for non-str)
+    'slave_priority': float,
 }
 
 BUILDSLAVE_REQUIRED = ('password',)
@@ -128,6 +133,9 @@ class BuildoutsConfigurator(object):
         BUILDSLAVE_KWARGS constant, in which case they are used directly in
         instantiation keyword arguments.
 
+        For properties, the BUILDSLAVE_PROPERTIES dict of validators is
+        also used (with default to ``str``)
+
         There is for now no limitation on which properties can be set.
         """
         parser = ConfigParser()
@@ -148,7 +156,7 @@ class BuildoutsConfigurator(object):
                 elif key in BUILDSLAVE_KWARGS:
                     kw[key] = BUILDSLAVE_KWARGS[key](value)
                 else:
-                    props[key] = value
+                    props[key] = BUILDSLAVE_PROPERTIES.get(key, str)(value)
 
             for option in BUILDSLAVE_REQUIRED:
                 if option not in seen:
@@ -509,6 +517,7 @@ class BuildoutsConfigurator(object):
                         properties=dict(pg_version='not-used'),
                         category=build_category,
                         factory=factory,
+                        nextSlave=priorityAwareNextSlave,
                         slavenames=slavenames
                     )]
             else:
@@ -519,6 +528,7 @@ class BuildoutsConfigurator(object):
                         properties=dict(pg_version=pg_version),
                         category=build_category,
                         factory=factory,
+                        nextSlave=priorityAwareNextSlave,
                         slavenames=slavenames)
                     for pg_version, slavenames in meet_requires.items()
                     if pgvf is None or pgvf.match(Version.parse(pg_version))
