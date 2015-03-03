@@ -1,3 +1,6 @@
+
+.. _subfactories:
+
 Custom builds: subfactories
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
