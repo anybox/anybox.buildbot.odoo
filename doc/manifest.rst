@@ -61,8 +61,8 @@ Prototype::
 
 Here, ``TYPE`` can be one ``standalone`` or indicate a VCS (``bzr``,
 ``hg`` or ``git``).
-For standalone buildouts, ``SPECIFICATION`` is a path from the buildmaster
-directory.
+For standalone buildouts, ``SPECIFICATION`` is a path from the same
+directory as the manifest.
 
 For buildouts from VCSes, ``SPECIFICATION`` takes the form
 ``URL BRANCH PATH`` (or ``URL PATH`` in the case of ``bzr).
