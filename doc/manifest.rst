@@ -65,8 +65,8 @@ For standalone buildouts, ``SPECIFICATION`` is a path from the same
 directory as the manifest.
 
 For buildouts from VCSes, ``SPECIFICATION`` takes the form
-``URL BRANCH PATH`` (or ``URL PATH`` in the case of ``bzr).
- where ``PATH`` is the path from a clone of repo ``URL`` on branch
+``URL BRANCH PATH`` (or ``URL PATH`` in the case of ``bzr``) 
+where ``PATH`` is the path from a clone of repo ``URL`` on branch
 ``BRANCH`` to the wished buildout configuration. This allows to use
 configuration files with ``extends`` and to track the buildout configuration
 itself, and to reduce duplication.
@@ -82,7 +82,7 @@ The ``watch`` option
 --------------------
 With this option, you can manually specify VCS locations to watch for
 changes. These are merged with what :ref:`automatic watching
-<manifest_auto_watch>` does.
+<auto_watch>` does.
 
 Prototype::
 
@@ -103,6 +103,9 @@ No scheduling based on commits is made if ``watch`` is explicitely set
 empty, namely::
 
   watch =
+
+
+.. _auto-watch:
 
 The ``auto-watch`` option
 -------------------------
