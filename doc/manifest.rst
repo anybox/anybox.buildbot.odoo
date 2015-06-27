@@ -81,8 +81,7 @@ itself, and to reduce duplication.
 The ``watch`` option
 --------------------
 With this option, you can manually specify VCS locations to watch for
-changes. These are merged with what :ref:`automatic watching
-<auto_watch>` does.
+changes. These are merged with what :ref:`auto_watch` does.
 
 Prototype::
 
@@ -105,7 +104,7 @@ empty, namely::
   watch =
 
 
-.. _auto-watch:
+.. _auto_watch:
 
 The ``auto-watch`` option
 -------------------------
