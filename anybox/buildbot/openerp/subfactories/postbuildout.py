@@ -267,21 +267,21 @@ def install_modules_nose(configurator, options, buildout_slave_path,
 
     Available manifest file options:
 
-      - openerp-addons: comma-separated list of addons to test
-      - install-as-upgrade: use the upgrade script to install the project
+    :openerp-addons: comma-separated list of addons to test
+    :install-as-upgrade: use the upgrade script to install the project
 
-        If this is False, the step will simply issue a start_<PART> -i on
-        openerp-addons
+      If this is False, the step will simply issue a start_<PART> -i on
+      openerp-addons
 
-      - upgrade.script: name of the upgrade script (defaults to
-        ``bin/upgrade_<PART>``)
-      - nose.tests: goes directly to command line; list directories to find
-        tests here.
-      - nose.coverage: boolean, if true, will run coverage for the listed
-        addons
-      - nose.cover-options: additional options for nosetests invocation
-      - nose.upload-path: path on master to upload files produced by nose
-      - nose.upload-url: URL to present files produced by nose in waterfall
+    :upgrade.script: name of the upgrade script (defaults to
+      ``bin/upgrade_<PART>``)
+    :nose.tests: goes directly to command line; list directories to find
+      tests here.
+    :nose.coverage: boolean, if true, will run coverage for the listed
+      addons
+    :nose.cover-options: additional options for nosetests invocation
+    :nose.upload-path: path on master to upload files produced by nose
+    :nose.upload-url: URL to present files produced by nose in waterfall
 
     In upload-path and upload-url, one may use properties as in the
     steps definitions, with $ instead of %, to avoid ConfigParser interpret
