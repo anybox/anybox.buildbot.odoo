@@ -269,10 +269,10 @@ def install_modules_nose(configurator, options, buildout_slave_path,
 
       :openerp-addons: comma-separated list of addons to test
       :install-as-upgrade: use the upgrade script to install the project
-  
+
         If this is False, the step will simply issue a start_<PART> -i on
         openerp-addons
-  
+
       :upgrade.script: name of the upgrade script (defaults to
         ``bin/upgrade_<PART>``)
       :nose.tests: goes directly to command line; list directories to find
