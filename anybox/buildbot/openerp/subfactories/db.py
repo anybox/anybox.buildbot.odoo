@@ -38,13 +38,19 @@ def pg_remote_copy(configurator, options, environ=()):
     but may be used for any script able to create a DB, provided buildbot can
     pass the wished database name
 
-    options: ``pg_remote_copy.arguments``: arguments to pass (required)
-             will be simply splitted.
-             ``pg_remote_copy.executable``: path to executable, defaults to
-             ``pg_remote_copy``.
-             ``pg_remote_copy.db_option``: option to use to specify the target
-             database name, defaults to ``--copied_db_name``. Set to None for
-             no option (db name will be a simple positional argument).
+    options:
+
+    :pg_remote_copy.arguments: arguments to pass (required).
+                               will be simply splitted.
+    :pg_remote_copy.executable: path to executable, defaults to
+                                ``pg_remote_copy``.
+    :pg_remote_copy.db_option: option to use to specify the target
+                               database name, defaults to ``--copied_db_name``.
+                               Set to None for no option
+                               (db name will be a simple positional argument).
+    :pg_remote_copy.timeout: time (seconds) allowed to complete the step.
+                             Default is to use buildbot's default (1200 at the
+                             time of this writing).
     """
 
     steps = []
@@ -69,11 +75,16 @@ def pg_remote_copy(configurator, options, environ=()):
 
     copy_cmd.extend(options['pg_remote_copy.arguments'].split())
 
+    timeout = options.get('pg_remote_copy.timeout')
+    if timeout is not None:
+        timeout = int(timeout.strip())
+
     steps.append(ShellCommand(
         command=copy_cmd,
         name='pg_remote_copy',
         description='pg_remote_copy',
         env=environ,
         haltOnFailure=True,
+        timeout=timeout,
     ))
     return steps
