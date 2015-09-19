@@ -1,7 +1,8 @@
-import download
-import postdownload
-import postbuildout
-import db
+import warnings
+from . import download
+from . import postdownload
+from . import postbuildout
+from . import db
 
 buildout_download = dict(standalone=download.standalone_buildout,
                          hgtag=download.hg_tag_buildout,
@@ -15,9 +16,28 @@ db_handling = dict(simple_create=db.simple_create,
                    pg_remote_copy=db.pg_remote_copy)
 
 
+def deprecate(name, replacement, subfactory):
+    """Rewrap subfactory with a deprecation wrapper.
+
+    This is here because most deprecations are about the dict keys.
+    Instead of the factory name (MANIFEST section name), that we don't have,
+    we log the buildout address, that'll be specific enough.
+    """
+
+    def wrapped(configurator, options, *args, **kwargs):
+        warnings.warn(
+            "The %r subfactory used for buildout %r is deprecated, "
+            "please use %r instead" % (name,
+                                       options.get('buildout'),
+                                       replacement),
+            DeprecationWarning)
+        return subfactory(configurator, options, *args, **kwargs)
+
+    return wrapped
+
+
 post_buildout = {
-    'test-openerp': postbuildout.install_modules_test_openerp,
-    'test-odoo': postbuildout.install_modules_test_openerp,
+    'install-modules-test': postbuildout.install_modules_test,
     'install-modules': postbuildout.install_modules,
     'update-openerp': postbuildout.update_modules,
     'nose': postbuildout.install_modules_nose,
@@ -28,11 +48,15 @@ post_buildout = {
     'doc': postbuildout.sphinx_doc,
     'packaging': postbuildout.packaging,
     'autocommit': postbuildout.autocommit,
+    # deprecated aliases
+    'standard': deprecate('standard', 'install-modules-test',
+                          postbuildout.install_modules_test),
+    'test-openerp': deprecate('test-openerp', 'install-modules-test',
+                              postbuildout.install_modules_test),
+    'test-odoo': deprecate('test-odoo', 'install-modules-test',
+                           postbuildout.install_modules_test),
 }
 
 post_download = {'noop': postdownload.noop,
                  'packaging': postdownload.packaging,
                  }
-
-# deprecated compatibility aliases
-post_buildout['standard'] = post_buildout['test-openerp']

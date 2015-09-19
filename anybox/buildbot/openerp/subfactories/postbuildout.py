@@ -99,13 +99,16 @@ def install_modules(configurator, options, buildout_slave_path,
     return steps
 
 
-def install_modules_test_openerp(configurator, options, buildout_slave_path,
-                                 environ=()):
-    """Return steps to run bin/test_<PART> -i MODULES.
+def install_modules_test(configurator, options, buildout_slave_path,
+                         environ=()):
+    """Return steps to run bin/test_<PART> -i.
 
 
     Available manifest file options:
 
+      :openerp-addons: passed to the command in the ``-i`` argument.
+                       Defaults to 'all', which actually only installs/tests
+                       the base addons (this is Odoo's doing)
       :odoo.use-port: if set to ``true``, necessary free ports will be chosen,
                       and used in the test run.
                       See :func:`steps_odoo_port_reservation` for port
@@ -162,7 +165,8 @@ def openerp_command_initialize_tests(configurator, options,
       :odoo.use-port: if set to ``true``, necessary free ports will be chosen,
                       and used in the test run.
                       See :func:`steps_odoo_port_reservation` for port
-                      selection tuning options.    """
+                      selection tuning options.
+    """
 
     environ = dict(environ)
 
