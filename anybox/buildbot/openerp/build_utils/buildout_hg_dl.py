@@ -16,10 +16,18 @@ parser = ArgumentParser()
 parser.add_argument('url')
 parser.add_argument('revspec')
 parser.add_argument('--type', '-t', default='branch')
+parser.add_argument('--cwd', '--change-directory',
+                    default='.',
+                    help="Instead of working on current directory, use the "
+                    "given one")
 
 arguments = parser.parse_args()
 url = arguments.url
 revspec = arguments.revspec
+cwd = arguments.cwd
+if not os.path.exists(cwd):
+    os.makedirs(cwd)
+os.chdir(cwd)
 
 if not os.path.exists(os.path.join('.hg')):
     check_call(['hg', 'init'])
