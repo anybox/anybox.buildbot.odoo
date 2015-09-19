@@ -296,7 +296,7 @@ class BuildoutsConfigurator(object):
                    initialisation. Defaults to ``['simple_create']``.
         :post-buildout-steps: list of subfactories to call for actual
                               test/build once the buildout is ready. Defaults
-                              to ``['test-odoo']``,
+                              to ``['install-modules-test']``,
                               see :func:`subfactories.test_openerp`
         :git-shallow: if ``True``, a shallow git clone (--depth=2) is
                       maintained instead of a full one. We've experienced
@@ -447,7 +447,7 @@ class BuildoutsConfigurator(object):
                     self, options, environ=capability_env))
 
         for line in options.get('post-buildout-steps',
-                                'standard').split(os.linesep):
+                                'install-modules-test').split(os.linesep):
             if not line:
                 continue
 
