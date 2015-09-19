@@ -340,35 +340,45 @@ class BuildoutsConfigurator(object):
         map(factory.addStep,
             self.steps_bootstrap(buildout_slave_path, options, eggs_cache))
 
-        factory.addStep(ShellCommand(command=[
-            'bin/buildout',
-            '-c', buildout_slave_path,
+        buildout_cache_options = [
             WithProperties('buildout:eggs-directory=' + eggs_cache),
-            WithProperties('buildout:openerp-downloads-directory='
-                           + openerp_cache),
-            buildout_part + ':with_devtools=true',
-            buildout_part + ':vcs-clear-locks=true',
-            buildout_part + ':vcs-clear-retry=true',
-            buildout_part + ':git-depth=1',
-            buildout_part + ':clean=true',
-            buildout_part + ':vcs-revert=on-merge',
+            WithProperties('buildout:openerp-downloads-directory=' +
+                           openerp_cache),
+        ]
+        buildout_vcs_options = [buildout_part + ':vcs-clear-locks=true',
+                                buildout_part + ':vcs-clear-retry=true',
+                                buildout_part + ':clean=true',
+                                buildout_part + ':vcs-revert=on-merge'
+                                buildout_part + ':git-depth=1',
+                                ]
+        buildout_pgcnx_options = [
             WithProperties(buildout_part +
                            ':options.db_port=%(cap_postgresql_port:-5432)s'),
             WithProperties(buildout_part +
                            ':options.db_host=%(cap_postgresql_host:-False)s'),
             WithProperties(buildout_part +
                            ':options.db_user=%(cap_postgresql_user:-False)s'),
-            WithProperties(buildout_part + ':options.db_password='
+            WithProperties(buildout_part +
+                           ':options.db_password='
                            '%(cap_postgresql_passwd:-False)s'),
-            WithProperties(buildout_part + ':options.db_name=%(testing_db)s')
-        ],
-            name="buildout",
-            description="buildout",
-            timeout=3600*4,
-            haltOnFailure=True,
-            locks=[buildout_lock.access('exclusive')],
-            env=capability_env,
-        ))
+        ]
+        buildout_db_name_option = WithProperties(
+            buildout_part + ':options.db_name=%(testing_db)s')
+
+        factory.addStep(
+            ShellCommand(
+                command=['bin/buildout', '-c', buildout_slave_path] +
+                buildout_cache_options +
+                buildout_vcs_options + buildout_pgcnx_options +
+                [buildout_part + ':with_devtools=true',
+                 buildout_db_name_option],
+                name="buildout",
+                description="buildout",
+                timeout=3600*4,
+                haltOnFailure=True,
+                locks=[buildout_lock.access('exclusive')],
+                env=capability_env,
+                ))
 
         if options.get('auto-watch', 'false').lower() == 'true':
             dumped_watches = 'buildbot_watch.json'
