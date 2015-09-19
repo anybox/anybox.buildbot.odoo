@@ -272,14 +272,42 @@ class BuildoutsConfigurator(object):
                      options):
         """Return a build factory using name and buildout config at cfg_path.
 
-        buildout_path is the slave-side path from build directory to the
-          buildout configuration file.
-        buildout_dl_steps is an iterable of BuildSteps to retrieve slave-side
-          the buildout configuration file and its dependencies (bootstrap,
-          extended conf files)
+        :param buildout_path: the slave-side path from build directory to the
+                              buildout configuration file.
+        :param buildout_dl_steps: an iterable of :class:`BuildStep` instances
+                                  to retrieve slave-side the buildout
+                                  configuration file and its dependencies
+                                  (bootstrap, extended conf files)
+        :param name: the factory name, also used as testing database suffix
+        :param options: the configuration section for this factory,
+                        seen as a dict. This is passed to subfactories
+                        (``post-buildout-steps`` etc)
 
-        the factory name is also used as testing database suffix
-        options is the config part for this factory, seen as a dict
+        Options that matter directly in this method:
+
+        :buildout part: the Odoo/OpenERP part that the whole build is about
+        :build-for: dispatch onto available PostgreSQL versions that
+                    match these criteria
+        :build-requires: used to run only on buildslaves having the correct
+                         capabilities
+        :post-dl-steps: list of subfactories to call right after initial
+                        download
+        :db-steps: list of subfactories to call for database
+                   initialisation. Defaults to ``['simple_create']``.
+        :post-buildout-steps: list of subfactories to call for actual
+                              test/build once the buildout is ready. Defaults
+                              to ``['test-odoo']``,
+                              see :func:`subfactories.test_openerp`
+        :git-shallow: if ``True``, a shallow git clone (--depth=2) is
+                      maintained instead of a full one. We've experienced
+                      trouble with Git actually redownloading everything at
+                      each run with this option, especially with tags,
+                      that's why it's by default disabled.
+                      Depth is 2 in the hope to mitigate these  problems.
+        :auto-watch: if ``True``, the build will report dependent VCS
+                     to the master so that watch directives can be updated.
+                     This depends on the master being reconfig'ed regularly
+                     enough, e.g, by a cron job.
         """
         factory = BuildFactory()
         build_for = options.get('build-for')
@@ -348,9 +376,11 @@ class BuildoutsConfigurator(object):
         buildout_vcs_options = [buildout_part + ':vcs-clear-locks=true',
                                 buildout_part + ':vcs-clear-retry=true',
                                 buildout_part + ':clean=true',
-                                buildout_part + ':vcs-revert=on-merge'
-                                buildout_part + ':git-depth=1',
+                                buildout_part + ':vcs-revert=on-merge',
                                 ]
+        if options.get('git-shallow'):
+            buildout_vcs_options.append(buildout_part + ':git-depth=2')
+
         buildout_pgcnx_options = [
             WithProperties(buildout_part +
                            ':options.db_port=%(cap_postgresql_port:-5432)s'),
