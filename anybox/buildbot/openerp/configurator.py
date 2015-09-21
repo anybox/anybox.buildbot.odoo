@@ -510,6 +510,39 @@ class BuildoutsConfigurator(object):
                 slaves.setdefault(version, []).append(slave)
         return slaves
 
+    def slaves_meeting_requires_by_capa(self, master_config, capa_name,
+                                        requires):
+        """Same as slaves_by_capa, but additionnally meeting the requirements.
+
+        :param requires: the requirements, usually having nothing to do with
+                         the capability being considered.
+        """
+
+        def only_if_requires(slave):
+            """Shorcut for extraction of build-only-if-requires tokens."""
+            only = slave.properties.getProperty('build-only-if-requires')
+            if only is None:
+                return set()
+            else:
+                return set(only.split())
+
+        meet_by_version = {}  # pg version -> list of slave names
+
+        require_names = set(req.cap for req in requires)
+        for capa_version, slaves in self.slaves_by_capability(
+                master_config, capa_name).items():
+            meet = [slave.slavename for slave in slaves
+                    if capability.does_meet_requirements(
+                        slave.properties['capability'], requires)
+                    and only_if_requires(slave).issubset(require_names)
+                    ]
+            if meet:
+                # important so that no empty list of slave names is passed
+                # to buildbot
+                meet_by_version[capa_version] = meet
+
+        return meet_by_version
+
     def make_builders(self, master_config=None):
         """Spawn builders from build factories.
 
@@ -528,40 +561,23 @@ class BuildoutsConfigurator(object):
         # this parameter is passed as kwarg for the sake of expliciteness
         assert master_config is not None
 
-        slaves = master_config['slaves']
-
         all_builders = []
         fact_to_builders = self.factories_to_builders
 
-        def only_if_requires(slave):
-            """Shorcut for extraction of build-only-if-requires tokens."""
-            only = slave.properties.getProperty('build-only-if-requires')
-            if only is None:
-                return set()
-            else:
-                return set(only.split())
-
         for factory_name, factory in self.build_factories.items():
-            pgvf = factory.build_for.get('postgresql')
-            requires = factory.build_requires
-            require_names = set(req.cap for req in requires)
-            meet_requires = {}  # pg version -> list of slave names
-
-            for pg, slaves in self.slaves_by_capability(
-                    master_config, 'postgresql').items():
-                meet = [slave.slavename for slave in slaves
-                        if capability.does_meet_requirements(
-                            slave.properties['capability'], requires)
-                        and only_if_requires(slave).issubset(require_names)
-                        ]
-                if meet:
-                    meet_requires[pg] = meet
             build_category = factory.options.get('build-category', '').strip()
-            if pgvf is not None and pgvf.criteria == (None,):
-                # The build does not actually use PG
-                slavenames = list(set(
-                    sn for each_pg in meet_requires.values()
-                    for sn in each_pg))
+
+            capa_name = 'postgresql'
+            capa_vf = factory.build_for.get(capa_name)
+            requires = factory.build_requires
+            meet_requires = self.slaves_meeting_requires_by_capa(
+                master_config, capa_name, requires)
+
+            if capa_vf is not None and capa_vf.criteria == (None,):
+                # The build does not actually use the capability, lets run it
+                # on all buildslaves meeting requirements
+                slavenames = list(set(sn for each in meet_requires.values()
+                                      for sn in each))
                 if not slavenames:
                     # buildbot does not allow builders with empty list of
                     # slaves
@@ -579,15 +595,17 @@ class BuildoutsConfigurator(object):
             else:
                 builders = [
                     BuilderConfig(
-                        name='%s-postgresql-%s' % (factory_name,
-                                                   pg_version),
-                        properties=dict(pg_version=pg_version),
+                        name='%s-%s-%s' % (factory_name,
+                                           capa_name,
+                                           capa_version),
+                        properties=dict(pg_version=capa_version),
                         category=build_category,
                         factory=factory,
                         nextSlave=priorityAwareNextSlave,
                         slavenames=slavenames)
-                    for pg_version, slavenames in meet_requires.items()
-                    if pgvf is None or pgvf.match(Version.parse(pg_version))
+                    for capa_version, slavenames in meet_requires.items()
+                    if capa_vf is None or
+                    capa_vf.match(Version.parse(capa_version))
                 ]
 
             fact_to_builders[factory_name] = [b.name for b in builders]
