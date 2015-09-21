@@ -490,6 +490,26 @@ class BuildoutsConfigurator(object):
                 name, conf_slave_path, dl_steps, options)
             factory.manifest_path = manifest_path  # change filter will need it
 
+    def slaves_by_capability(self, master_config, capa_name):
+        """Return a dict of slaves having the given capability, by version of it.
+
+        Keeps a cache as a special key in master_config for frequent
+        reexecution in loops.
+        """
+        by_cap = master_config.get('_slaves_by_capability')
+        if by_cap is None:
+            by_cap = master_config['_slaves_by_capability'] = {}
+
+        slaves = by_cap.get(capa_name)
+        if slaves is not None:
+            return slaves
+
+        slaves = by_cap[capa_name] = {}
+        for slave in master_config['slaves']:
+            for version in slave.properties['capability'].get(capa_name, {}):
+                slaves.setdefault(version, []).append(slave)
+        return slaves
+
     def make_builders(self, master_config=None):
         """Spawn builders from build factories.
 
@@ -510,11 +530,6 @@ class BuildoutsConfigurator(object):
 
         slaves = master_config['slaves']
 
-        slaves_by_pg = {}  # pg version -> list of slaves
-        for slave in slaves:
-            for pg in slave.properties['capability'].get('postgresql', {}):
-                slaves_by_pg.setdefault(pg, []).append(slave)
-
         all_builders = []
         fact_to_builders = self.factories_to_builders
 
@@ -532,7 +547,8 @@ class BuildoutsConfigurator(object):
             require_names = set(req.cap for req in requires)
             meet_requires = {}  # pg version -> list of slave names
 
-            for pg, slaves in slaves_by_pg.items():
+            for pg, slaves in self.slaves_by_capability(
+                    master_config, 'postgresql').items():
                 meet = [slave.slavename for slave in slaves
                         if capability.does_meet_requirements(
                             slave.properties['capability'], requires)
