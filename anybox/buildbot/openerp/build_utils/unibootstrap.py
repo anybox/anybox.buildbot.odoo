@@ -277,17 +277,17 @@ class Bootstrapper(object):
         if force_distribute is not None:
             setuptools, setuptools_rhs = 'distribute', force_distribute
 
-        # this is almost the CLI, but that lets us control which one is executed
-        # from PYTHONPATH (finding the equivalent executable would be
+        # this is almost the CLI, but that lets us control which one is
+        # executed from PYTHONPATH (finding the equivalent executable would be
         # more hazardeous)
         self._ez_install = (
             sys.executable, '-c',
             "from setuptools.command.easy_install import main; main()",
         )
 
-        # actually, installing distribute with any version of setuptools or itself
-        # happens to work... provided that the magic buildout marker that
-        # tells is setup no to touch the global site-packages is there
+        # actually, installing distribute with any version of setuptools or
+        # itself happens to work... provided that the magic buildout marker
+        # that tells is setup no to touch the global site-packages is there
         # otherwise, it'd try the rename an .egg_info, and would fail for non-
         # privileged users, even for a local egg production.
         # Usually, the shell would set it, thankfully it's not libc's concern
@@ -526,8 +526,8 @@ class TestBootstrapper(unittest.TestCase):
             logger.error("Need virtualenv to run these tests")
             raise
 
-        logger.warning("Starting integration tests, current Python version %s, "
-                       "using %s (%s)",
+        logger.warning("Starting integration tests, current Python is "
+                       "version %s, using %s (%s)",
                        '.'.join(str(i) for i in sys.version_info),
                        venv.__name__,
                        venv_version if venv_version is not None else 'builtin')
