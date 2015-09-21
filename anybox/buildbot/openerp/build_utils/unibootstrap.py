@@ -234,15 +234,18 @@ class Bootstrapper(object):
         paths = dict(setuptools_path=self.ensure_req(self.setuptools_req),
                      buildout_path=self.ensure_req(self.buildout_req))
 
+        oldpwd = os.getcwd()
         os.chdir(self.buildout_dir)
-        boot_fname = 'bootstrap_offline.py'
-        with open(boot_fname, 'w') as bootf:
-            bootf.write(bootstrap_script_tmpl % paths)
-        logger.info("Wrote %r file, now running it.", boot_fname)
-        subprocess.check_call([self.python, boot_fname])
-
-        self.clean()
-        self.remove_develop_eggs()
+        try:
+            boot_fname = 'bootstrap_offline.py'
+            with open(boot_fname, 'w') as bootf:
+                bootf.write(bootstrap_script_tmpl % paths)
+            logger.info("Wrote %r file, now running it.", boot_fname)
+            subprocess.check_call([self.python, boot_fname])
+            self.clean()
+            self.remove_develop_eggs()
+        finally:
+            os.chdir(oldpwd)  # crucial for tests
 
     def init_env(self):
         self.ws = WorkingSet(entries=())
@@ -274,18 +277,28 @@ class Bootstrapper(object):
         if force_distribute is not None:
             setuptools, setuptools_rhs = 'distribute', force_distribute
 
-        # this is almost the CLI
+        # this is almost the CLI, but that lets us control which one is executed
+        # from PYTHONPATH (finding the equivalent executable would be
+        # more hazardeous)
         self._ez_install = (
             sys.executable, '-c',
             "from setuptools.command.easy_install import main; main()",
         )
+
+        # actually, installing distribute with any version of setuptools or itself
+        # happens to work... provided that the magic buildout marker that
+        # tells is setup no to touch the global site-packages is there
+        # otherwise, it'd try the rename an .egg_info, and would fail for non-
+        # privileged users, even for a local egg production.
+        # Usually, the shell would set it, thankfully it's not libc's concern
+        if setuptools == 'distribute':
+            os.environ['_'] = 'buildout_unibootstrap'
+
         if DISTRIBUTE and setuptools == 'setuptools':
             self.setuptools_req = self._setuptools_req(setuptools_rhs)
             self.init_ez_install_distribute_to_setuptools()
             return
 
-        # actually, installing distribute with any version of setuptools
-        # happens to work
         self.setuptools_req = Requirement.parse(setuptools + setuptools_rhs)
         self._ez_install_pypath = None
 
@@ -495,3 +508,138 @@ if __name__ == '__main__':
 
 class TestBootstrapper(unittest.TestCase):
     """That's all for today"""
+
+    logger = logging.getLogger('test.unibootstrap')
+
+    @classmethod
+    def setUpClass(cls):
+        logger = cls.logger
+        cls.logger.addHandler(logging.StreamHandler())
+        try:
+            if sys.version_info < (3, 3):
+                import virtualenv as venv
+                venv_version = venv.virtualenv_version
+            else:
+                import venv
+                venv_version = None
+        except ImportError:
+            logger.error("Need virtualenv to run these tests")
+            raise
+
+        logger.warning("Starting integration tests, current Python version %s, "
+                       "using %s (%s)",
+                       '.'.join(str(i) for i in sys.version_info),
+                       venv.__name__,
+                       venv_version if venv_version is not None else 'builtin')
+        cls.init_venv(venv, venv_version)
+
+    @classmethod
+    def init_venv(cls, venv, version):
+        """Create a fresh virtualenv without setuptools."""
+        cls.logger.info("Creating virtualenv")
+        if version is not None:
+            version = tuple(int(i) for i in version.split('.'))
+
+        cls.venv_dir = tempfile.mkdtemp('test_unibootstrap')
+        cls.venv_python = os.path.join(cls.venv_dir, 'bin', 'python')
+        if version is None:
+            try:
+                # py3 venv is by default without pip at API level
+                venv.EnvBuilder().create(cls.venv_dir)
+            except:
+                cls.tearDown()
+            return
+
+        kwargs = {}
+        if version >= (1, 8):
+            kwargs['no_setuptools'] = True
+            post_cmd = None
+        else:
+            post_cmd = (os.path.join(cls.venv_dir, 'bin', 'pip'),
+                        'uninstall', '-y', 'setuptools', 'pip')
+
+        try:
+            venv.create_environment(cls.venv_dir,
+                                    site_packages=False,
+                                    never_download=True,
+                                    **kwargs)
+
+            if post_cmd:
+                subprocess.check_call(post_cmd)
+
+            # double checking that it is as expected
+            subprocess.check_call((cls.venv_python, '--version'),
+                                  stdout=subprocess.PIPE)
+            try:
+                subprocess.check_call((cls.venv_python, '-m', 'setuptools'),
+                                      stderr=subprocess.PIPE)
+            except subprocess.CalledProcessError:
+                pass
+            else:
+                raise AssertionError("init_venv: the virtualenv "
+                                     "still has setuptools")
+        except:
+            cls.tearDownClass()
+            raise
+
+    @classmethod
+    def tearDownClass(cls):
+        venv_dir = getattr(cls, 'venv_dir', None)
+        if venv_dir is not None and os.path.isdir(venv_dir):
+            shutil.rmtree(venv_dir)
+
+    def setUp(self):
+        self.test_dir = tempfile.mkdtemp()
+        self.eggs_dir = os.path.join(self.test_dir, 'bootstrap-eggs')
+        self.buildout_dir = os.path.join(self.test_dir, 'thebuildout')
+        os.mkdir(self.eggs_dir)
+        os.mkdir(self.buildout_dir)
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir)
+
+    def bootstrap(self, buildout_version, cfg_lines,
+                  force_setuptools=None, force_distribute=None):
+        with open(os.path.join(self.buildout_dir, 'buildout.cfg'), 'w') as cfg:
+            cfg.write('\n'.join(cfg_lines) + '\n')
+
+        Bootstrapper(buildout_version,
+                     eggs_dir=self.eggs_dir,
+                     python=self.venv_python,
+                     buildout_dir=self.buildout_dir,
+                     force_setuptools=force_setuptools,
+                     force_distribute=force_distribute,
+                     error=lambda msg: self._fail(msg)).bootstrap()
+
+    def cfg_lines_from_versions(self, versions):
+        lines = ["[buildout]",
+                 "parts = main",
+                 "versions = versions",
+                 "",
+                 "[main]",
+                 "recipe = zc.recipe.egg",
+                 "eggs = zope.event",
+                 "",
+                 "[versions]"]
+        lines.extend('%s = %s' % version for version in versions.items())
+        return lines
+
+    def buildout(self):
+        old_pwd = os.getcwd()
+        os.chdir(self.buildout_dir)
+        try:
+            subprocess.check_call([os.path.join('bin', 'buildout')])
+        finally:
+            os.chdir(old_pwd)
+
+    def test_2_4_1(self):
+        self.bootstrap('2.4.1', self.cfg_lines_from_versions(
+            {'setuptools': '18.3.2',
+             'zc.recipe.egg': '2.0.0'}))
+        self.buildout()
+
+    def test_2_1_1(self):
+        self.bootstrap('2.1.1', self.cfg_lines_from_versions(
+            {'distribute': '0.6.49',
+             'zc.recipe.egg': '2.0.0'}))
+        self.buildout()
