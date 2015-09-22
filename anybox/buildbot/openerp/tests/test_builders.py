@@ -70,12 +70,12 @@ class TestBuilders(BaseTestCase):
         conf.register_build_factories(self.data_join('manifest_build_for.cfg'))
         builders = self.configurator.make_builders(master_config=master)
         names = set(builder.name for builder in builders)
-        self.assertEquals(names, set(('sup90-postgresql-9.1-devel',
-                                      'range-postgresql-9.1-devel',
-                                      'range-postgresql-9.0',
-                                      'range-postgresql-8.4',
-                                      'or-statement-postgresql-9.1-devel',
-                                      'or-statement-postgresql-8.4')))
+        self.assertEquals(names, set(('sup90-pg9.1-devel',
+                                      'range-pg9.1-devel',
+                                      'range-pg9.0',
+                                      'range-pg8.4',
+                                      'or-statement-pg9.1-devel',
+                                      'or-statement-pg8.4')))
 
     def test_build_for_double(self):
         """build-for dispatching for two capabilities."""
@@ -89,9 +89,9 @@ class TestBuilders(BaseTestCase):
         builders = {b.name: b for b in builders}
         # our precise combination actually does not have so much possibilities
         self.assertEquals(set(builders),
-                          set(('range-postgresql-9.0-python-2.6',
-                               'range-postgresql-9.1-devel-python-2.6',
-                               'or-statement-postgresql-8.4-python-2.4'
+                          set(('range-pg9.0-py2.6',
+                               'range-pg9.1-devel-py2.6',
+                               'or-statement-pg8.4-py2.4'
                                )))
 
     def test_build_for_double2(self):
@@ -105,19 +105,19 @@ class TestBuilders(BaseTestCase):
         builders = self.configurator.make_builders(master_config=master)
         builders = {b.name: b for b in builders}
         self.assertEquals(set(builders),
-                          set(('range-postgresql-9.0-python-2.6',
-                               'range-postgresql-9.0-python-2.7',
-                               'range-postgresql-9.1-devel-python-2.6',
+                          set(('range-pg9.0-py2.6',
+                               'range-pg9.0-py2.7',
+                               'range-pg9.1-devel-py2.6',
                                )))
         # checking props
         self.assertEquals(
-            builders['range-postgresql-9.0-python-2.6'].properties,
+            builders['range-pg9.0-py2.6'].properties,
             dict(pg_version='9.0', py_version='2.6'))
         self.assertEquals(
-            builders['range-postgresql-9.0-python-2.7'].properties,
+            builders['range-pg9.0-py2.7'].properties,
             dict(pg_version='9.0', py_version='2.7'))
         self.assertEquals(
-            builders['range-postgresql-9.1-devel-python-2.6'].properties,
+            builders['range-pg9.1-devel-py2.6'].properties,
             dict(pg_version='9.1-devel', py_version='2.6'))
 
     def test_build_requires(self):
@@ -136,33 +136,33 @@ class TestBuilders(BaseTestCase):
         self.assertEquals(
             set(name for name in builders.keys()
                 if name.startswith('priv-pgall')),
-            set(('priv-pgall-postgresql-8.4',
-                 'priv-pgall-postgresql-9.1-devel',)))
+            set(('priv-pgall-pg8.4',
+                 'priv-pgall-pg9.1-devel',)))
 
-        self.assertEquals(builders['priv-pgall-postgresql-8.4'].slavenames,
+        self.assertEquals(builders['priv-pgall-pg8.4'].slavenames,
                           ['privcode', 'privcode-84'])
         self.assertEquals(
-            builders['priv-pgall-postgresql-9.1-devel'].slavenames,
+            builders['priv-pgall-pg9.1-devel'].slavenames,
             ['privcode', 'privcode-91'])
 
         # now build-for and build-requires together
         self.assertEquals(
             set(name for name in builders.keys()
                 if name.startswith('priv-sup90')),
-            set(('priv-sup90-postgresql-9.1-devel',)))
+            set(('priv-sup90-pg9.1-devel',)))
 
         self.assertEquals(
-            builders['priv-sup90-postgresql-9.1-devel'].slavenames,
+            builders['priv-sup90-pg9.1-devel'].slavenames,
             ['privcode', 'privcode-91'])
 
         # now with a version
         self.assertEquals(
             set(name for name in builders.keys()
                 if name.startswith('rabb-sup20')),
-            set(('rabb-sup20-postgresql-9.0',)))
+            set(('rabb-sup20-pg9.0',)))
 
         self.assertEquals(
-            builders['rabb-sup20-postgresql-9.0'].slavenames,
+            builders['rabb-sup20-pg9.0'].slavenames,
             ['rabb284'])
 
     def test_build_requires2(self):
@@ -176,10 +176,10 @@ class TestBuilders(BaseTestCase):
         builders = self.configurator.make_builders(master_config=master)
         builders = dict((b.name, b) for b in builders)
 
-        self.assertEquals(builders.keys(), ['rabb-18-postgresql-9.0'])
+        self.assertEquals(builders.keys(), ['rabb-18-pg9.0'])
 
         self.assertEquals(
-            builders['rabb-18-postgresql-9.0'].slavenames,
+            builders['rabb-18-pg9.0'].slavenames,
             ['rabb18'])
 
     def test_build_requires_pg_not_used(self):
@@ -214,7 +214,7 @@ class TestBuilders(BaseTestCase):
 
         # 'privcode' doesn't run a the sup90 builders, since they don't
         # need private-code-access cap
-        self.assertEquals(builders['sup90-postgresql-9.1-devel'].slavenames,
+        self.assertEquals(builders['sup90-pg9.1-devel'].slavenames,
                           ['privcode-91', 'pg90-91'])
 
         # Redoing the tests of normal build_requires about builds that do
@@ -222,41 +222,43 @@ class TestBuilders(BaseTestCase):
         self.assertEquals(
             set(name for name in builders.keys()
                 if name.startswith('priv-pgall')),
-            set(('priv-pgall-postgresql-8.4',
-                 'priv-pgall-postgresql-9.1-devel',)))
+            set(('priv-pgall-pg8.4',
+                 'priv-pgall-pg9.1-devel',)))
 
-        self.assertEquals(builders['priv-pgall-postgresql-8.4'].slavenames,
+        self.assertEquals(builders['priv-pgall-pg8.4'].slavenames,
                           ['privcode', 'privcode-84'])
         self.assertEquals(
-            builders['priv-pgall-postgresql-9.1-devel'].slavenames,
+            builders['priv-pgall-pg9.1-devel'].slavenames,
             ['privcode', 'privcode-91'])
 
         # now build-for and build-requires together
         self.assertEquals(
             set(name for name in builders.keys()
                 if name.startswith('priv-sup90')),
-            set(('priv-sup90-postgresql-9.1-devel',)))
+            set(('priv-sup90-pg9.1-devel',)))
 
         self.assertEquals(
-            builders['priv-sup90-postgresql-9.1-devel'].slavenames,
+            builders['priv-sup90-pg9.1-devel'].slavenames,
             ['privcode', 'privcode-91'])
 
         # now with a version
         self.assertEquals(
             set(name for name in builders.keys()
                 if name.startswith('rabb-sup20')),
-            set(('rabb-sup20-postgresql-9.0',)))
+            set(('rabb-sup20-pg9.0',)))
 
         self.assertEquals(
-            builders['rabb-sup20-postgresql-9.0'].slavenames,
+            builders['rabb-sup20-pg9.0'].slavenames,
             ['rabb284'])
 
     def test_capability_env(self):
         master = {}
         conf = self.configurator
-        conf.add_capability_environ(
-            'python', dict(version_prop='py_version',
-                           environ={'PYTHONBIN': '%(cap(bin)-)s'}))
+        # it's a bit weird now that there is a Python capability, but that
+        # changes nothing to the validity of the test
+        conf.capabilities['python'] = dict(
+            version_prop='py_version',
+            environ={'PYTHONBIN': '%(cap(bin)-)s'})
 
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_capability.cfg'))
@@ -302,8 +304,10 @@ class TestBuilders(BaseTestCase):
 
         master = {}
         conf = self.configurator
-        conf.add_capability_environ(
-            'python', dict(environ={'PYTHONBIN': '%(cap(bin)-)s'}))
+        # it's a bit weird now that there is a Python capability, but that
+        # changes nothing to the validity of the test
+        conf.capabilities['python'] = dict(
+            environ={'PYTHONBIN': '%(cap(bin)-)s'})
 
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_capability.cfg'))
@@ -340,12 +344,12 @@ class TestBuilders(BaseTestCase):
         # we got the same builders as for 'simple', without 9.0, because
         # no slave has 'private-code-access' capability.
         self.assertEquals(set(builders.keys()),
-                          set(['simple-postgresql-9.0',
-                               'simple-postgresql-8.4',
-                               'simple-postgresql-9.1-devel',
-                               'inheritor-postgresql-8.4',
-                               'inheritor-postgresql-9.1-devel']))
+                          set(['simple-pg9.0',
+                               'simple-pg8.4',
+                               'simple-pg9.1-devel',
+                               'inheritor-pg8.4',
+                               'inheritor-pg9.1-devel']))
 
         # other option are unchanged
-        factory = builders['inheritor-postgresql-8.4'].factory
+        factory = builders['inheritor-pg8.4'].factory
         self.assertEquals(factory.options['openerp-addons'], ('stock, crm'))

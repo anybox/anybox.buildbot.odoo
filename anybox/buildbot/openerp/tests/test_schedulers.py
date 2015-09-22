@@ -18,7 +18,7 @@ class TestSchedulers(BaseTestCase):
         self.assertEquals(len(schs), 1)
         sch = schs[0]
         self.assertEquals(sch.name, 'simple')
-        self.assertEquals(sch.builderNames, ['simple-postgresql-8.4'])
+        self.assertEquals(sch.builderNames, ['simple-pg8.4'])
         filt = sch.change_filter
 
         self.assertEqual(len(filt.interesting), 1)

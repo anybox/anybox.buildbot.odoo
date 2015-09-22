@@ -1,6 +1,6 @@
 import os
 import logging
-
+import warnings
 import json
 from copy import deepcopy
 from collections import OrderedDict
@@ -58,11 +58,14 @@ class BuildoutsConfigurator(object):
        - post_buildout (see ``subfactories.postbuildout``)
     """
 
-    cap2environ = dict(
+    capabilities = dict(
         wkhtmltopdf=dict(version_prop='wkhtml2pdf_version',
                          environ={'DISPLAY': '%(cap(display):-:0)s'}),
-        python=dict(version_prop='py_version', environ={}),
+        python=dict(version_prop='py_version',
+                    abbrev='py',
+                    environ={}),
         postgresql=dict(version_prop='pg_version',
+                        abbrev='pg',
                         environ={'PGPORT': '%(cap(port):-)s',
                                  'PGHOST': '%(cap(host):-)s',
                                  'LD_LIBRARY_PATH': '%(cap(lib):-)s',
@@ -78,7 +81,7 @@ class BuildoutsConfigurator(object):
     def __init__(self, buildmaster_dir,
                  manifest_paths=('buildouts/MANIFEST.cfg',),
                  slaves_path='slaves.cfg',
-                 capability_options_to_environ=None):
+                 capabilities=None):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
         self.buildmaster_dir = buildmaster_dir
@@ -86,13 +89,14 @@ class BuildoutsConfigurator(object):
         self.factories_to_builders = {}  # factory name -> builders playing it
         self.manifest_paths = manifest_paths
         self.slaves_path = slaves_path
-        if capability_options_to_environ is not None:
-            self.cap2environ = capability_options_to_environ
+        if capabilities is not None:
+            self.capabilities = capabilities
 
     def add_capability_environ(self, capability_name, options2environ):
         """Add a dict of capability options to environment mapping."""
-        self.cap2environ = self.cap2environ.copy()
-        self.cap2environ[capability_name] = options2environ
+        warnings.warn("The add_capability_environ method is deprecated. "
+                      "Please use simply the capabilities attribute.")
+        self.capabilities[capability_name] = options2environ
 
     def populate(self, config):
         config.setdefault('slaves', []).extend(
@@ -339,7 +343,7 @@ class BuildoutsConfigurator(object):
         map(factory.addStep, buildout_dl_steps)
 
         capability_env = capability.set_properties_make_environ(
-            self.cap2environ, factory)
+            self.capabilities, factory)
 
         for line in options.get('post-dl-steps', 'noop').split(os.linesep):
             subfactory = subfactories.post_download[line]
@@ -529,7 +533,9 @@ class BuildoutsConfigurator(object):
             # spawning builds that ignore it entirely
             return builders
 
-        prop = self.cap2environ[cap]['version_prop']
+        capdef = self.capabilities[cap]
+        prop = capdef['version_prop']
+        abbrev = capdef.get('abbrev', cap)
         for builder in builders:
             for cap_version, slavenames in self.split_slaves_by_capability(
                     all_slaves, cap, builder['slavenames']).items():
@@ -541,7 +547,8 @@ class BuildoutsConfigurator(object):
                 refined = deepcopy(builder)
                 refined['slavenames'] = slavenames
                 refined.setdefault('properties', {})[prop] = cap_version
-                refined['name'] = '-'.join((builder['name'], cap, cap_version))
+                refined['name'] = '%s-%s%s' % (
+                    builder['name'], abbrev, cap_version)
                 res.append(refined)
         return res
 
