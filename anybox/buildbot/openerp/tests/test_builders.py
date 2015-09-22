@@ -57,15 +57,14 @@ class TestBuilders(BaseTestCase):
         conf.register_build_factories(self.data_join('manifest_category.cfg'))
         builders = self.configurator.make_builders(master_config=master)
         self.assertEquals(len(builders), 2)
-        expected = {'ready-postgresql-8.4': 'mature',
-                    'wip-postgresql-8.4': 'unstable'}
+        expected = {'ready': 'mature',
+                    'wip': 'unstable'}
         for b in builders:
             self.assertEquals(b.category, expected[b.name])
 
     def test_build_for(self):
         master = {}
         conf = self.configurator
-
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_build_for.cfg'))
         conf.register_build_factories(self.data_join('manifest_build_for.cfg'))
@@ -77,6 +76,49 @@ class TestBuilders(BaseTestCase):
                                       'range-postgresql-8.4',
                                       'or-statement-postgresql-9.1-devel',
                                       'or-statement-postgresql-8.4')))
+
+    def test_build_for_double(self):
+        """build-for dispatching for two capabilities."""
+        master = {}
+        conf = self.configurator
+        master['slaves'] = conf.make_slaves(
+            self.data_join('slaves_build_for.cfg'))
+        conf.register_build_factories(
+            self.data_join('manifest_double_build_for.cfg'))
+        builders = self.configurator.make_builders(master_config=master)
+        builders = {b.name: b for b in builders}
+        # our precise combination actually does not have so much possibilities
+        self.assertEquals(set(builders),
+                          set(('range-postgresql-9.0-python-2.6',
+                               'range-postgresql-9.1-devel-python-2.6',
+                               'or-statement-postgresql-8.4-python-2.4'
+                               )))
+
+    def test_build_for_double2(self):
+        """build-for dispatching for two capabilities."""
+        master = {}
+        conf = self.configurator
+        master['slaves'] = conf.make_slaves(
+            self.data_join('slaves_build_for2.cfg'))
+        conf.register_build_factories(
+            self.data_join('manifest_double_build_for.cfg'))
+        builders = self.configurator.make_builders(master_config=master)
+        builders = {b.name: b for b in builders}
+        self.assertEquals(set(builders),
+                          set(('range-postgresql-9.0-python-2.6',
+                               'range-postgresql-9.0-python-2.7',
+                               'range-postgresql-9.1-devel-python-2.6',
+                               )))
+        # checking props
+        self.assertEquals(
+            builders['range-postgresql-9.0-python-2.6'].properties,
+            dict(pg_version='9.0', py_version='2.6'))
+        self.assertEquals(
+            builders['range-postgresql-9.0-python-2.7'].properties,
+            dict(pg_version='9.0', py_version='2.7'))
+        self.assertEquals(
+            builders['range-postgresql-9.1-devel-python-2.6'].properties,
+            dict(pg_version='9.1-devel', py_version='2.6'))
 
     def test_build_requires(self):
         master = {}

@@ -1,3 +1,6 @@
+NOT_USED = object()
+
+
 class VersionParseError(ValueError):
     """Dedicated exception for version and version filter parsing errors.
 
@@ -140,7 +143,7 @@ class VersionFilter(object):
 
       >>> vf = VersionFilter.parse('postgresql not-used')
       >>> vf
-      VersionFilter('postgresql', (None,))
+      VersionFilter('postgresql', (NOT_USED, ))
 
     """
 
@@ -167,7 +170,7 @@ class VersionFilter(object):
     @classmethod
     def boolean_parse(cls, reqline):
         if reqline == 'not-used':
-            return (None, )
+            return (NOT_USED, )
 
         ors = reqline.split('OR', 1)
         if len(ors) == 2:
