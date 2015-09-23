@@ -2,13 +2,11 @@ import os
 import logging
 import warnings
 import json
-from copy import deepcopy
 from collections import OrderedDict
 from ConfigParser import ConfigParser
 from ConfigParser import NoOptionError
 from twisted.python import log
 from buildbot.buildslave import BuildSlave
-from buildbot.config import BuilderConfig
 
 from buildbot import locks
 from buildbot.process.factory import BuildFactory
@@ -27,9 +25,7 @@ from . import buildouts
 from .utils import BUILD_UTILS_PATH
 from .constants import DEFAULT_BUILDOUT_PART
 from .buildslave import priorityAwareNextSlave
-from version import Version
-from version import NOT_USED
-from version import VersionFilter
+from .version import VersionFilter
 
 BUILDSLAVE_KWARGS = {  # name -> validating callable
     'max_builds': int,
@@ -498,97 +494,6 @@ class BuildoutsConfigurator(object):
                 name, conf_slave_path, dl_steps, options)
             factory.manifest_path = manifest_path  # change filter will need it
 
-    def dispatch_builders_by_capability(self, all_slaves, builders,
-                                        cap, cap_vf):
-        """Take a list of builders preconfig dicts and redipatch by capability.
-
-        :param all_slaves: dict (name -> slave) with all known slaves
-        :param builders: iterable of dicts with keywords arguments to create
-                         ``BuilderConfig instances. These are not
-                         ``BuilderConfig`` instance because they are not ready
-                          yet to pass the constructor's validation
-
-                          They need to have the ``slavenames`` and
-                          ``properties`` keys.
-
-        :param cap: capability name
-        :param cap_vf: capability version filter controlling the dispatching
-        :param prop: the capability controlling property
-                     (e.g., ``'pg_version'`` for the PostgreSQL capability)
-
-        This is meant to refine it by successive iterations.
-        Example with two capabilities::
-        (b1, b2) ->
-        (b1-pg9.1, b2-pg9.2) ->
-        (b1-pg9.1-py3.4, b1-pg9.1-py3.5, b2-pg9.2-py3.4, b2-pg9.2-py3.5)
-
-        Of course the list of buildslaves and properties are refined at each
-        step. The idea is that only the latest such list will actually
-        get registered.
-        """
-        res = []
-        if cap_vf is not None and cap_vf.criteria == (NOT_USED, ):
-            # This is a marker to explicitely say that the capability does not
-            # matter. For instance, in the case of PostgreSQL, this helps
-            # spawning builds that ignore it entirely
-            return builders
-
-        capdef = self.capabilities[cap]
-        prop = capdef['version_prop']
-        abbrev = capdef.get('abbrev', cap)
-        for builder in builders:
-            for cap_version, slavenames in self.split_slaves_by_capability(
-                    all_slaves, cap, builder['slavenames']).items():
-
-                if cap_vf is not None and not cap_vf.match(
-                        Version.parse(cap_version)):
-                    continue
-
-                refined = deepcopy(builder)
-                refined['slavenames'] = slavenames
-                refined.setdefault('properties', {})[prop] = cap_version
-                refined['name'] = '%s-%s%s' % (
-                    builder['name'], abbrev, cap_version)
-                res.append(refined)
-        return res
-
-    def split_slaves_by_capability(self, slaves, cap, slavenames):
-        """Organize an iterable of slavenames into a dict capability versions.
-        """
-        res = {}
-        assert all(isinstance(s, basestring) for s in slavenames)
-
-        for slavename in slavenames:
-            slave = slaves[slavename]
-            versions = slave.properties['capability'].get(cap)
-            if versions is None:
-                continue
-            for version in versions:
-                res.setdefault(version, []).append(slavename)
-        return res
-
-    def filter_slaves_by_requires(self, slaves, requires):
-        """Return an iterable of slavenames meeting the requirements.
-
-        :slaves: dict name -> slave
-        The special ``build-only-if-requires`` slave attribute is taken into
-        account.
-        """
-        def only_if_requires(slave):
-            """Shorcut for extraction of build-only-if-requires tokens."""
-            only = slave.properties.getProperty('build-only-if-requires')
-            if only is None:
-                return set()
-            else:
-                return set(only.split())
-
-        require_names = set(req.cap for req in requires)
-        return [slavename
-                for slavename, slave in slaves.items()
-                if capability.does_meet_requirements(
-                    slave.properties['capability'], requires)
-                and only_if_requires(slave).issubset(require_names)]
-
     def make_builders(self, master_config=None):
         """Spawn builders from build factories.
 
@@ -611,27 +516,21 @@ class BuildoutsConfigurator(object):
         fact_to_builders = self.factories_to_builders
         all_slaves = {slave.slavename: slave
                       for slave in master_config['slaves']}
+        dispatcher = capability.BuilderDispatcher(all_slaves,
+                                                  self.capabilities)
 
-        for factory_name, factory in self.build_factories.items():
-            build_category = factory.options.get('build-category', '').strip()
-            slavenames = self.filter_slaves_by_requires(all_slaves,
-                                                        factory.build_requires)
-            if not slavenames:
-                # buildbot does not allow builders with empty list of slaves
-                continue
+        for fact_name, factory in self.build_factories.items():
+            fact_builders = dispatcher.make_builders(
+                fact_name, factory,
+                build_category=factory.options.get(
+                    'build-category', '').strip(),
+                build_for=factory.build_for,
+                build_requires=factory.build_requires,
+                next_slave=priorityAwareNextSlave,
+            )
+            builders.extend(fact_builders)
+            fact_to_builders[fact_name] = [b.name for b in fact_builders]
 
-            builder_preconfs = [dict(name=factory_name,
-                                     category=build_category,
-                                     factory=factory,
-                                     nextSlave=priorityAwareNextSlave,
-                                     slavenames=list(slavenames))]
-
-            for cap_name, cap_vf in factory.build_for.items():
-                builder_preconfs = self.dispatch_builders_by_capability(
-                    all_slaves, builder_preconfs, cap_name, cap_vf)
-
-            builders.extend(BuilderConfig(**conf) for conf in builder_preconfs)
-            fact_to_builders[factory_name] = [b.name for b in builders]
         return builders
 
     def factory_to_manifest(self, fact_name, absolute=False):

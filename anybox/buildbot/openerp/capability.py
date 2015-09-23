@@ -2,10 +2,16 @@
 
 import os
 import re
+from copy import deepcopy
+
 from buildbot.process.properties import WithProperties
+from buildbot.config import BuilderConfig
+
 from .constants import CAPABILITY_PROP_FMT
 from .steps import SetCapabilityProperties
 from .version import Version
+from .version import NOT_USED
+
 
 RE_PROP_CAP_OPT = re.compile(r'cap\((\w*)\)')
 
@@ -118,3 +124,138 @@ def does_meet_requirements(capability, requirements):
         else:
             return False
     return True
+
+
+class BuilderDispatcher(object):
+    """Provide the means to spawn builders according to capability settings.
+
+    This class implements:
+
+      - filtering by capability
+      - creation of variants according to capabilities
+
+    """
+    def __init__(self, slaves, capabilities):
+        self.all_slaves = slaves
+        self.capabilities = capabilities
+
+    def make_builders(self, name, factory, build_category=None, build_for=None,
+                      build_requires=(), next_slave=None):
+        """Produce the builders for the given factory.
+
+        :param name: base name for the builders.
+        :param factory: :class:`BuildFactory` instance
+        :param build_requires: list of capability requirements that the buildslave
+                               must match to run a builder from the factory.
+        :param build_for: a dict whose keys are capability names and values are
+                          corresponding :class:`VersionFilter` instances.
+        :param build_category: forwarded to :class:`BuilderConfig`  instantiation
+        :param next_slave: forwarded to :class:`BuilderConfig`  instantiation as
+                           ``nextSlave``.
+        """
+        slavenames = self.filter_slaves_by_requires(build_requires)
+        if not slavenames:
+            # buildbot does not allow builders with empty list of slaves
+            return ()
+
+        preconfs = [dict(name=name,
+                         category=build_category,
+                         factory=factory,
+                         nextSlave=next_slave,
+                         slavenames=list(slavenames))]
+
+        for cap_name, cap_vf in factory.build_for.items():
+            preconfs = self.dispatch_builders_by_capability(
+                preconfs, cap_name, cap_vf)
+
+        return [BuilderConfig(**conf) for conf in preconfs]
+
+    def dispatch_builders_by_capability(self, builders, cap, cap_vf):
+        """Take a list of builders preconfig dicts and redispatch by capability.
+
+        :param builders: iterable of dicts with keywords arguments to create
+                         ``BuilderConfig instances. These are not
+                         ``BuilderConfig`` instance because they are not ready
+                          yet to pass the constructor's validation
+
+                          They need to have the ``slavenames`` and
+                          ``properties`` keys.
+
+        :param cap: capability name
+        :param cap_vf: capability version filter controlling the dispatching.
+                       ``None`` meaning that the capability is ignored
+        :param prop: the capability controlling property
+                     (e.g., ``'pg_version'`` for the PostgreSQL capability)
+
+        This is meant to refine it by successive iterations.
+        Example with two capabilities::
+        (b1, b2) ->
+        (b1-pg9.1, b2-pg9.2) ->
+        (b1-pg9.1-py3.4, b1-pg9.1-py3.5, b2-pg9.2-py3.4, b2-pg9.2-py3.5)
+
+        Of course the list of buildslaves and properties are refined at each
+        step. The idea is that only the latest such list will actually
+        get registered.
+        """
+        res = []
+        if cap_vf is not None and cap_vf.criteria == (NOT_USED, ):
+            # This is a marker to explicitely say that the capability does not
+            # matter. For instance, in the case of PostgreSQL, this helps
+            # spawning builds that ignore it entirely
+            return builders
+
+        capdef = self.capabilities[cap]
+        prop = capdef['version_prop']
+        abbrev = capdef.get('abbrev', cap)
+        for builder in builders:
+            for cap_version, slavenames in self.split_slaves_by_capability(
+                    cap, builder['slavenames']).items():
+
+                if cap_vf is not None and not cap_vf.match(
+                        Version.parse(cap_version)):
+                    continue
+
+                refined = deepcopy(builder)
+                refined['slavenames'] = slavenames
+                refined.setdefault('properties', {})[prop] = cap_version
+                refined['name'] = '%s-%s%s' % (
+                    builder['name'], abbrev, cap_version)
+                res.append(refined)
+        return res
+
+    def split_slaves_by_capability(self, cap, slavenames):
+        """Organize an iterable of slavenames into a dict capability versions.
+
+        Each available version of the capability among the slaves with given
+        names is a key of the returned dict, and the corresponding value is the
+        list of those that have it.
+        """
+        res = {}
+
+        for slavename in slavenames:
+            slave = self.all_slaves[slavename]
+            versions = slave.properties['capability'].get(cap)
+            if versions is None:
+                continue
+            for version in versions:
+                res.setdefault(version, []).append(slavename)
+        return res
+
+    def only_if_requires(self, slave):
+        """Shorcut for extraction of build-only-if-requires tokens."""
+        only = slave.properties.getProperty('build-only-if-requires')
+        return set(only.split()) if only is not None else set()
+
+    def filter_slaves_by_requires(self, requires):
+        """Return an iterable of slavenames meeting the requirements.
+
+        The special ``build-only-if-requires`` slave attribute is taken into
+        account.
+        """
+
+        require_names = set(req.cap for req in requires)
+        return [slavename
+                for slavename, slave in self.all_slaves.items()
+                if does_meet_requirements(
+                    slave.properties['capability'], requires)
+                and self.only_if_requires(slave).issubset(require_names)]

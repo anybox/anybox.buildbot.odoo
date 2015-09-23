@@ -138,8 +138,8 @@ class VersionFilter(object):
       ... except VersionParseError, exc: exc.args[0]
       '8.4'
 
-    special case where we want to indicate that we actually won't be using
-    the given capability::
+    special case where we want to indicate explicitely that we
+    actually won't be using the given capability::
 
       >>> vf = VersionFilter.parse('postgresql not-used')
       >>> vf
