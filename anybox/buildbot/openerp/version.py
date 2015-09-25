@@ -114,6 +114,8 @@ class VersionFilter(object):
       False
       >>> vf.match(Version.parse('9.3-devel'))
       True
+      >>> vf.match(Version.parse('9.4'))
+      False
 
     With more complicated criteria::
 
