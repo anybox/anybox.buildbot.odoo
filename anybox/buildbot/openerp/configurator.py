@@ -86,6 +86,7 @@ class BuildoutsConfigurator(object):
         self.slaves_path = slaves_path
         if capabilities is not None:
             self.capabilities = capabilities
+        self.build_manifests = {}  # factory name -> dict(options, path)
 
     def add_capability_environ(self, capability_name, options2environ):
         """Add a dict of capability options to environment mapping."""
@@ -245,8 +246,7 @@ class BuildoutsConfigurator(object):
                     **dump_kw)))
         return steps
 
-    def make_factory(self, name, buildout_slave_path, buildout_dl_steps,
-                     options, manifest_path):
+    def make_factory(self, name, buildout_slave_path, buildout_dl_steps):
         """Return a build factory using name and buildout config at cfg_path.
 
         :param buildout_path: the slave-side path from build directory to the
@@ -257,11 +257,10 @@ class BuildoutsConfigurator(object):
                                   (bootstrap, extended conf files)
         :param name: the factory name in registry,
                       also used as testing database suffix
-        :param manifest_path: will be set on factory (used by change filters)
-        :param options: the configuration section for this factory,
-                        seen as a dict. This is passed to subfactories
-                        (``post-buildout-steps`` etc)
 
+
+        The options for the build factory are read from self.build_manifests
+        and are passed to subfactories.
         Options that matter directly in this method:
 
         :buildout part: the Odoo/OpenERP part that the whole build is about
@@ -289,7 +288,8 @@ class BuildoutsConfigurator(object):
                      enough, e.g, by a cron job.
         """
         factory = BuildFactory()
-        self.register_build_factory(name, factory, manifest_path, options)
+        self.register_build_factory(name, factory)
+        options = self.build_manifests[name]['options']
 
         factory.addStep(ShellCommand(command=['bzr', 'init-repo', '..'],
                                      name="bzr repo",
@@ -425,12 +425,14 @@ class BuildoutsConfigurator(object):
 
         return factory
 
-    def register_build_factory(self, name, factory, manifest_path, options):
+    def register_build_factory(self, name, factory):
         """Put the factory in register, with dispatching information.
 
         build_for, build_requires are within the dispatching info.
         """
-        factory.options = options
+        manifest = self.build_manifests[name]
+        options = manifest['options']
+        factory.options = options  # should become gradually useless
         build_for = options.get('build-for')
         factory.build_for = OrderedDict()
         if build_for is not None:
@@ -445,7 +447,9 @@ class BuildoutsConfigurator(object):
             factory.build_requires = set(VersionFilter.parse(r)
                                          for r in requires.split(os.linesep))
 
-        factory.manifest_path = manifest_path  # needed for change filters
+        # TODO kept as refactor step, but next step is to remove it
+        factory.manifest_path = manifest['path']  # needed for change filters
+
         self.build_factories[name] = factory
 
     def register_build_factories(self, manifest_path):
@@ -455,9 +459,12 @@ class BuildoutsConfigurator(object):
         """
         parser = buildouts.parse_manifest(
             self.path_from_buildmaster(manifest_path))
-        manifest_dir = os.path.split(manifest_path)[0]
+        manifest_dir = os.path.dirname(manifest_path)
 
         for name in parser.sections():
+            options = dict(parser.items(name))
+            self.build_manifests[name] = dict(path=manifest_path,
+                                              options=options)
             try:
                 buildout = parser.get(name, 'buildout').split()
             except NoOptionError:
@@ -470,12 +477,15 @@ class BuildoutsConfigurator(object):
                 raise ValueError("Buildout type %r in %r not supported" % (
                     btype, name))
 
-            options = dict(parser.items(name))
-
             conf_slave_path, dl_steps = buildout_downloader(
                 self, options, buildout[1:], manifest_dir)
-            self.make_factory(name, conf_slave_path, dl_steps, options,
-                              manifest_path)
+            self.make_factory(name, conf_slave_path, dl_steps)
+
+    def builder_dispatcher(self, master_config):
+        all_slaves = {slave.slavename: slave
+                      for slave in master_config['slaves']}
+        return capability.BuilderDispatcher(all_slaves,
+                                            self.capabilities)
 
     def make_builders(self, master_config=None):
         """Spawn builders from build factories.
@@ -497,10 +507,7 @@ class BuildoutsConfigurator(object):
 
         builders = []
         fact_to_builders = self.factories_to_builders
-        all_slaves = {slave.slavename: slave
-                      for slave in master_config['slaves']}
-        dispatcher = capability.BuilderDispatcher(all_slaves,
-                                                  self.capabilities)
+        dispatcher = self.builder_dispatcher(master_config)
 
         for fact_name, factory in self.build_factories.items():
             fact_builders = dispatcher.make_builders(
