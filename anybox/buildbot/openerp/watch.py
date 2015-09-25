@@ -104,7 +104,7 @@ class MultiWatcher(object):
         self.original_urls = {}   # final -> original
         self.rewritten_urls = {}  # original -> final
 
-    def make_pollers(self, poll_interval=10*60):
+    def make_pollers(self, poll_interval=10 * 60):
         """Return an iterable of pollers for the watched repos."""
         for h, (vcs, url, minor_specs) in self.repos.items():
             if vcs == 'hg':

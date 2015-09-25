@@ -43,8 +43,8 @@ def steps_odoo_port_reservation(configurator, options, environ=()):
                 '--port-min=' + options.get('odoo.http-port-min', '6069'),
                 '--port-max=' + options.get('odoo.http-port-max', '7068'),
                 '--step=' + options.get('odoo.http-port-step', '5'),
-                ])
-        )
+            ])
+    )
 
 
 def install_modules(configurator, options, buildout_slave_path,
@@ -386,7 +386,7 @@ def install_modules_nose(configurator, options, buildout_slave_path,
         description="nose tests",
         haltOnFailure=True,
         env=environ,
-        timeout=3600*4,
+        timeout=3600 * 4,
     ))
 
     if upload:
@@ -576,7 +576,7 @@ def static_analysis(configurator, options, buildout_slave_path, environ=()):
         name='flake8',
         description=['flake8'] + flake_dirs,
         env=environ,
-        ))
+    ))
 
     return steps
 

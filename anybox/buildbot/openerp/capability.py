@@ -145,12 +145,14 @@ class BuilderDispatcher(object):
 
         :param name: base name for the builders.
         :param factory: :class:`BuildFactory` instance
-        :param build_requires: list of capability requirements that the buildslave
-                               must match to run a builder from the factory.
+        :param build_requires: list of capability requirements that the
+                               buildslave must match to run a builder
+                               from the factory.
         :param build_for: a dict whose keys are capability names and values are
                           corresponding :class:`VersionFilter` instances.
-        :param build_category: forwarded to :class:`BuilderConfig`  instantiation
-        :param next_slave: forwarded to :class:`BuilderConfig`  instantiation as
+        :param build_category: forwarded to :class:`BuilderConfig`
+                               instantiation
+        :param next_slave: forwarded to :class:`BuilderConfig` instantiation as
                            ``nextSlave``.
         """
         slavenames = self.filter_slaves_by_requires(build_requires)
@@ -257,5 +259,5 @@ class BuilderDispatcher(object):
         return [slavename
                 for slavename, slave in self.all_slaves.items()
                 if does_meet_requirements(
-                    slave.properties['capability'], requires)
-                and self.only_if_requires(slave).issubset(require_names)]
+                    slave.properties['capability'], requires) and
+                self.only_if_requires(slave).issubset(require_names)]

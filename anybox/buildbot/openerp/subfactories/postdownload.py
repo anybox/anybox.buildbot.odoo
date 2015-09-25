@@ -80,8 +80,8 @@ def packaging(configurator, options,
 
     steps.append(
         ShellCommand(command=['bin/buildout', '-c', buildout_slave_path,
-                              WithProperties('buildout:eggs-directory='
-                                             + eggs_cache),
+                              WithProperties(
+                                  'buildout:eggs-directory=' + eggs_cache),
                               WithProperties('buildout:openerp-downloads-'
                                              'directory=' + openerp_cache),
                               'install'] + parts,
@@ -92,8 +92,8 @@ def packaging(configurator, options,
 
     extract_cmd = ['bin/buildout', '-o', '-c', buildout_slave_path,
                    WithProperties('buildout:eggs-directory=' + eggs_cache),
-                   WithProperties('buildout:openerp-downloads-directory='
-                                  + openerp_cache),
+                   WithProperties('buildout:openerp-downloads-'
+                                  'directory=' + openerp_cache),
                    ]
     extract_cmd.extend(WithProperties(
         ('%s:extract-downloads-to=../dist/' % part) + archive_name_interp)
@@ -112,8 +112,9 @@ def packaging(configurator, options,
                      haltOnFailure=True,
                      workdir='./dist'))
     steps.append(ShellCommand(
-        command=WithProperties('md5sum ' + archive_name_interp + '.tar.bz2 > '
-                               + archive_name_interp + '.tar.bz2.md5'),
+        command=WithProperties('md5sum ' + archive_name_interp +
+                               '.tar.bz2 > ' + archive_name_interp +
+                               '.tar.bz2.md5'),
         description=["md5"],
         warnOnFailure=False,
         workdir='./dist'))

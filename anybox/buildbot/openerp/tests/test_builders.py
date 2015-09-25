@@ -30,7 +30,7 @@ class TestBuilders(BaseTestCase):
         commands = step.kwargs['command']
         try:
             i = commands.index('-i')
-            addons = commands[i+1]
+            addons = commands[i + 1]
         except IndexError:
             self.fail(
                 "Addons list not found in OpenERP command: %r" % commands)

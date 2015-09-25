@@ -381,11 +381,11 @@ class BuildoutsConfigurator(object):
                  buildout_db_name_option],
                 name="buildout",
                 description="buildout",
-                timeout=3600*4,
+                timeout=3600 * 4,
                 haltOnFailure=True,
                 locks=[buildout_lock.access('exclusive')],
                 env=capability_env,
-                ))
+            ))
 
         if options.get('auto-watch', 'false').lower() == 'true':
             dumped_watches = 'buildbot_watch.json'
