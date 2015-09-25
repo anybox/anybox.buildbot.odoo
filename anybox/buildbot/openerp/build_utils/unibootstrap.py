@@ -655,7 +655,7 @@ class TestBootstrapper(unittest.TestCase):
         self.buildout()
 
     def test_2_3_0(self):
-        self.bootstrap('2.4.1', self.cfg_lines_from_versions(
+        self.bootstrap('2.3.0', self.cfg_lines_from_versions(
             {'setuptools': '8.3',
              'zc.recipe.egg': '2.0.0'}))
         self.buildout()
