@@ -458,14 +458,18 @@ def main():
                            "(typically a virtualenv's). "
                            "You may use any Python 2 or 3 version, by default "
                            "the one used to run this script will be used.")
-    parser.add_option('--eggs-directory', default='eggs',
-                      help="Eggs cache directory for the bootstrap, relative "
-                      "to the buildout directory, irrespective of what the "
-                      "buildout configuration says "
-                      "(will be created if needed). "
+    parser.add_option('--dists-directory', default='eggs',
+                      help="Directory to look for and store distributions. "
+                      "for setuptools and zc.buildout, relative to the "
+                      "buildout directory (will be created if needed). "
                       "You are encouraged to use a directory which already "
                       "holds some eggs, especially for setuptools or "
-                      "distribute: it helps the bootstrap being offline.")
+                      "distribute: it helps the bootstrap being offline. "
+                      "Typically you'd put the shared eggs directory "
+                      "you're using for your buildouts so that chances "
+                      "to find the needed distributions are high and "
+                      "if fetched by this script, buildout does not need to "
+                      "reinstall them")
     parser.add_option('--force-distribute',
                       help="Use this to force a distribute requirement. "
                       "and give the requirement right-hand-side, such "
@@ -494,7 +498,7 @@ def main():
     logging.basicConfig(level=getattr(logging, opts.logging_level.upper()))
 
     Bootstrapper(opts.buildout_version,
-                 eggs_dir=opts.eggs_directory,
+                 eggs_dir=opts.dists_directory,
                  python=opts.python,
                  buildout_dir=buildout_dir,
                  force_setuptools=opts.force_setuptools,
