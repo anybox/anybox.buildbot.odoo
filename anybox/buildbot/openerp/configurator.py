@@ -193,7 +193,7 @@ class BuildoutsConfigurator(object):
         if options.get('virtualenv', 'true').strip().lower() == 'true':
             boot_opts['--python'] = "~/openerp-env/bin/python"
         boot_opts['--buildout-version'] = options.get(
-            'bootstrap-version').strip()
+            'bootstrap-version', '').strip()
 
         command = ['python', 'unibootstrap.py',
                    '--dists-directory', WithProperties(eggs_cache),
@@ -246,7 +246,7 @@ class BuildoutsConfigurator(object):
         return steps
 
     def make_factory(self, name, buildout_slave_path, buildout_dl_steps,
-                     options):
+                     options, manifest_path):
         """Return a build factory using name and buildout config at cfg_path.
 
         :param buildout_path: the slave-side path from build directory to the
@@ -255,7 +255,9 @@ class BuildoutsConfigurator(object):
                                   to retrieve slave-side the buildout
                                   configuration file and its dependencies
                                   (bootstrap, extended conf files)
-        :param name: the factory name, also used as testing database suffix
+        :param name: the factory name in registry,
+                      also used as testing database suffix
+        :param manifest_path: will be set on factory (used by change filters)
         :param options: the configuration section for this factory,
                         seen as a dict. This is passed to subfactories
                         (``post-buildout-steps`` etc)
@@ -287,19 +289,7 @@ class BuildoutsConfigurator(object):
                      enough, e.g, by a cron job.
         """
         factory = BuildFactory()
-        build_for = options.get('build-for')
-        factory.build_for = OrderedDict()
-        if build_for is not None:
-            for line in build_for.split(os.linesep):
-                vf = VersionFilter.parse(line)
-                factory.build_for[vf.cap] = vf
-
-        requires = options.get('build-requires')
-        if requires is None:
-            factory.build_requires = []
-        else:
-            factory.build_requires = set(VersionFilter.parse(r)
-                                         for r in requires.split(os.linesep))
+        self.register_build_factory(name, factory, manifest_path, options)
 
         factory.addStep(ShellCommand(command=['bzr', 'init-repo', '..'],
                                      name="bzr repo",
@@ -433,8 +423,30 @@ class BuildoutsConfigurator(object):
                     self, options, buildout_slave_path,
                     environ=capability_env))
 
-        factory.options = options
         return factory
+
+    def register_build_factory(self, name, factory, manifest_path, options):
+        """Put the factory in register, with dispatching information.
+
+        build_for, build_requires are within the dispatching info.
+        """
+        factory.options = options
+        build_for = options.get('build-for')
+        factory.build_for = OrderedDict()
+        if build_for is not None:
+            for line in build_for.split(os.linesep):
+                vf = VersionFilter.parse(line)
+                factory.build_for[vf.cap] = vf
+
+        requires = options.get('build-requires')
+        if requires is None:
+            factory.build_requires = []
+        else:
+            factory.build_requires = set(VersionFilter.parse(r)
+                                         for r in requires.split(os.linesep))
+
+        factory.manifest_path = manifest_path  # needed for change filters
+        self.build_factories[name] = factory
 
     def register_build_factories(self, manifest_path):
         """Register a build factory per buildout from file at manifest_path.
@@ -444,7 +456,6 @@ class BuildoutsConfigurator(object):
         parser = buildouts.parse_manifest(
             self.path_from_buildmaster(manifest_path))
         manifest_dir = os.path.split(manifest_path)[0]
-        registry = self.build_factories
 
         for name in parser.sections():
             try:
@@ -463,9 +474,8 @@ class BuildoutsConfigurator(object):
 
             conf_slave_path, dl_steps = buildout_downloader(
                 self, options, buildout[1:], manifest_dir)
-            registry[name] = factory = self.make_factory(
-                name, conf_slave_path, dl_steps, options)
-            factory.manifest_path = manifest_path  # change filter will need it
+            self.make_factory(name, conf_slave_path, dl_steps, options,
+                              manifest_path)
 
     def make_builders(self, master_config=None):
         """Spawn builders from build factories.
