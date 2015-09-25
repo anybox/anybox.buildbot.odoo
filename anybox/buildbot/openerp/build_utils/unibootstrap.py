@@ -147,7 +147,7 @@ def guess_versions(buildout_version, python_version=None):
 
     if bv_tuple < (2, 2, 0):
         setuptools_req = ('distribute', '==0.6.49')
-    elif bv_tuple < (2, 3, 1):
+    elif bv_tuple < (2, 3, 0):
         setuptools_req = ('setuptools', '==3.0')  # improve
     else:
         setuptools_req = ('setuptools', '==18.3.2')  # improve
@@ -651,6 +651,12 @@ class TestBootstrapper(unittest.TestCase):
     def test_2_4_1(self):
         self.bootstrap('2.4.1', self.cfg_lines_from_versions(
             {'setuptools': '18.3.2',
+             'zc.recipe.egg': '2.0.0'}))
+        self.buildout()
+
+    def test_2_3_0(self):
+        self.bootstrap('2.4.1', self.cfg_lines_from_versions(
+            {'setuptools': '8.3',
              'zc.recipe.egg': '2.0.0'}))
         self.buildout()
 
