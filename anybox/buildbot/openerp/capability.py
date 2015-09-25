@@ -173,7 +173,7 @@ class BuilderDispatcher(object):
         return [BuilderConfig(**conf) for conf in preconfs]
 
     def dispatch_builders_by_capability(self, builders, cap, cap_vf):
-        """Take a list of builders preconfig dicts and redispatch by capability.
+        """Take a list of builders parameters and redispatch by capability.
 
         :param builders: iterable of dicts with keywords arguments to create
                          ``BuilderConfig instances. These are not
