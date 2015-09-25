@@ -142,9 +142,8 @@ class VersionFilter(object):
     actually won't be using the given capability::
 
       >>> vf = VersionFilter.parse('postgresql not-used')
-      >>> vf
-      VersionFilter('postgresql', (NOT_USED, ))
-
+      >>> vf.criteria == (NOT_USED, )
+      True
     """
 
     def __init__(self, capability, criteria):
