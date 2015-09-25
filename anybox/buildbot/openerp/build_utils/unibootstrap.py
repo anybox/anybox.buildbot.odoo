@@ -147,8 +147,13 @@ def guess_versions(buildout_version, python_version=None):
 
     if bv_tuple < (2, 2, 0):
         setuptools_req = ('distribute', '==0.6.49')
+    # zc.buildout 2.2.0 requires setuptools >=0.7, i.e., not distribute
+    # zc.buildout 2.2.5 requires setuptools >=3.3
+    elif bv_tuple < (2, 2, 5):
+        setuptools_req = ('setuptools', '==3.0')
+    # zc.buildout from 2.3.0 until 2.4.3 (current) requires setuptools==8.0
     elif bv_tuple < (2, 3, 0):
-        setuptools_req = ('setuptools', '==3.0')  # improve
+        setuptools_req = ('setuptools', '==3.3')  # improve
     else:
         setuptools_req = ('setuptools', '==18.3.2')  # improve
     return (buildout_rhs, ) + setuptools_req
@@ -657,6 +662,15 @@ class TestBootstrapper(unittest.TestCase):
     def test_2_3_0(self):
         self.bootstrap('2.3.0', self.cfg_lines_from_versions(
             {'setuptools': '8.3',
+             'zc.recipe.egg': '2.0.0'}))
+        self.buildout()
+
+    def test_2_2_5(self):
+        # 2.2.5 requires setuptools 3.3, and this buildout will upgrade
+        # to 2.3.0 which requires setuptools 8.0
+        self.bootstrap('2.2.5', self.cfg_lines_from_versions(
+            {'setuptools': '8.0',
+             'zc.buildout': '2.3.0',
              'zc.recipe.egg': '2.0.0'}))
         self.buildout()
 
