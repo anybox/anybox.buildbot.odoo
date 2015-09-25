@@ -74,7 +74,7 @@ def packaging(configurator, options,
 
     parts = options.get('packaging.parts').split()
 
-    steps.extend(configurator.steps_bootstrap(
+    steps.extend(configurator.steps_unibootstrap(
         buildout_slave_path, options, eggs_cache, workdir='./src',
         dump_options_to=WithProperties('../dist/' + archive_name_interp)))
 
