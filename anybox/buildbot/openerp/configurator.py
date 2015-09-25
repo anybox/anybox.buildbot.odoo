@@ -368,6 +368,7 @@ class BuildoutsConfigurator(object):
                 buildout_cache_options +
                 buildout_vcs_options + buildout_pgcnx_options +
                 [buildout_part + ':with_devtools=true',
+                 'buildout:unzip=true',
                  buildout_db_name_option],
                 name="buildout",
                 description="buildout",
