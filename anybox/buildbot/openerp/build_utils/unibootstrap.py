@@ -200,6 +200,7 @@ class Bootstrapper(object):
     def __init__(self, buildout_version, eggs_dir='bootstrap-eggs',
                  python=sys.executable,
                  buildout_dir=None,
+                 buildout_config='buildout.cfg',
                  force_distribute=None,
                  force_setuptools=None,
                  error=None):
@@ -218,6 +219,7 @@ class Bootstrapper(object):
                        force_distribute=force_distribute,
                        force_setuptools=force_setuptools)
         self.init_internal_attrs()
+        self.buildout_config = buildout_config
 
     def init_directories(self, buildout_dir, eggs_dir):
         if buildout_dir is None:
@@ -241,7 +243,8 @@ class Bootstrapper(object):
             with open(boot_fname, 'w') as bootf:
                 bootf.write(bootstrap_script_tmpl % paths)
             logger.info("Wrote %r file, now running it.", boot_fname)
-            subprocess.check_call([self.python, boot_fname])
+            subprocess.check_call([self.python, boot_fname,
+                                   '-c', self.buildout_config])
             self.clean()
             self.remove_develop_eggs()
         finally:
@@ -453,11 +456,17 @@ def main():
                       help="The wished version of zc.buildout to bootstrap. "
                       "It must be a simplified version string such as x.y.z, "
                       "where x, y and z are numbers.")
+    parser.add_option('--buildout-config', default='buildout.cfg',
+                      help="The buildout configuration file, relative "
+                      "to buildout directory.")
     parser.add_option('--python',
                       help="Python executable that the buildout will use "
                            "(typically a virtualenv's). "
                            "You may use any Python 2 or 3 version, by default "
-                           "the one used to run this script will be used.")
+                           "the one used to run this script will be used. "
+                           "Path is relative to the current working "
+                           "directory and will be made absolute, "
+                           "with ~ expansion.")
     parser.add_option('--dists-directory', default='eggs',
                       help="Directory to look for and store distributions. "
                       "for setuptools and zc.buildout, relative to the "
@@ -497,10 +506,13 @@ def main():
 
     logging.basicConfig(level=getattr(logging, opts.logging_level.upper()))
 
+    if opts.python is not None:
+        python = os.path.abspath(os.path.expanduser(opts.python))
     Bootstrapper(opts.buildout_version,
                  eggs_dir=opts.dists_directory,
-                 python=opts.python,
+                 python=python,
                  buildout_dir=buildout_dir,
+                 buildout_config=opts.buildout_config,
                  force_setuptools=opts.force_setuptools,
                  force_distribute=opts.force_distribute,
                  error=parser.error).bootstrap()

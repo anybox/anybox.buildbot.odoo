@@ -1,15 +1,16 @@
 """Utility to dump bootstrap options in a 'bootstrap.ini' file
 """
 
-import json
 import os
 from argparse import ArgumentParser
 from ConfigParser import ConfigParser
 
 parser = ArgumentParser()
 parser.add_argument('destdir')
-parser.add_argument('options',
-                    help="JSON serialization of options.")
+parser.add_argument('--buildout-version',
+                    help="The wished bootstrap buildout version.")
+parser.add_argument('--bootstrap-type', required=True,
+                    choices=('v1', 'v2', 'uni'))
 parser.add_argument('--filename', default='bootstrap.ini')
 
 arguments = parser.parse_args()
@@ -18,16 +19,16 @@ print("Dumping bootstrap options to %r" % dest_path)
 
 conf = ConfigParser()
 conf.add_section('bootstrap')
-options = json.loads(arguments.options)
+options = {}
 
 # changing namings for clearer ones out of context and the ones
-# anybox-oe-tarball-deploy settled on
-version = options.pop('version', None)
-btype = options.pop('type', None)
-if version is not None:
-    options['buildout-version'] = version
-if btype is not None:
-    options['bootstrap-type'] = btype
+# anybox-odoo-deploy settled on
+# Note that this renaming has become identical, but it may change later
+# again
+if arguments.buildout_version is not None:
+    options['buildout-version'] = arguments.buildout_version
+if arguments.bootstrap_type is not None:
+    options['bootstrap-type'] = arguments.bootstrap_type
 
 for k, v in options.items():
     conf.set('bootstrap', k, v)

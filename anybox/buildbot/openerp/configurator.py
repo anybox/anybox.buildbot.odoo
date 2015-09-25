@@ -1,7 +1,6 @@
 import os
 import logging
 import warnings
-import json
 from collections import OrderedDict
 from ConfigParser import ConfigParser
 from ConfigParser import NoOptionError
@@ -173,10 +172,13 @@ class BuildoutsConfigurator(object):
 
         return slaves
 
-    def steps_bootstrap(self, buildout_slave_path, options, eggs_cache,
-                        dump_options_to=None,
-                        **step_kw):
-        """return a list of steps for buildout bootstrap.
+    def steps_unibootstrap(self, buildout_slave_path, options, eggs_cache,
+                           dump_options_to=None,
+                           **step_kw):
+        """return a list of steps for buildout bootstrap, using uniform script.
+
+        The uniform script is ``unibootstrap.py``. For now it ships with
+        build_utils and is downloaded from the buildmaster.
 
         options prefixed with 'bootstrap-' are applied
 
@@ -187,59 +189,30 @@ class BuildoutsConfigurator(object):
         :param step_kw: will be passed to the step constructor. Known use-case:
                         change workdir in packaging step.
         """
+        boot_opts = {}
+        if options.get('virtualenv', 'true').strip().lower() == 'true':
+            boot_opts['--python'] = "~/openerp-env/bin/python"
+        boot_opts['--buildout-version'] = options.get(
+            'bootstrap-version').strip()
 
-        bootstrap_prefix = 'bootstrap-'
-        bootstrap_options = dict((k[len(bootstrap_prefix):], v.strip())
-                                 for k, v in options.items()
-                                 if k.startswith(bootstrap_prefix))
-        bootstrap_options.setdefault('version', '2.1.1')
-        forbidden = set(('eggs', 'help', 'find-links'))
-        if not forbidden.isdisjoint(bootstrap_options):
-            raise ValueError(
-                "The following bootstrap options are forbidden: %r" % list(
-                    forbidden))
-        as_json = json.dumps(bootstrap_options)
-        known_bootstraps = ('v1', 'v2')
+        command = ['python', 'unibootstrap.py',
+                   '--dists-directory', WithProperties(eggs_cache),
+                   '--buildout-config', buildout_slave_path]
+        for o, v in boot_opts.items():
+            command.extend((o, v))
+        command.append('.')
 
-        bootstrap_type = bootstrap_options.pop('type', 'v1').lower()
-        if bootstrap_type not in known_bootstraps:
-            raise ValueError(
-                "Unknown bootstrap type: %r. Known ones are %r" % (
-                    bootstrap_type, known_bootstraps))
-
-        find_links_opt = dict(v1='--eggs', v2='--find-links')[bootstrap_type]
-
-        venv_opt = bootstrap_options.pop('virtualenv', 'false').strip()
-        if venv_opt.lower() == 'true':
-            env = dict(PATH=["${HOME}/openerp-env/bin", "${PATH}"])
-        else:
-            env = None
-
-        # bootstrap script path is by default relative to the
-        # build directory, not the buildout config. Indeed, buildouts
-        # bootstrapped from another directory need extra care to work out
-        # of the box, and their needs depend on the exact situation. So
-        # we expect in that case users to issue a proper relative
-        # path in that situation, that is likely to be the simplest of their
-        # tunings
-        command = ['python', bootstrap_options.pop('script', 'bootstrap.py'),
-                   find_links_opt, WithProperties(eggs_cache),
-                   '-c', buildout_slave_path]
-        command.extend('--%s=%s' % (k, v)
-                       for k, v in bootstrap_options.items())
-
-        # rm -rf does not fail if directory does not exist
-        steps = [ShellCommand(command=['rm', '-rf', 'develop-eggs'],
-                              name='cleanup',
-                              description=["cleaning", 'develop-eggs'],
-                              descriptionDone=["cleaning", 'develop-eggs'],
+        steps = [FileDownload(mastersrc=os.path.join(BUILD_UTILS_PATH,
+                                                     'unibootstrap.py'),
+                              slavedest='unibootstrap.py',
+                              name="download",
+                              description=['download', 'unibootstrap'],
                               **step_kw),
                  ShellCommand(command=command,
                               name='bootstrap',
                               description="bootstrapping",
                               descriptionDone="bootstrapped",
                               haltOnFailure=True,
-                              env=env,
                               **step_kw)]
 
         if dump_options_to is not None:
@@ -252,6 +225,11 @@ class BuildoutsConfigurator(object):
             dump_kw = dict((k, v) for k, v in step_kw.items()
                            if k in ['workdir'])
 
+            command = ['python', 'dump_bootstrap_options.py', dump_options_to]
+            boot_opts['--bootstrap-type'] = 'uni'
+            for o, v in boot_opts.items():
+                command.extend((o, v))
+
             steps.extend((
                 FileDownload(
                     mastersrc=os.path.join(BUILD_UTILS_PATH, dumper),
@@ -259,17 +237,12 @@ class BuildoutsConfigurator(object):
                     haltOnFailure=True,
                     **dump_kw),
                 ShellCommand(
-                    command=['python', 'dump_bootstrap_options.py',
-                             dump_options_to, as_json],
                     name='bootstrap_ini',
-                    description=['dump', 'bootstrap',
-                                 'options'],
-                    descriptionDone=['dumped', 'bootstrap',
-                                     'options'],
+                    command=command,
+                    description=['dump', 'bootstrap', 'options'],
+                    descriptionDone=['dumped', 'bootstrap', 'options'],
                     haltOnFailure=True,
-                    env=env,
                     **dump_kw)))
-
         return steps
 
     def make_factory(self, name, buildout_slave_path, buildout_dl_steps,
@@ -370,7 +343,7 @@ class BuildoutsConfigurator(object):
                                      description="prepare cache dirs"))
 
         map(factory.addStep,
-            self.steps_bootstrap(buildout_slave_path, options, eggs_cache))
+            self.steps_unibootstrap(buildout_slave_path, options, eggs_cache))
 
         buildout_cache_options = [
             WithProperties('buildout:eggs-directory=' + eggs_cache),
