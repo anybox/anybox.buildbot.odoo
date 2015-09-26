@@ -203,9 +203,11 @@ if __name__ == '__main__':
 class Bootstrapper(object):
 
     def __init__(self, buildout_version, eggs_dir='bootstrap-eggs',
+                 offline=False,
                  python=sys.executable,
                  buildout_dir=None,
                  buildout_config='buildout.cfg',
+                 force_setuptools_path=None,
                  force_distribute=None,
                  force_setuptools=None,
                  error=None):
@@ -221,10 +223,12 @@ class Bootstrapper(object):
 
         self.init_python_info(python)
         self.init_reqs(buildout_version,
+                       force_setuptools_path=force_setuptools_path,
                        force_distribute=force_distribute,
                        force_setuptools=force_setuptools)
         self.init_internal_attrs()
         self.buildout_config = buildout_config
+        self.offline = offline
 
     def init_directories(self, buildout_dir, eggs_dir):
         if buildout_dir is None:
@@ -238,7 +242,10 @@ class Bootstrapper(object):
         # actually calling the property right now
         logger.info("Starting bootstrap for %s (%s)",
                     self.python, self.python_version)
-        paths = dict(setuptools_path=self.ensure_req(self.setuptools_req),
+        if self.setuptools_path is None:
+            self.setuptools_path = self.ensure_req(self.setuptools_req)
+
+        paths = dict(setuptools_path=self.setuptools_path,
                      buildout_path=self.ensure_req(self.buildout_req))
 
         oldpwd = os.getcwd()
@@ -260,6 +267,7 @@ class Bootstrapper(object):
         self.env = Environment(search_path=[self.eggs_dir])
 
     def init_reqs(self, buildout_version,
+                  force_setuptools_path=None,
                   force_setuptools=None, force_distribute=None):
         """Sets wished requirement attributes.
 
@@ -269,12 +277,37 @@ class Bootstrapper(object):
         :meth:`grab_req`
 
         :param buildout_version: same as in :func:`guess_versions`
+        :param force_setuptools_path: if set, this setuptools distribution
+                                      will be used both to grab zc.buildout
+                                      and in stage2 of bootstrap. This has
+                                      precedence over the other 'force'
+                                      arguments below.
+        :param force_setuptools: force a setuptools (not distribute) req, and
+                                 make the necessary preparations for it.
+        :param force_distribute: force a distribute (not setuptools) req, and
+                                 make the necessary preparations for it.
         """
         self.init_env()
         buildout_rhs, setuptools, setuptools_rhs = guess_versions(
             buildout_version)
         self.buildout_req = Requirement.parse('zc.buildout' + buildout_rhs)
+        # this is almost the CLI, but that lets us control which one is
+        # executed from PYTHONPATH (finding the equivalent executable would be
+        # more hazardeous)
+        self._ez_install = (
+            sys.executable, '-c',
+            "from setuptools.command.easy_install import main; main()",
+        )
 
+        if force_setuptools_path is not None:
+            logger.info("Using the forced setuptools distribution at %r "
+                        "both for preparations and in stage2 bootstrap",
+                        force_setuptools_path)
+            self.setuptools_path = force_setuptools_path
+            self._ez_install_pypath = force_setuptools_path
+            return
+
+        self.setuptools_path = None
         if force_setuptools is not None and force_distribute is not None:
             # should be excluded upstream, last-time check
             logger.critical("Got force_setuptools=%r AND force_distribute=%r",
@@ -284,14 +317,6 @@ class Bootstrapper(object):
             setuptools, setuptools_rhs = 'setuptools', force_setuptools
         if force_distribute is not None:
             setuptools, setuptools_rhs = 'distribute', force_distribute
-
-        # this is almost the CLI, but that lets us control which one is
-        # executed from PYTHONPATH (finding the equivalent executable would be
-        # more hazardeous)
-        self._ez_install = (
-            sys.executable, '-c',
-            "from setuptools.command.easy_install import main; main()",
-        )
 
         # actually, installing distribute with any version of setuptools or
         # itself happens to work... provided that the magic buildout marker
@@ -337,6 +362,14 @@ class Bootstrapper(object):
           from here
         - the command-line (or surface) API is obviously very stable
         """
+        if self.offline:
+            # actually, we would have a small ability to find setuptools
+            # eggs that are present locally, but that's too complicated for
+            # now and has few chances of success
+            self.error("%s is not available in specified dists "
+                       "directory %s, and can't be downloaded "
+                       "(offline mode is requested)" % (req, self.eggs_dir))
+
         logger.info("%s not available locally, attempting to download", req)
         os_env = dict(os.environ)
         pypath = self._ez_install_pypath
@@ -484,14 +517,30 @@ def main():
                       "to find the needed distributions are high and "
                       "if fetched by this script, buildout does not need to "
                       "reinstall them")
-    parser.add_option('--force-distribute',
-                      help="Use this to force a distribute requirement. "
-                      "and give the requirement right-hand-side, such "
-                      "as '== 0.6.14'")
-    parser.add_option('--force-setuptools',
-                      help="Use this to force a setuptools requirement. "
-                      "and give the requirement right-hand-side, such "
-                      "as '== 18.1.0'")
+    parser.add_option('--offline', action='store_true',
+                      help="If set, no download will be attempted, "
+                      "you must have the zc.buildout and selected "
+                      "setuptools variant/version locally.")
+    stools_group = parser.add_option_group(
+        'Setuptools forcing options',
+        "These mutually exclusive options can be used to shortcut the "
+        "setuptools variant/version selection logic, in case there is "
+        "before hand knowledge of what has to be done and what is locally "
+        "available. By using them, the caller takes responsibility on "
+        "the result.")
+    stools_group.add_option('--force-distribute', metavar='REQ_RHS',
+                            help="Force the use of distribute, with "
+                            "the given requirement right-hand side, such "
+                            "as '==0.6.14'")
+    stools_group.add_option('--force-setuptools', metavar='REQ_RHS',
+                            help="Force the use of setuptools "
+                            "(ie, not distribute), with "
+                            "the given requirement right-hand side, such "
+                            "as '==18.1.0'")
+    stools_group.add_option('--force-setuptools-path',
+                            help="Use this to provide directly a path to "
+                            "the wished setuptools variant/version to use. "
+                            )
     parser.add_option('-l', '--logging-level', default='INFO')
 
     opts, pos = parser.parse_args()
@@ -500,9 +549,12 @@ def main():
                      "the wished buildout directory")
     buildout_dir = pos[0]
 
-    if opts.force_setuptools and opts.force_distribute:
-        # not sure out of memory if optparser has mutually excl groups
-        parser.error("The --force-setuptools and --force-distribute options "
+    # mutually exclusive groups seem to be an added value of argparse over
+    # optparse
+    nb_stools_opts = sum(1 for opt in stools_group.option_list
+                         if getattr(opts, opt.dest) is not None)
+    if nb_stools_opts > 1:
+        parser.error("The setuptools forcing options "
                      "are mutually exclusive")
 
     if not os.path.isdir(buildout_dir):
@@ -511,15 +563,20 @@ def main():
 
     logging.basicConfig(level=getattr(logging, opts.logging_level.upper()))
 
-    if opts.python is not None:
+    if opts.python is None:
+        python = sys.executable
+    else:
         python = os.path.abspath(os.path.expanduser(opts.python))
+
     Bootstrapper(opts.buildout_version,
                  eggs_dir=opts.dists_directory,
                  python=python,
+                 offline=opts.offline,
                  buildout_dir=buildout_dir,
                  buildout_config=opts.buildout_config,
                  force_setuptools=opts.force_setuptools,
                  force_distribute=opts.force_distribute,
+                 force_setuptools_path=opts.force_setuptools_path,
                  error=parser.error).bootstrap()
 
 
