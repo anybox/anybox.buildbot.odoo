@@ -240,7 +240,7 @@ class Bootstrapper(object):
 
     def bootstrap(self):
         # actually calling the property right now
-        logger.info("Starting bootstrap for %s (%s)",
+        logger.info("Starting bootstrap stage 1 for %s (%s)",
                     self.python, self.python_version)
         if self.setuptools_path is None:
             self.setuptools_path = self.ensure_req(self.setuptools_req)
@@ -251,12 +251,18 @@ class Bootstrapper(object):
         oldpwd = os.getcwd()
         os.chdir(self.buildout_dir)
         try:
-            boot_fname = 'bootstrap_offline.py'
+            boot_fname = 'bootstrap_stage2.py'
             with open(boot_fname, 'w') as bootf:
                 bootf.write(bootstrap_script_tmpl % paths)
-            logger.info("Wrote %r file, now running it.", boot_fname)
-            subprocess.check_call([self.python, boot_fname,
-                                   '-c', self.buildout_config])
+
+            logger.info("Starting bootstrap stage 2 (running %r)",
+                        boot_fname)
+            cmd = [self.python, boot_fname, '-c', self.buildout_config]
+            cmd.append('buildout:eggs-directory=' + self.eggs_dir)
+            if self.offline:
+                cmd.append("-o")
+            logger.debug("Exact stage2 command is %r", cmd)
+            subprocess.check_call(cmd)
             self.clean()
             self.remove_develop_eggs()
         finally:
@@ -489,11 +495,22 @@ class Bootstrapper(object):
 def main():
     parser = OptionParser(usage="%(proc)s [OPTIONS] BUILDOUT_DIR",
                           epilog="It is recommended to use the "
-                          "--buildout-version option")
+                          "--buildout-version option, and it's best "
+                          "if you can match it with what the buildout "
+                          "configuration prescribes. "
+                          "The bootstrap is performed in two stages : "
+                          "first, BUILDOUT_VERSION is installed "
+                          "then (stage 2), it is used to run the equivalent "
+                          "of bin/buildout bootstrap."
+                          "The configuration file is not used in stage 1"
+                          "In stage 2, buildout may change the used versions "
+                          "of setuptools and itself according to the "
+                          "configuration file. ")
     parser.add_option('--buildout-version',
                       help="The wished version of zc.buildout to bootstrap. "
                       "It must be a simplified version string such as x.y.z, "
-                      "where x, y and z are numbers.")
+                      "where x, y and z are numbers. By default, the "
+                      "latest available locally, or online will be used.")
     parser.add_option('--buildout-config', default='buildout.cfg',
                       help="The buildout configuration file, relative "
                       "to buildout directory.")
@@ -506,21 +523,30 @@ def main():
                            "directory and will be made absolute, "
                            "with ~ expansion.")
     parser.add_option('--dists-directory', default='eggs',
-                      help="Directory to look for and store distributions. "
-                      "for setuptools and zc.buildout, relative to the "
+                      help="Directory to look for distributions of "
+                      "setuptools and zc.buildout, and store them. "
+                      "it is relative to the "
                       "buildout directory (will be created if needed). "
-                      "You are encouraged to use a directory which already "
-                      "holds some eggs, especially for setuptools or "
-                      "distribute: it helps the bootstrap being offline. "
+                      "It is used in both stages of the bootstrap procedure "
+                      "and will be necessary for the resulting buildout "
+                      "executable to work and keep working. Don't remove it"
+                      "afterwards"
+                      "You are encouraged to specify a directory "
+                      "which already holds some eggs, especially "
+                      "for setuptools or distribute: "
+                      "it helps the bootstrap happening without downloads. "
                       "Typically you'd put the shared eggs directory "
                       "you're using for your buildouts so that chances "
                       "to find the needed distributions are high and "
-                      "if fetched by this script, buildout does not need to "
-                      "reinstall them")
+                      "if fetched by the current script, "
+                      "buildout never gets tempted to "
+                      "reinstall them when you later run it.")
     parser.add_option('--offline', action='store_true',
-                      help="If set, no download will be attempted, "
-                      "you must have the zc.buildout and selected "
-                      "setuptools variant/version locally.")
+                      help="If set, no download will be attempted. "
+                      "You must have the zc.buildout and selected "
+                      "setuptools variant/version locally for stage 1 "
+                      "to succeed and those that the configuration file "
+                      "requires, in case they differ, for stage 2.")
     stools_group = parser.add_option_group(
         'Setuptools forcing options',
         "These mutually exclusive options can be used to shortcut the "
