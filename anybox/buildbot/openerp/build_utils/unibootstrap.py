@@ -96,6 +96,10 @@ distutils/setuptools library. This would add another layer of chicken-and-eggs
 problems, and defeat the point.
 
 Style: pep8 or flake8 with ``--ignore=E402``
+Tests: there are integration tests at the end of the module. You can run them,
+       e.g, with ``nosetests unibootstrap.py``. They perform the bootstrap in
+       virtualenvs without setuptools, and check that the resulting buildout
+       works.
 
 The code is organized for a clear separation between two concerns:
 
@@ -180,9 +184,13 @@ from optparse import OptionParser
 from pkg_resources import WorkingSet, Environment, Requirement
 from pkg_resources import working_set
 try:
-    from urllib.request import urlopen
+    from urllib.request import urlopen  # py3
 except ImportError:
-    from urllib2 import urlopen
+    from urllib2 import urlopen  # py2
+try:
+    from configparser import ConfigParser  # py3
+except ImportError:
+    from ConfigParser import ConfigParser  # py2
 
 logger = logging.getLogger(os.path.basename(sys.argv[0]))
 
@@ -210,6 +218,7 @@ if __name__ == '__main__':
 class Bootstrapper(object):
 
     def __init__(self, buildout_version, eggs_dir='bootstrap-eggs',
+                 bootstrap_config=None,
                  offline=False,
                  python=sys.executable,
                  buildout_dir=None,
@@ -229,6 +238,8 @@ class Bootstrapper(object):
         self.error = error
 
         self.init_python_info(python)
+        if buildout_version is None:
+            buildout_version = self.read_bootstrap_config(bootstrap_config)
         self.init_reqs(buildout_version,
                        force_setuptools_path=force_setuptools_path,
                        force_distribute=force_distribute,
@@ -247,14 +258,14 @@ class Bootstrapper(object):
 
     def bootstrap(self):
         # actually calling the property right now
-        logger.info("Starting bootstrap stage 1 for %s (%s)",
+        logger.info("Starting bootstrap stage 1 for %s (%s) "
+                    "and " + str(self.buildout_req),
                     self.python, self.python_version)
         if self.setuptools_path is None:
             self.setuptools_path = self.ensure_req(self.setuptools_req)
 
         paths = dict(setuptools_path=self.setuptools_path,
                      buildout_path=self.ensure_req(self.buildout_req))
-
         oldpwd = os.getcwd()
         os.chdir(self.buildout_dir)
         try:
@@ -274,6 +285,25 @@ class Bootstrapper(object):
             self.remove_develop_eggs()
         finally:
             os.chdir(oldpwd)  # crucial for tests
+
+    def read_bootstrap_config(self, bootstrap_config):
+        """Read buildout version from a bootstrap INI file."""
+        ini_path = os.path.join(self.buildout_dir, bootstrap_config)
+        if not os.path.exists(ini_path):
+            logger.info("No bootstrap configuration file found at %r "
+                        "proceeding without any prescribed buildout version.",
+                        ini_path)
+            return
+
+        logger.info("Reading buildout version from %r", ini_path)
+        parser = ConfigParser()
+        try:
+            parser.read(ini_path)
+            return parser.get('bootstrap', 'buildout-version').strip()
+        except Exception as exc:
+            logger.warn("Exception while reading bootstrap configuration "
+                        "file %r, %s. Ignoring the file",
+                        ini_path, exc)
 
     def init_env(self):
         self.ws = WorkingSet(entries=())
@@ -518,6 +548,16 @@ def main():
                       "It must be a simplified version string such as x.y.z, "
                       "where x, y and z are numbers. By default, the "
                       "latest available locally, or online will be used.")
+    parser.add_option('--bootstrap-config', default='bootstrap.ini',
+                      help="INI file, relative to buildout directory. "
+                      "If it exists, has a [boostrap] section with a "
+                      "buildout-version option, and --buildout-version "
+                      "is not specified, that version will be targetted. "
+                      "Use-case: one can write this file at a release time "
+                      "and henceforth guarantee reproducibility all the way "
+                      "downstream without any internal knowledge of the "
+                      "project."
+                      )
     parser.add_option('--buildout-config', default='buildout.cfg',
                       help="The buildout configuration file, relative "
                       "to buildout directory.")
@@ -601,12 +641,15 @@ def main():
     else:
         python = os.path.abspath(os.path.expanduser(opts.python))
 
+    buildout_version = opts.buildout_version
+
     Bootstrapper(opts.buildout_version,
                  eggs_dir=opts.dists_directory,
                  python=python,
                  offline=opts.offline,
                  buildout_dir=buildout_dir,
                  buildout_config=opts.buildout_config,
+                 bootstrap_config=opts.bootstrap_config,
                  force_setuptools=opts.force_setuptools,
                  force_distribute=opts.force_distribute,
                  force_setuptools_path=opts.force_setuptools_path,
@@ -710,11 +753,22 @@ class TestBootstrapper(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def bootstrap(self, buildout_version, cfg_lines,
+                  from_ini_file=False,
                   force_setuptools=None, force_distribute=None):
         with open(os.path.join(self.buildout_dir, 'buildout.cfg'), 'w') as cfg:
             cfg.write('\n'.join(cfg_lines) + '\n')
 
+        if from_ini_file:
+            ini_fname = 'bootstrap.ini'
+            with open(os.path.join(self.buildout_dir, ini_fname), 'w') as ini:
+                ini.write("[bootstrap]\n"
+                          "buildout-version = %s\n" % buildout_version)
+            buildout_version = None
+        else:
+            ini_fname = None
+
         Bootstrapper(buildout_version,
+                     bootstrap_config=ini_fname,
                      eggs_dir=self.eggs_dir,
                      python=self.venv_python,
                      buildout_dir=self.buildout_dir,
@@ -743,7 +797,7 @@ class TestBootstrapper(unittest.TestCase):
         finally:
             os.chdir(old_pwd)
 
-    def test_2_4_1(self):
+    def xtest_2_4_1(self):
         self.bootstrap('2.4.1', self.cfg_lines_from_versions(
             {'setuptools': '18.3.2',
              'zc.recipe.egg': '2.0.0'}))
@@ -753,6 +807,14 @@ class TestBootstrapper(unittest.TestCase):
         self.bootstrap('2.3.0', self.cfg_lines_from_versions(
             {'setuptools': '8.3',
              'zc.recipe.egg': '2.0.0'}))
+        self.buildout()
+
+    def test_2_3_0_ini(self):
+        self.bootstrap('2.3.0',
+                       self.cfg_lines_from_versions(
+                           {'setuptools': '8.3',
+                            'zc.recipe.egg': '2.0.0'}),
+                       from_ini_file=True)
         self.buildout()
 
     def test_2_2_5(self):
