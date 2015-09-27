@@ -9,31 +9,31 @@ zc.buildout and the official bootstrap that ships with it, but that is
 impractical for production maintainance use-cases, especially those on
 older systems:
 
-- sometimes, a newer version of zc.buildout would not want to work in the
-  production environmnent
-- sometimes, a developper or admin has to pass one of these one-liners patches
-  and really wants to touch nothing else
+- sometimes, a newer version of zc.buildout would not want to work readily in
+  the production environmnent or with the targetted versions of all the
+  dependencies (including recipes). We have experienced many different corner
+  cases accross 4 years.
 - sometimes, one needs to restore a corrupted system. It's a relief not to
   add another pile of potential problems.
 - deployment tools and continuous integration are dumber than humans; for
   idempotency, they have a tendency to rebootstrap even if that's not strictly
   necessary (case of the one liner patch).
-- although it is unwise to have old systems, it's
-  a reality of life, that even those whose job is precisely to migrate them
-  ASAP have to live with them at least a short while.
+- although it is unwise to have old systems, even those whose job is
+  precisely to migrate them ASAP have to live with them at least a short while.
 
-All this piled on together means we'd really like a uniform solution, maybe
-by restricting targetting a bit, in an acceptable way.
+All this piled on together means we'd really like a uniform solution able to
+produce a ``buildout`` executable for any version, maybe
+by restricting the problem space a bit.
 This script works under the following assumptions:
 
-- Run the latest version, it is designed to be more compatible with older
-  setups than its predecessors.
+- Run the latest version of this script ; if it is bundled with a project,
+  ignore the bundled version.
 - We are not under Windows. Also, it is tested currently with CPython only.
 - The targetted Python is 2.6, 2.7 or >= 3.2, and the Python running the script
   has the same major version.
 - There is a system-wide installation of setuptools (or distribute). More
-  precisely, the Python version that runs the script has one (it does not have
-  to have anything with the targetted Python, see below).
+  precisely, the Python version that runs this script has one (it does not
+  have to have anything with the targetted Python, see below).
 
   This may sound not solving the bootstrap problem, but in practice, the
   targetted production systems and bots often have one, thanks to the
@@ -44,6 +44,10 @@ This script works under the following assumptions:
   totally mandatory, but in practice, bootstrapping with zc.buildout 2.4.1 with
   a buildout configuration that requires 1.0.0 is really looking for trouble.
 
+  Usually, you'd have a configuration file that where you could read a
+  ``versions`` section, or some CI tool would have recorded the version used
+  at bootstrap time in a ``bootstrap.ini`` file.
+
 - The buildout configuration is consistent. In particular, if it has
   requirements for setuptools, distribute and zc.buildout, it must be
   compatible with them (usually that means that someone was once able to run
@@ -51,8 +55,8 @@ This script works under the following assumptions:
 
 It has the following other desireable properties:
 
-- If you pass a ``--eggs-directory`` option, it will try and use what already
-  lies there and do all the bootstrap offline.
+- If you pass a ``--dists-directory`` option, it will try and use what already
+  lies there and avoid downloads.
 - It will clean up the ``develop-eggs`` directory, which is a well-known source
   of trouble, if applicable.
 - You can require a precise version of setuptools or distribute directly.
@@ -104,6 +108,9 @@ The code is organized for a clear separation between two concerns:
 * providing the needed versions and running stage 2 of
   bootstrap (equivalent of the ``boostsrap`` command of the ``buildout``)
   executable.
+
+  There are dirty hacks for corner case, we tried to enclose them as much
+  as possible in abstractions for later improvements.
 
 Current bugs
 ------------
