@@ -193,8 +193,9 @@ class BuildoutsConfigurator(object):
         boot_opts = {}
         if options.get('virtualenv', 'true').strip().lower() == 'true':
             boot_opts['--python'] = "~/openerp-env/bin/python"
-        boot_opts['--buildout-version'] = options.get(
-            'bootstrap-version', '').strip()
+        bv = options.get('bootstrap-version')
+        if bv is not None:
+            boot_opts['--buildout-version'] = bv.strip()
 
         command = ['python', 'unibootstrap.py',
                    '--dists-directory', WithProperties(eggs_cache),
