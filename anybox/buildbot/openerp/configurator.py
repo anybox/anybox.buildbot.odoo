@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 # Running buildouts in parallel on one slave fails
 # if they used shared eggs or downloads area
-buildout_lock = locks.SlaveLock("buildout")
+buildout_caches_lock = locks.SlaveLock("buildout caches")
 
 
 class BuildoutsConfigurator(object):
@@ -214,6 +214,8 @@ class BuildoutsConfigurator(object):
                               name='bootstrap',
                               description="bootstrapping",
                               descriptionDone="bootstrapped",
+                              locks=[
+                                  buildout_caches_lock.access('exclusive')],
                               haltOnFailure=True,
                               **step_kw)]
 
@@ -375,7 +377,7 @@ class BuildoutsConfigurator(object):
                 description="buildout",
                 timeout=3600 * 4,
                 haltOnFailure=True,
-                locks=[buildout_lock.access('exclusive')],
+                locks=[buildout_caches_lock.access('exclusive')],
                 env=capability_env,
             ))
 
