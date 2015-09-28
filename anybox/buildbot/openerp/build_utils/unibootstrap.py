@@ -713,7 +713,7 @@ def main():
     else:
         python = os.path.abspath(os.path.expanduser(opts.python))
 
-    output_bootstrap_config = opts.no_output_bootstrap_config
+    output_bootstrap_config = opts.output_bootstrap_config
     if output_bootstrap_config is None:
         output_bootstrap_config = opts.bootstrap_config
     if opts.no_output_bootstrap_config:
