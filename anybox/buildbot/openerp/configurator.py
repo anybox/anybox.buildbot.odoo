@@ -183,10 +183,8 @@ class BuildoutsConfigurator(object):
 
         options prefixed with 'bootstrap-' are applied
 
-        :param dump_options_to: (directory path). If specified,
-                                a 'bootstrap.ini' file will be put in there,
-                                giving installers the means to reproduce the
-                                bootstrap identically.
+        :param dump_options_to: kept for backwards compatibility,
+                                (unibootstrap will dump them in all cases).
         :param step_kw: will be passed to the step constructor. Known use-case:
                         change workdir in packaging step.
         """
@@ -200,54 +198,29 @@ class BuildoutsConfigurator(object):
         command = ['python', 'unibootstrap.py',
                    '--dists-directory', WithProperties(eggs_cache),
                    '--buildout-config', buildout_slave_path]
+        if dump_options_to is None:
+            command.append('--no-output-bootstrap-config')
+        else:
+            boot_opts['--output-bootstrap-config'] = dump_options_to
+
         for o, v in boot_opts.items():
             command.extend((o, v))
         command.append('.')
 
-        steps = [FileDownload(mastersrc=os.path.join(BUILD_UTILS_PATH,
-                                                     'unibootstrap.py'),
-                              slavedest='unibootstrap.py',
-                              name="download",
-                              description=['download', 'unibootstrap'],
-                              **step_kw),
-                 ShellCommand(command=command,
-                              name='bootstrap',
-                              description="bootstrapping",
-                              descriptionDone="bootstrapped",
-                              locks=[
-                                  buildout_caches_lock.access('exclusive')],
-                              haltOnFailure=True,
-                              **step_kw)]
-
-        if dump_options_to is not None:
-            dumper = 'dump_bootstrap_options.py'
-            # here it's important not to put the dumper script
-            # in the build/ directory
-            # because some builds (release) expect build/ not to be created
-            # at this point. So we'll use the same workdir as for the bootstrap
-            # itself
-            dump_kw = dict((k, v) for k, v in step_kw.items()
-                           if k in ['workdir'])
-
-            command = ['python', 'dump_bootstrap_options.py', dump_options_to]
-            boot_opts['--bootstrap-type'] = 'uni'
-            for o, v in boot_opts.items():
-                command.extend((o, v))
-
-            steps.extend((
-                FileDownload(
-                    mastersrc=os.path.join(BUILD_UTILS_PATH, dumper),
-                    slavedest=dumper,
-                    haltOnFailure=True,
-                    **dump_kw),
-                ShellCommand(
-                    name='bootstrap_ini',
-                    command=command,
-                    description=['dump', 'bootstrap', 'options'],
-                    descriptionDone=['dumped', 'bootstrap', 'options'],
-                    haltOnFailure=True,
-                    **dump_kw)))
-        return steps
+        return [FileDownload(mastersrc=os.path.join(BUILD_UTILS_PATH,
+                                                    'unibootstrap.py'),
+                             slavedest='unibootstrap.py',
+                             name="download",
+                             description=['download', 'unibootstrap'],
+                             **step_kw),
+                ShellCommand(command=command,
+                             name='bootstrap',
+                             description="bootstrapping",
+                             descriptionDone="bootstrapped",
+                             locks=[
+                                 buildout_caches_lock.access('exclusive')],
+                             haltOnFailure=True,
+                             **step_kw)]
 
     def make_factory(self, name, buildout_slave_path, buildout_dl_steps):
         """Return a build factory using name and buildout config at cfg_path.

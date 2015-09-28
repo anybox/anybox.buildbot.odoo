@@ -76,7 +76,8 @@ def packaging(configurator, options,
 
     steps.extend(configurator.steps_unibootstrap(
         buildout_slave_path, options, eggs_cache, workdir='./src',
-        dump_options_to=WithProperties('../dist/' + archive_name_interp)))
+        dump_options_to=WithProperties('../dist/' + archive_name_interp +
+                                       '/bootstrap.ini')))
 
     steps.append(
         ShellCommand(command=['bin/buildout', '-c', buildout_slave_path,

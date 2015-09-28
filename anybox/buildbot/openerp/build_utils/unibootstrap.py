@@ -198,7 +198,7 @@ try:
 except ImportError:
     from ConfigParser import ConfigParser  # py2
 
-logger = logging.getLogger(os.path.basename(sys.argv[0]))
+logger = logging.getLogger(os.path.basename(sys.argv[0].rsplit('.', 1)[0]))
 
 DISTRIBUTE = working_set.find(Requirement.parse('distribute')) is not None
 del working_set  # I don't like ambiguity
@@ -225,6 +225,7 @@ class Bootstrapper(object):
 
     def __init__(self, buildout_version, eggs_dir='bootstrap-eggs',
                  bootstrap_config=None,
+                 output_bootstrap_config=None,
                  offline=False,
                  python=sys.executable,
                  buildout_dir=None,
@@ -245,9 +246,10 @@ class Bootstrapper(object):
 
         self.init_python_info(python)
         self.bootstrap_config = bootstrap_config
+        self.output_bootstrap_config = output_bootstrap_config
         if buildout_version is None:
             buildout_version = self.read_bootstrap_config()
-        self.buildout_version = None
+        self.buildout_version = buildout_version
         self.init_reqs(buildout_version,
                        force_setuptools_path=force_setuptools_path,
                        force_distribute=force_distribute,
@@ -325,25 +327,35 @@ class Bootstrapper(object):
         it works, just dump it.
         Otherwise, take the version after stage2, there's no reason it should
         not work.
+
+        :param out_path: path to the produced file, relative to the buildout
+                         directory
         """
-        if self.bootstrap_config is None:
+        out_path = self.output_bootstrap_config
+        if out_path is None:
             return
         b_version = self.buildout_version
 
-        ini_path = self.bootstrap_config  # we have chdir to buildout dir
+        # we have already changed directory to buildout directory
+        # TODO make it independent of cwd
         try:
             if b_version is None:
                 # not passed on command line, not read from config file
                 # TODO don't hardcode exe path (not so easy)
-                buildout = subprocess.Popen(["bin/buildout", "--version"],
-                                            stdout=subprocess.PIPE)
+                cmd = ["bin/buildout", "--version"]
+                cmd_str = ' '.join(cmd)
+                logger.info("No buildout version has been specified on "
+                            "command line nor in bootstrap config file. "
+                            "Using the one stage 2 produced (%s)",
+                            cmd_str)
+                buildout = subprocess.Popen(cmd, stdout=subprocess.PIPE)
                 out = buildout.communicate()[0]
                 if buildout.returncode == 0:
                     b_version = out.decode().split()[-1]
                 else:
-                    raise RuntimeError("bin/buildout --version has errors")
+                    raise RuntimeError(cmd_str + " has errors")
 
-            with open(ini_path, 'w') as ini:
+            with open(out_path, 'w') as ini:
                 ini.write('\n'.join((
                     "# Produced by unibootstrap",
                     "# at time (UTC): " + datetime.utcnow().isoformat(),
@@ -354,8 +366,8 @@ class Bootstrapper(object):
                 )))
         except Exception as exc:
             logger.error("Could not write used "
-                         "buildout version in %r (%s)", ini_path, exc)
-        logger.info("Wrote buildout version %s to %s", b_version, ini_path)
+                         "buildout version in %r (%s)", out_path, exc)
+        logger.info("Wrote buildout version %s to %s", b_version, out_path)
 
     def init_env(self):
         self.ws = WorkingSet(entries=())
@@ -602,7 +614,7 @@ def main():
                       "latest available locally, or online will be used.")
     parser.add_option('--bootstrap-config', default='bootstrap.ini',
                       help="INI file, relative to buildout directory. "
-                      "If it exists, has a [boostrap] section with a "
+                      "If it exists, has a [bootstrap] section with a "
                       "buildout-version option, and --buildout-version "
                       "is not specified, that version will be targetted. "
                       "Use-case: one can write this file at a release time "
@@ -610,6 +622,14 @@ def main():
                       "downstream without any internal knowledge of the "
                       "project."
                       )
+    parser.add_option('--output-bootstrap-config',
+                      default='bootstrap.ini',
+                      help="By default, a file suitable for "
+                      "BOOTSTRAP_CONFIG will be produced. This option "
+                      "allows you to choose its path (defaults to the "
+                      "current value of BOOTSTRAP_CONFIG).")
+    parser.add_option('--no-output-bootstrap-config', action='store_true',
+                      help="Do not output a bootstrap configuration file.")
     parser.add_option('--buildout-config', default='buildout.cfg',
                       help="The buildout configuration file, relative "
                       "to buildout directory.")
@@ -693,7 +713,11 @@ def main():
     else:
         python = os.path.abspath(os.path.expanduser(opts.python))
 
-    buildout_version = opts.buildout_version
+    output_bootstrap_config = opts.no_output_bootstrap_config
+    if output_bootstrap_config is None:
+        output_bootstrap_config = opts.bootstrap_config
+    if opts.no_output_bootstrap_config:
+        output_bootstrap_config = None
 
     Bootstrapper(opts.buildout_version,
                  eggs_dir=opts.dists_directory,
@@ -702,6 +726,7 @@ def main():
                  buildout_dir=buildout_dir,
                  buildout_config=opts.buildout_config,
                  bootstrap_config=opts.bootstrap_config,
+                 output_bootstrap_config=output_bootstrap_config,
                  force_setuptools=opts.force_setuptools,
                  force_distribute=opts.force_distribute,
                  force_setuptools_path=opts.force_setuptools_path,
