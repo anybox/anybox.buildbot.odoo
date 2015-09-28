@@ -62,7 +62,12 @@ It has the following other desireable properties:
 - You can require a precise version of setuptools or distribute directly.
   This is handy if it is already in the eggs directory, but in that case you
   must be sure it is the right one for the job.
-
+- The project-dependent information (namely the buildout version) gets stored
+  in the buildout_dir, in a small INI file (by default 'bootstrap.ini'). If
+  the buildout version is not specifie on the command line and this file is
+  found, it is used. Therefore, if a (working properly) buildout directorty
+  gets released one way or another, unibootstrap will be able to handle
+  it blindly at any point in the future.
 
 Why yet another bootstrap
 -------------------------
@@ -180,6 +185,7 @@ import shutil
 import tempfile
 import logging
 import unittest
+from datetime import datetime
 from optparse import OptionParser
 from pkg_resources import WorkingSet, Environment, Requirement
 from pkg_resources import working_set
@@ -238,8 +244,10 @@ class Bootstrapper(object):
         self.error = error
 
         self.init_python_info(python)
+        self.bootstrap_config = bootstrap_config
         if buildout_version is None:
-            buildout_version = self.read_bootstrap_config(bootstrap_config)
+            buildout_version = self.read_bootstrap_config()
+        self.buildout_version = None
         self.init_reqs(buildout_version,
                        force_setuptools_path=force_setuptools_path,
                        force_distribute=force_distribute,
@@ -282,13 +290,18 @@ class Bootstrapper(object):
             logger.debug("Exact stage2 command is %r", cmd)
             subprocess.check_call(cmd)
             self.clean()
+            self.dump_bootstrap_config()
             self.remove_develop_eggs()
         finally:
             os.chdir(oldpwd)  # crucial for tests
 
-    def read_bootstrap_config(self, bootstrap_config):
+    def read_bootstrap_config(self):
         """Read buildout version from a bootstrap INI file."""
-        ini_path = os.path.join(self.buildout_dir, bootstrap_config)
+        config = self.bootstrap_config
+        if config is None:
+            return
+
+        ini_path = os.path.join(self.buildout_dir, config)
         if not os.path.exists(ini_path):
             logger.info("No bootstrap configuration file found at %r "
                         "proceeding without any prescribed buildout version.",
@@ -304,6 +317,45 @@ class Bootstrapper(object):
             logger.warn("Exception while reading bootstrap configuration "
                         "file %r, %s. Ignoring the file",
                         ini_path, exc)
+
+    def dump_bootstrap_config(self):
+        """Write the used buildout version in the bootstrap config file.
+
+        If a precise version has been required, at this stage we know
+        it works, just dump it.
+        Otherwise, take the version after stage2, there's no reason it should
+        not work.
+        """
+        if self.bootstrap_config is None:
+            return
+        b_version = self.buildout_version
+
+        ini_path = self.bootstrap_config  # we have chdir to buildout dir
+        try:
+            if b_version is None:
+                # not passed on command line, not read from config file
+                # TODO don't hardcode exe path (not so easy)
+                buildout = subprocess.Popen(["bin/buildout", "--version"],
+                                            stdout=subprocess.PIPE)
+                out = buildout.communicate()[0]
+                if buildout.returncode == 0:
+                    b_version = out.decode().split()[-1]
+                else:
+                    raise RuntimeError("bin/buildout --version has errors")
+
+            with open(ini_path, 'w') as ini:
+                ini.write('\n'.join((
+                    "# Produced by unibootstrap",
+                    "# at time (UTC): " + datetime.utcnow().isoformat(),
+                    "# with Python " + sys.version.splitlines()[0],
+                    "",
+                    "[bootstrap]",
+                    "buildout-version = " + b_version,
+                )))
+        except Exception as exc:
+            logger.error("Could not write used "
+                         "buildout version in %r (%s)", ini_path, exc)
+        logger.info("Wrote buildout version %s to %s", b_version, ini_path)
 
     def init_env(self):
         self.ws = WorkingSet(entries=())
