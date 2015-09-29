@@ -200,14 +200,16 @@ class BuilderDispatcher(object):
         get registered.
         """
         res = []
+        capdef = self.capabilities[cap]
+        prop = capdef['version_prop']
         if cap_vf is not None and cap_vf.criteria == (NOT_USED, ):
             # This is a marker to explicitely say that the capability does not
             # matter. For instance, in the case of PostgreSQL, this helps
             # spawning builds that ignore it entirely
+            for builder in builders:
+                builder.setdefault('properties', {})[prop] = 'not-used'
             return builders
 
-        capdef = self.capabilities[cap]
-        prop = capdef['version_prop']
         abbrev = capdef.get('abbrev', cap)
         for builder in builders:
             for cap_version, slavenames in self.split_slaves_by_capability(
