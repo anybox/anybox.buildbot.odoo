@@ -14,7 +14,7 @@ parser.add_argument('target',
                     "for the target buildout")
 parser.add_argument('--subdir',
                     help="Subdirectory of the repo in which the buildout "
-                    " config and bootstrap script actually sit")
+                    "configuration file actually lies.")
 parser.add_argument('--force-remove-subdir', action='store_true',
                     help="In --subdir-target situation, "
                     "remove any previous subdir directory sitting in the way.")

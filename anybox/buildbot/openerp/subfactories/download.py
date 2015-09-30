@@ -1,8 +1,5 @@
 """Buildstep subfactories for download of the buildout configuration
 
-bootstrap.py is considered to be part of the configuration.
-Depending on the subfactory, it may be specific to that buildout or not.
-
 These functions have a common signature:
        ``f(configurator, options, cfg_tokens, manifest_dir)``
 
@@ -23,6 +20,7 @@ They must return:
 """
 
 import os
+import warnings
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.transfer import FileDownload
 from buildbot.process.properties import Property
@@ -34,27 +32,25 @@ def standalone_buildout(configurator, options, cfg_tokens, manifest_dir):
     """Simple download from master of a self-contained buildout conf file.
 
     See module docstring for signature and return values.
-
-    Options:
-
-    :bootstrap-script: name of the bootstrap script to download (defaults to
-                       ``bootstrap.py``). Applies to both source and
-                       destination.
     """
     if len(cfg_tokens) != 1:
         raise ValueError(
             "Wrong standalong buildout specification: %r" % cfg_tokens)
 
+    if 'bootstrap-script' in options:
+        warnings.warn("The option 'boostrap-script' is now ignored, all "
+                      "bootstraps are done with unibootstrap.py",
+                      DeprecationWarning)
     conf_path = cfg_tokens[0]
     conf_name = os.path.split(conf_path)[-1]
     conf_path = os.path.join(manifest_dir, conf_path)
-    script_name = options.get('bootstrap-script', 'bootstrap.py')
-    bootstrap_path = os.path.join(manifest_dir, script_name)
-    return conf_name, (FileDownload(mastersrc=bootstrap_path,
-                                    slavedest=script_name),
-                       FileDownload(mastersrc=conf_path,
-                                    slavedest=conf_name),
-                       )
+    return conf_name, (
+        FileDownload(mastersrc=conf_path,
+                     slavedest=conf_name,
+                     name="download",
+                     description=["Download", "buildout", "conf"],
+                     haltOnFailure=True),
+    )
 
 
 def hg_buildout(self, options, cfg_tokens, manifest_dir):

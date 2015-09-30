@@ -16,7 +16,7 @@ parser = ArgumentParser()
 parser.add_argument('url')
 parser.add_argument('--subdir',
                     help="Subdirectory of the branch in which the buildout "
-                    " config and bootstrap script actually sit")
+                    "configuration file actually lies")
 parser.add_argument('--subdir-target',
                     help="Full path, relative to current working directory "
                     "for the target buildout (mandatory if --subdir option "
