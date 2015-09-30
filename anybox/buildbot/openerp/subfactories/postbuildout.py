@@ -1,7 +1,7 @@
 import os
 from buildbot import locks
 from buildbot.steps.shell import ShellCommand
-from buildbot.steps.shell import SetProperty
+from buildbot.steps.shell import SetPropertyFromCommand
 from buildbot.steps.python import Sphinx
 from buildbot.steps.transfer import FileDownload
 from buildbot.steps.transfer import FileUpload
@@ -34,7 +34,7 @@ def steps_odoo_port_reservation(configurator, options, environ=()):
             mastersrc=os.path.join(BUILD_UTILS_PATH, 'port_reserve.py'),
             slavedest='port_reserve.py'),
 
-        SetProperty(
+        SetPropertyFromCommand(
             property='openerp_port',
             description=['Port', 'reservation'],
             locks=[port_lock.access('exclusive')],
@@ -454,7 +454,7 @@ def functional(configurator, options, buildout_slave_path,
         mastersrc=os.path.join(BUILD_UTILS_PATH, 'port_reserve.py'),
         slavedest='port_reserve.py'))
 
-    steps.append(SetProperty(
+    steps.append(SetPropertyFromCommand(
         property='openerp_port',
         description=['Port', 'reservation'],
         locks=[port_lock.access('exclusive')],
