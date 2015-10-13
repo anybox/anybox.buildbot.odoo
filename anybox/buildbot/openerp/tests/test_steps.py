@@ -1,28 +1,9 @@
 import unittest
-from twisted.python import components
-from buildbot.interfaces import IProperties
 from buildbot.process.buildstep import SUCCESS
 from buildbot.process.properties import Properties
 from ..version import VersionFilter
 from ..steps import SetCapabilityProperties
 from ..constants import CAPABILITY_PROP_FMT
-
-
-# probably not necessary NOCOMMIT
-class TestingBuild(object):
-    """Directly implement IProperties."""
-    def __init__(self):
-        self.props = {}
-
-    def getProperty(self, k, default=None):
-        return self.props.get(k)
-
-    def setProperty(self, k, v):
-        self.props[k] = v
-
-
-components.registerAdapter(lambda build: build,
-                           TestingBuild, IProperties)
 
 
 class TestSetCapabilityProperties(unittest.TestCase):
@@ -32,8 +13,8 @@ class TestSetCapabilityProperties(unittest.TestCase):
             'zecap',
             capability_version_prop='zecap_version')
 
-        # build attribute is necessary only to be adapted to IProperties
-        # for testing, let's just provide IProperties directly
+        # step.build is necessary only to be adapted to IProperties.
+        # For testing, let's just provide IProperties directly
         self.step.build = Properties()
 
         self.step_status = None
