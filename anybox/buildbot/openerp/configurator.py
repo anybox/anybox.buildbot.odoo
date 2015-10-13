@@ -14,6 +14,7 @@ from buildbot.steps.shell import ShellCommand
 from buildbot.steps.transfer import FileDownload
 from buildbot.steps.transfer import FileUpload
 from buildbot.process.properties import WithProperties
+from buildbot.process.properties import Property
 from buildbot.schedulers.basic import SingleBranchScheduler
 
 from . import capability
@@ -190,12 +191,15 @@ class BuildoutsConfigurator(object):
         """
         boot_opts = {}
         if options.get('virtualenv', 'true').strip().lower() == 'true':
-            boot_opts['--python'] = "~/openerp-env/bin/python"
+            boot_opts['--python'] = Property('cap_python_venv',
+                                             default='~/openerp-env/bin/python')
+
         bv = options.get('bootstrap-version')
         if bv is not None:
             boot_opts['--buildout-version'] = bv.strip()
 
-        command = ['python', 'unibootstrap.py',
+        command = [Property('cap_python_bin', default='python'),
+                   'unibootstrap.py',
                    '--dists-directory', WithProperties(eggs_cache),
                    '--buildout-config', buildout_slave_path]
         if dump_options_to is None:
