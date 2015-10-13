@@ -5,6 +5,7 @@ from buildbot.process.buildstep import SUCCESS
 from buildbot.process.buildstep import FAILURE  # NOQA
 
 from .constants import CAPABILITY_PROP_FMT
+from .version import Version
 
 
 class DescriptionBuildStep(BuildStep):
@@ -74,6 +75,7 @@ class SetCapabilityProperties(DescriptionBuildStep):
 
     def __init__(self, capability_name,
                  capability_prop='capability',
+                 build_requires_prop='build_requires',
                  capability_version_prop=None,
                  **kw):
         """
@@ -86,6 +88,7 @@ class SetCapabilityProperties(DescriptionBuildStep):
         DescriptionBuildStep.__init__(self, **kw)
         self.capability_name = capability_name
         self.capability_prop = capability_prop
+        self.build_requires_prop = build_requires_prop
         self.capability_version_prop = capability_version_prop
 
     def start(self):
@@ -93,6 +96,15 @@ class SetCapabilityProperties(DescriptionBuildStep):
             self.capability_name]
         if not cap_details:
             self.finished(SUCCESS)
+
+        # apply build_requires, if submitted
+        build_requires = self.getProperty(self.build_requires_prop, {})
+        for req in build_requires:
+            if req.cap != self.capability_name:
+                continue
+            cap_details = dict(
+                (v, o) for (v, o) in cap_details.items()
+                if req.match(None if v is None else Version.parse(v)))
 
         options = None
         if self.capability_version_prop:
@@ -106,9 +118,10 @@ class SetCapabilityProperties(DescriptionBuildStep):
         if options is None:
             # could not get options by a capacity version from props
             # works if there's only one capacity version on this buildslave
+            # TODO replace assert() by a FAILURE status with message
             assert len(cap_details) == 1, (
                 "No version of capability %r in properties, but"
-                " slave %r has several versions of it." % (
+                " slave %r has several applicable versions of it." % (
                     self.capability_name, self.getProperty('slavename')))
             options = cap_details.values()[0]
 

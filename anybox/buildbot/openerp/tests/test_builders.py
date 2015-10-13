@@ -1,7 +1,7 @@
 from base import BaseTestCase
 
-from anybox.buildbot.openerp.configurator import BuildoutsConfigurator
-from anybox.buildbot.openerp.steps import SetCapabilityProperties
+from ..configurator import BuildoutsConfigurator
+from ..steps import SetCapabilityProperties
 
 
 class TestBuilders(BaseTestCase):
@@ -161,9 +161,13 @@ class TestBuilders(BaseTestCase):
                 if name.startswith('rabb-sup20')),
             set(('rabb-sup20-pg9.0',)))
 
-        self.assertEquals(
-            builders['rabb-sup20-pg9.0'].slavenames,
-            ['rabb284'])
+        builder = builders['rabb-sup20-pg9.0']
+
+        self.assertEqual(builder.slavenames, ['rabb284'])
+        build_requires = builder.properties['build_requires']
+        self.assertEqual(len(build_requires), 1)
+        self.assertEqual(repr(build_requires.pop()),
+                         "VersionFilter('rabbitmq', ('>=', Version(2, 0)))")
 
     def test_build_requires2(self):
         master = {}

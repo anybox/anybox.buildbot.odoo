@@ -160,12 +160,18 @@ class BuilderDispatcher(object):
             # buildbot does not allow builders with empty list of slaves
             return ()
 
-        preconfs = [dict(name=name,
+        base_conf = dict(name=name,
                          category=build_category,
                          factory=factory,
                          nextSlave=next_slave,
-                         slavenames=list(slavenames))]
+                         slavenames=list(slavenames))
 
+        # forward requirement in the build properties
+        if build_requires:
+            base_conf['properties'] = dict(
+                build_requires=build_requires)
+
+        preconfs = [base_conf]
         for cap_name, cap_vf in factory.build_for.items():
             preconfs = self.dispatch_builders_by_capability(
                 preconfs, cap_name, cap_vf)
