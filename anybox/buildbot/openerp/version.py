@@ -58,6 +58,12 @@ class Version(object):
             return 'Version(%s)' % numeric
         return 'Version(%s, suffix=%r)' % (numeric, self.suffix)
 
+    def __str__(self):
+        numeric = '.'.join(str(v) for v in self.version)
+        if self.suffix is None:
+            return numeric
+        return '-'.join((numeric, self.suffix))
+
     def __eq__(self, other):
         return self.version == other.version and self.suffix == other.suffix
 
@@ -89,6 +95,16 @@ class Version(object):
 
         >>> Version.parse(None) is None
         True
+
+        The parse method and str() are mutually inverse
+        >>> str(Version.parse('2.6'))
+        '2.6'
+        >>> str(Version.parse('1.2-alpha'))
+        '1.2-alpha'
+        >>> Version.parse(str(Version(9, 1)))
+        Version(9, 1)
+        >>> Version.parse(str(Version(1, 2, suffix='alpha')))
+        Version(1, 2, suffix='alpha')
         """
         if as_string is None:
             return None
@@ -155,6 +171,17 @@ class VersionFilter(object):
       >>> vf = VersionFilter.parse('postgresql not-used')
       >>> vf.criteria == (NOT_USED, )
       True
+
+    On a version filter, str() gives back something that's meant for parse():
+
+      >>> str(VersionFilter.parse('rabbitmq'))
+      'rabbitmq'
+      >>> str(VersionFilter.parse('pg >= 9.1 < 9.3'))
+      'pg >= 9.1 AND < 9.3'
+      >>> str(VersionFilter.parse('pg >= 9.2-devel OR == 8.4-special'))
+      'pg >= 9.2-devel OR == 8.4-special'
+      >>> str(VersionFilter.parse('postgresql not-used'))
+      'postgresql not-used'
     """
 
     def __init__(self, capability, criteria):
@@ -176,6 +203,23 @@ class VersionFilter(object):
 
     def __repr__(self):
         return 'VersionFilter(%r, %r)' % (self.cap, self.criteria)
+
+    def _crit_str(self, crit):
+        op = crit[0]
+        if op is NOT_USED:
+            return 'not-used'
+
+        if op.upper() in ('AND', 'OR'):
+            return ' '.join((self._crit_str(crit[1]),
+                             op.upper(),
+                             self._crit_str(crit[2])))
+
+        return ' '.join((op, str(crit[1])))
+
+    def __str__(self):
+        if not self.criteria:
+            return self.cap
+        return ' '.join((self.cap, self._crit_str(self.criteria)))
 
     @classmethod
     def boolean_parse(cls, reqline):
