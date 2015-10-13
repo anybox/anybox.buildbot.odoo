@@ -5,7 +5,7 @@ from buildbot.process.buildstep import SUCCESS
 from buildbot.process.buildstep import FAILURE  # NOQA
 
 from .constants import CAPABILITY_PROP_FMT
-from .version import Version
+from .version import Version, VersionFilter
 
 
 class DescriptionBuildStep(BuildStep):
@@ -100,6 +100,7 @@ class SetCapabilityProperties(DescriptionBuildStep):
         # apply build_requires, if submitted
         build_requires = self.getProperty(self.build_requires_prop, {})
         for req in build_requires:
+            req = VersionFilter.parse(req)
             if req.cap != self.capability_name:
                 continue
             cap_details = dict(

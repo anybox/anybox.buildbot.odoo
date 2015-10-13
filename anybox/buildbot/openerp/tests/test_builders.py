@@ -166,8 +166,7 @@ class TestBuilders(BaseTestCase):
         self.assertEqual(builder.slavenames, ['rabb284'])
         build_requires = builder.properties['build_requires']
         self.assertEqual(len(build_requires), 1)
-        self.assertEqual(repr(build_requires.pop()),
-                         "VersionFilter('rabbitmq', ('>=', Version(2, 0)))")
+        self.assertEqual(build_requires.pop(), "rabbitmq >= 2.0")
 
     def test_build_requires2(self):
         master = {}

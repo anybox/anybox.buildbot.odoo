@@ -168,7 +168,7 @@ class BuilderDispatcher(object):
         # forward requirement in the build properties
         if build_requires:
             base_conf['properties'] = dict(
-                build_requires=build_requires)
+                build_requires=[str(req) for req in build_requires])
 
         preconfs = [base_conf]
         for cap_name, cap_vf in factory.build_for.items():

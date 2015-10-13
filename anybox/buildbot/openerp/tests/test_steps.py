@@ -56,7 +56,7 @@ class TestSetCapabilityProperties(unittest.TestCase):
                                      '2.0': dict(bin='/usr/bin/zecap2'),
                                      },
                               ), 'BuildSlave')
-        step.setProperty('build_requires', [VersionFilter.parse("zecap < 2")])
+        step.setProperty('build_requires', ["zecap < 2"])
         step.start()
         self.assertEqual(self.step_status, SUCCESS)
         self.assertEqual(
