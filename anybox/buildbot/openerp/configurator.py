@@ -15,6 +15,7 @@ from buildbot.steps.transfer import FileDownload
 from buildbot.steps.transfer import FileUpload
 from buildbot.process.properties import WithProperties
 from buildbot.process.properties import Property
+from buildbot.process.properties import Interpolate
 from buildbot.schedulers.basic import SingleBranchScheduler
 
 from . import capability
@@ -191,8 +192,9 @@ class BuildoutsConfigurator(object):
         """
         boot_opts = {}
         if options.get('virtualenv', 'true').strip().lower() == 'true':
-            boot_opts['--python'] = Property('cap_python_venv',
-                                             default='~/openerp-env/bin/python')
+            boot_opts['--python'] = Interpolate(
+                '%(prop:cap_python_venv:-~/openerp-env)s'
+                '/bin/python')
 
         bv = options.get('bootstrap-version')
         if bv is not None:
