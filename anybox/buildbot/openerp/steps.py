@@ -109,7 +109,7 @@ class SetCapabilityProperties(DescriptionBuildStep):
             assert len(cap_details) == 1, (
                 "No version of capability %r in properties, but"
                 " slave %r has several versions of it." % (
-                    self.capability_name, self.getProperty('buildslave')))
+                    self.capability_name, self.getProperty('slavename')))
             options = cap_details.values()[0]
 
         for k, v in options.items():
