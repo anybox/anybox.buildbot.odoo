@@ -118,8 +118,7 @@ def does_meet_requirements(capability, requirements):
         if version_options is None:
             return False
         for version in version_options:
-            if req.match(None if version is None
-                         else Version.parse(version)):
+            if req.match(Version.parse(version)):
                 break
         else:
             return False

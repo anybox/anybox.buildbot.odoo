@@ -104,7 +104,7 @@ class SetCapabilityProperties(DescriptionBuildStep):
                 continue
             cap_details = dict(
                 (v, o) for (v, o) in cap_details.items()
-                if req.match(None if v is None else Version.parse(v)))
+                if req.match(Version.parse(v)))
 
         options = None
         if self.capability_version_prop:

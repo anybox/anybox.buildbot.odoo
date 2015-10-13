@@ -83,12 +83,21 @@ class Version(object):
         Version(9, 1)
         >>> Version.parse('9.2-devel')
         Version(9, 2, suffix='devel')
+
+        A special case that's a convenience, if no version is supplied, we
+        forward that, avoiding a cumbersome 'is None' case to some callers:
+
+        >>> Version.parse(None) is None
+        True
         """
+        if as_string is None:
+            return None
+
         split = as_string.split('-')
         if len(split) > 2:
             raise VersionParseError(as_string,
-                                    "Not enough tokens for a version filter. "
-                                    "Missing operator?")
+                                    "Only one dash is allowed, is this really "
+                                    "a version?")
         elif len(split) == 2:
             vstring, suffix = split
         else:
