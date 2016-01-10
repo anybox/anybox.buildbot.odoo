@@ -1,7 +1,6 @@
 import unittest
 from buildbot.process.buildstep import SUCCESS
 from buildbot.process.properties import Properties
-from ..version import VersionFilter
 from ..steps import SetCapabilityProperties
 from ..constants import CAPABILITY_PROP_FMT
 
