@@ -50,7 +50,10 @@ class TestBuilders(BaseTestCase):
         self.assertFalse('DEFAULT' in factories)
 
     def test_build_category(self):
-        """The ``build_category`` option becomes builders categories."""
+        """The ``build_category`` option becomes builders categories.
+
+        TODO NINE: replace with tags
+        """
         master = {}
         conf = self.configurator
         master['slaves'] = conf.make_slaves(self.data_join('one_slave.cfg'))
@@ -60,7 +63,7 @@ class TestBuilders(BaseTestCase):
         expected = {'ready': 'mature',
                     'wip': 'unstable'}
         for b in builders:
-            self.assertEquals(b.category, expected[b.name])
+            self.assertEquals(b.tags, [expected[b.name]])
 
     def test_build_for(self):
         master = {}
