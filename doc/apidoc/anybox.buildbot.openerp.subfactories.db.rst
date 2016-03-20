@@ -1,7 +1,7 @@
-anybox.buildbot.openerp.subfactories.db module
+anybox.buildbot.odoo.subfactories.db module
 ==============================================
 
-.. automodule:: anybox.buildbot.openerp.subfactories.db
+.. automodule:: anybox.buildbot.odoo.subfactories.db
     :members:
     :undoc-members:
     :show-inheritance:

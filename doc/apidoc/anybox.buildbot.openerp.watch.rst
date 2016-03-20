@@ -1,7 +1,7 @@
-anybox.buildbot.openerp.watch module
+anybox.buildbot.odoo.watch module
 ====================================
 
-.. automodule:: anybox.buildbot.openerp.watch
+.. automodule:: anybox.buildbot.odoo.watch
     :members:
     :undoc-members:
     :show-inheritance:

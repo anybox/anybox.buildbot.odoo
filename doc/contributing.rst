@@ -9,7 +9,7 @@ Code hosting and issue tracker
 
  * Code repository and bug tracker:
    https://github.com/anybox.buildbot.odoo
- * PyPI page: http://pypi.python.org/pypi/anybox.buildbot.openerp
+ * PyPI page: http://pypi.python.org/pypi/anybox.buildbot.odoo
 
 Please use GitHub to report any bug or ask for a new feature.
 
@@ -26,5 +26,5 @@ Continuous integration
 ----------------------
 
 `Anybox's public buildbot
-<https://buildbot.anybox.fr/builders/anybox.buildbot.openerp>`_ runs
+<https://buildbot.anybox.fr/builders/anybox.buildbot.odoo>`_ runs
 the tests and builds this documentation.

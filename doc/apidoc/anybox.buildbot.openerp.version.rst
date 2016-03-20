@@ -1,7 +1,7 @@
-anybox.buildbot.openerp.version module
+anybox.buildbot.odoo.version module
 ======================================
 
-.. automodule:: anybox.buildbot.openerp.version
+.. automodule:: anybox.buildbot.odoo.version
     :members:
     :undoc-members:
     :show-inheritance:

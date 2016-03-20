@@ -4,9 +4,9 @@ Introduction
 .. note:: this project is currently in the process of being renamed to
           ``anybox.buildbot.odoo``.
 
-``anybox.buildbot.openerp`` aims to be a turnkey buildbot master setup
+``anybox.buildbot.odoo`` aims to be a turnkey buildbot master setup
 for a bunch of buildout-based Odoo/OpenERP installations (see
-``anybox.recipe.odoo`` and ``anybox.recipe.openerp``).
+``anybox.recipe.odoo`` and ``anybox.recipe.odoo``).
 
 Its main features are:
 
@@ -55,7 +55,7 @@ These steps are for a first setup.
    If you are extending an existing buildbot master, add these lines in
    ``master.cfg`` right after the definition of ``BuildMasterConfig``::
 
-      from anybox.buildbot.openerp import configure_from_buildouts
+      from anybox.buildbot.odoo import configure_from_buildouts
       configure_from_buildouts(basedir, BuildmasterConfig)
 
 #. Copy the ``buildouts`` directory included in the source

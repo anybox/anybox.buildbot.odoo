@@ -24,7 +24,7 @@ Code documentation
    :maxdepth: 1
    :glob:
 
-   apidoc/anybox.buildbot.openerp
+   apidoc/anybox.buildbot.odoo
 
 
 Indices and tables

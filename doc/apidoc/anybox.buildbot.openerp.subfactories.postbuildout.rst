@@ -1,7 +1,7 @@
-anybox.buildbot.openerp.subfactories.postbuildout module
+anybox.buildbot.odoo.subfactories.postbuildout module
 ========================================================
 
-.. automodule:: anybox.buildbot.openerp.subfactories.postbuildout
+.. automodule:: anybox.buildbot.odoo.subfactories.postbuildout
     :members:
     :undoc-members:
     :show-inheritance:

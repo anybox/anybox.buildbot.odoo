@@ -1,7 +1,7 @@
-anybox.buildbot.openerp.steps module
+anybox.buildbot.odoo.steps module
 ====================================
 
-.. automodule:: anybox.buildbot.openerp.steps
+.. automodule:: anybox.buildbot.odoo.steps
     :members:
     :undoc-members:
     :show-inheritance:

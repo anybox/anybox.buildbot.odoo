@@ -193,7 +193,7 @@ class BuildoutsConfigurator(object):
         boot_opts = {}
         if options.get('virtualenv', 'true').strip().lower() == 'true':
             boot_opts['--python'] = Interpolate(
-                '%(prop:cap_python_venv:-~/openerp-env)s'
+                '%(prop:cap_python_venv:-~/odoo-env)s'
                 '/bin/python')
 
         bv = options.get('bootstrap-version')
@@ -257,7 +257,7 @@ class BuildoutsConfigurator(object):
         :post-buildout-steps: list of subfactories to call for actual
                               test/build once the buildout is ready. Defaults
                               to ``['install-modules-test']``,
-                              see :func:`subfactories.test_openerp`
+                              see :func:`subfactories.test_odoo`
         :git-shallow: if ``True``, a shallow git clone (--depth=2) is
                       maintained instead of a full one. We've experienced
                       trouble with Git actually redownloading everything at
@@ -306,10 +306,10 @@ class BuildoutsConfigurator(object):
         buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
         cache = '%(builddir)s/../buildout-caches'
         eggs_cache = cache + '/eggs'
-        openerp_cache = cache + '/openerp'
+        odoo_cache = cache + '/odoo'
         factory.addStep(ShellCommand(command=['mkdir', '-p',
                                               WithProperties(eggs_cache),
-                                              WithProperties(openerp_cache)],
+                                              WithProperties(odoo_cache)],
                                      name="cachedirs",
                                      workdir='.',
                                      description="prepare cache dirs"))
@@ -319,8 +319,8 @@ class BuildoutsConfigurator(object):
 
         buildout_cache_options = [
             WithProperties('buildout:eggs-directory=' + eggs_cache),
-            WithProperties('buildout:openerp-downloads-directory=' +
-                           openerp_cache),
+            WithProperties('buildout:odoo-downloads-directory=' +
+                           odoo_cache),
         ]
         buildout_vcs_options = [buildout_part + ':vcs-clear-locks=true',
                                 buildout_part + ':vcs-clear-retry=true',

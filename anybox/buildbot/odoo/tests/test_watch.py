@@ -144,7 +144,7 @@ class TestMultiWatcher(BaseTestCase):
         repo, details = interesting.items()[0]
 
         # lp: syntax is interpreted
-        self.assertTrue(repo.endswith('anybox.recipe.openerp/trunk'))
+        self.assertTrue(repo.endswith('anybox.recipe.odoo/trunk'))
         self.assertEqual(details, ('bzr', ()))
 
     def test_auto_buildout_precedence(self):
@@ -249,7 +249,7 @@ class TestMultiWatcher(BaseTestCase):
         self.assertEqual(len(pollers), 1)
         bzr = pollers[0]
         # BzrPoller does translation of lp: addresses
-        self.assertTrue('anybox.buildbot.openerp' in bzr.url)
+        self.assertTrue('anybox.buildbot.odoo' in bzr.url)
 
         chf = watcher.change_filter('w_no_buildout')
         self.assertIsNotNone(chf)

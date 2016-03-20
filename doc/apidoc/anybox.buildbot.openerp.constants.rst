@@ -1,7 +1,7 @@
-anybox.buildbot.openerp.constants module
+anybox.buildbot.odoo.constants module
 ========================================
 
-.. automodule:: anybox.buildbot.openerp.constants
+.. automodule:: anybox.buildbot.odoo.constants
     :members:
     :undoc-members:
     :show-inheritance:

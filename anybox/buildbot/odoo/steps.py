@@ -57,7 +57,7 @@ class PgSetProperties(DescriptionBuildStep):
         self.factory_name = factory_name
 
     def start(self):
-        db_prefix = self.getProperty('db_prefix', 'openerp_buildbot')
+        db_prefix = self.getProperty('db_prefix', 'odoo_buildbot')
         self.setProperty('testing_db',
                          '-'.join((db_prefix, self.factory_name)), '')
         self.finished(SUCCESS)

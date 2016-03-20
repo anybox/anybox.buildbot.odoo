@@ -45,7 +45,7 @@ def packaging(configurator, options,
     master_dir = os.path.join(options['packaging.root-dir'],
                               options['packaging.upload-dir'])
     # creation of upload dir beforehand to control perms
-    # see https://openerp.anybox.fr/anytracker/anybox/ticket/2496
+    # see https://odoo.anybox.fr/anytracker/anybox/ticket/2496
 
     # option -p of mkdir is set to avoid a failure if directory
     # already exists. It is NOT meant to create parent directories:
@@ -61,7 +61,7 @@ def packaging(configurator, options,
 
     cache = '%(builddir)s/../buildout-caches'  # lame duplication
     eggs_cache = cache + '/eggs'
-    openerp_cache = cache + '/openerp'
+    odoo_cache = cache + '/odoo'
     archive_name_interp = options['packaging.prefix'] + '-%(buildout-tag)s'
 
     steps.append(
@@ -83,8 +83,8 @@ def packaging(configurator, options,
         ShellCommand(command=['bin/buildout', '-c', buildout_slave_path,
                               WithProperties(
                                   'buildout:eggs-directory=' + eggs_cache),
-                              WithProperties('buildout:openerp-downloads-'
-                                             'directory=' + openerp_cache),
+                              WithProperties('buildout:odoo-downloads-'
+                                             'directory=' + odoo_cache),
                               'install'] + parts,
                      description=["buildout", "install"],
                      workdir='./src',
@@ -93,8 +93,8 @@ def packaging(configurator, options,
 
     extract_cmd = ['bin/buildout', '-o', '-c', buildout_slave_path,
                    WithProperties('buildout:eggs-directory=' + eggs_cache),
-                   WithProperties('buildout:openerp-downloads-'
-                                  'directory=' + openerp_cache),
+                   WithProperties('buildout:odoo-downloads-'
+                                  'directory=' + odoo_cache),
                    ]
     extract_cmd.extend(WithProperties(
         ('%s:extract-downloads-to=../dist/' % part) + archive_name_interp)

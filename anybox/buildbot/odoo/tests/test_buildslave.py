@@ -1,5 +1,5 @@
 import unittest
-from anybox.buildbot.openerp import buildslave
+from .. import buildslave
 
 FAKE_PRIOS = dict(low1=0, low2=0, low3=0,
                   med1=1, med2=1, med3=1,

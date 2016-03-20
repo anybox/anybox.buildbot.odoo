@@ -1,6 +1,6 @@
 from base import BaseTestCase
 
-from anybox.buildbot.openerp.configurator import BuildoutsConfigurator
+from ..configurator import BuildoutsConfigurator
 
 
 class TestSlaves(BaseTestCase):

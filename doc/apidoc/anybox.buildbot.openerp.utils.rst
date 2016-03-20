@@ -1,7 +1,7 @@
-anybox.buildbot.openerp.utils module
+anybox.buildbot.odoo.utils module
 ====================================
 
-.. automodule:: anybox.buildbot.openerp.utils
+.. automodule:: anybox.buildbot.odoo.utils
     :members:
     :undoc-members:
     :show-inheritance:

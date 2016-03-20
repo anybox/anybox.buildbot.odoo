@@ -1,7 +1,7 @@
-anybox.buildbot.openerp.subfactories.postdownload module
+anybox.buildbot.odoo.subfactories.postdownload module
 ========================================================
 
-.. automodule:: anybox.buildbot.openerp.subfactories.postdownload
+.. automodule:: anybox.buildbot.odoo.subfactories.postdownload
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,7 +1,7 @@
-anybox.buildbot.openerp.bzr_buildbot module
+anybox.buildbot.odoo.bzr_buildbot module
 ===========================================
 
-.. automodule:: anybox.buildbot.openerp.bzr_buildbot
+.. automodule:: anybox.buildbot.odoo.bzr_buildbot
     :members:
     :undoc-members:
     :show-inheritance:

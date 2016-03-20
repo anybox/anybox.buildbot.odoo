@@ -27,7 +27,7 @@ to be installed from pypi, and this can trigger some compilations. In
 turn, these usually require build utilities (gcc, make, etc),
 libraries and headers.
 
-There are `packages for debian-based systems <http://anybox.fr/blog/debian-package-helpers-for-openerp-buildouts>`_ that install all needed dependencies for OpenERP buildouts.
+There are `packages for debian-based systems <http://anybox.fr/blog/debian-package-helpers-for-odoo-buildouts>`_ that install all needed dependencies for OpenERP buildouts.
 
 .. _slave_capability:
 
@@ -172,7 +172,7 @@ to capability options.
 Tweaks, optimization and traps
 ------------------------------
 
-* eggs and openerp downloads are shared on a per-slave basis. A lock
+* eggs and odoo downloads are shared on a per-slave basis. A lock
   system prevents concurrency in buildout runs.
 
 * Windows slaves are currently unsupported : some steps use '/'

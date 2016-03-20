@@ -10,14 +10,14 @@ Custom builds: subfactories
 There is a hook to replace the steps that run after the buildout (test
 run, then log analysis) by custom ones. This is an advanced option, meant
 for users that are aware of the internals of
-``anybox.buildbot.openerp``, and notably of the properties that it
+``anybox.buildbot.odoo``, and notably of the properties that it
 sets and uses.
 
 In the master configuration file, register a callable that
 returns a list of buildbot steps. Instead of calling
 ``configure_from_buildouts``, follow this example::
 
-  from anybox.buildbot.openerp.configurator import BuildoutsConfigurator
+  from anybox.buildbot.odoo.configurator import BuildoutsConfigurator
   configurator = BuildoutsConfigurator(basedir)
   configurator.post_buildout_steps['mycase'] = mycase_callable
   configurator.populate(BuildmasterConfig)
@@ -32,7 +32,7 @@ where we the paramters are:
 
 ``configurator``:
     the instance of
-    :py:class:`anybox.buildbot.openerp.configurator.BuildoutsConfigurator`
+    :py:class:`anybox.buildbot.odoo.configurator.BuildoutsConfigurator`
                that does all the job.
 ``options``:
     the whole manifest file section, seen as a dict.
@@ -64,10 +64,10 @@ configuration option. Here's a real-life example::
                         doc
 
 There are many other builtin subfactories, see
-:py:module:`anybox.buildbot.openerp.subfactories`.
+:py:module:`anybox.buildbot.odoo.subfactories`.
 
 TODO: refactor the
 doc in two sections, the first listing them and explaining how to use
 them in conf, the second explaining how to register custom ones. The
 first doc would not require internal knowledge of buildbot or
-``anybox.buildbot.openerp``.
+``anybox.buildbot.odoo``.

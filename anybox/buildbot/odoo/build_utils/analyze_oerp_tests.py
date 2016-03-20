@@ -11,13 +11,13 @@ FAILURE_REGEXPS = {
     'Errors during x/yml tests': re.compile(r'ERROR:tests[.]'),
     'Errors or failures during unittest2 tests': re.compile(
         r'at least one error occurred in a test'),
-    'Errors loading addons': re.compile(r'ERROR.*openerp: Failed to load'),
+    'Errors loading addons': re.compile(r'ERROR.*odoo: Failed to load'),
     'Critical logs': re.compile(r'CRITICAL'),
     'Error init db': re.compile(r'Failed to initialize database'),
     'Tests failed to excute': re.compile(
-        r'openerp.modules.loading: Tests failed to execute'),
+        r'odoo.modules.loading: Tests failed to execute'),
     'At least one test failed when loading the modules': re.compile(
-        r'openerp.modules.loading: At least one test '
+        r'odoo.modules.loading: At least one test '
         r'failed when loading the modules.'),
 }
 

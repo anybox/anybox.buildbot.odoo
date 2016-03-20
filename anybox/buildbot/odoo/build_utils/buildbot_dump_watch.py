@@ -1,6 +1,6 @@
 """Analyze and dump watch file for this buildout.
 
-To be run in a context where zc.buildout and a.r.{odoo,openerp} are importable
+To be run in a context where zc.buildout and a.r.{odoo,odoo} are importable
 Typically, the ``bin/python_part`` installed by default by the recipe is
 such an environment.
 
@@ -20,9 +20,9 @@ try:
     from anybox.recipe.odoo.utils import working_directory_keeper
     from anybox.recipe.odoo.vcs import bzr
 except ImportError:
-    import anybox.recipe.openerp.base as arobase  # noqa
-    from anybox.recipe.openerp.utils import working_directory_keeper
-    from anybox.recipe.openerp.vcs import bzr  # noqa
+    import anybox.recipe.odoo.base as arobase  # noqa
+    from anybox.recipe.odoo.utils import working_directory_keeper
+    from anybox.recipe.odoo.vcs import bzr  # noqa
 
 logger = logging.getLogger(os.path.basename(sys.argv[0]))
 
@@ -70,7 +70,7 @@ arobase.vcs.BzrBranch.buildbot_to_watch = bzr_to_watch
 def fix_standalone_magic(vcs_cls, target_dir):
     """Correct target directory for pre a.r.o 1.9 behaviour
 
-    Before anybox.recipe.openerp 1.9, standalone addons were automatically
+    Before anybox.recipe.odoo 1.9, standalone addons were automatically
     shifted one directory deeper, in order to be registrable by OpenERP.
 
     Although 1.9 is currently the stable series (1.8 being obsoleted), it's
@@ -112,7 +112,7 @@ def read_sources(confpath, part):
     recipe = arobase.BaseRecipe(buildout, part, buildout[part])
     for target, (loc_type, loc, options) in recipe.sources.iteritems():
         if target is arobase.main_software:
-            target = recipe.openerp_dir
+            target = recipe.odoo_dir
         # vcs package is imported into aro.base
         vcs_cls = arobase.vcs.SUPPORTED.get(loc_type)
         if vcs_cls is None:  # probably not a VCS location at all
@@ -128,7 +128,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', default='buildout.cfg',
                         help="Buildout configuration to analyze")
-    parser.add_argument('--part', default='openerp',
+    parser.add_argument('--part', default='odoo',
                         help="Buildout part to analyze")
     parser.add_argument('--logging-level', default='info',
                         help="Logging level")

@@ -11,7 +11,7 @@ class TestBuilders(BaseTestCase):
         self.configurator = BuildoutsConfigurator(self.master_join(
             'master.cfg'))
 
-    def test_register_openerp_addons(self):
+    def test_register_odoo_addons(self):
         """The ``addons-list`` builder factory installs given addons."""
         self.configurator.register_build_factories(
             self.data_join('manifest_1.cfg'))
@@ -355,4 +355,4 @@ class TestBuilders(BaseTestCase):
 
         # other option are unchanged
         factory = builders['inheritor-pg8.4'].factory
-        self.assertEquals(factory.options['openerp-addons'], ('stock, crm'))
+        self.assertEquals(factory.options['odoo-addons'], ('stock, crm'))

@@ -39,19 +39,19 @@ def deprecate(name, replacement, subfactory):
 post_buildout = {
     'install-modules-test': postbuildout.install_modules_test,
     'install-modules': postbuildout.install_modules,
-    'update-openerp': postbuildout.update_modules,
+    'update-odoo': postbuildout.update_modules,
     'nose': postbuildout.install_modules_nose,
     'functional': postbuildout.functional,
     'static-analysis': postbuildout.static_analysis,
-    'openerpcommand-initialize-tests':
-    postbuildout.openerp_command_initialize_tests,
+    'odoocommand-initialize-tests':
+    postbuildout.odoo_command_initialize_tests,
     'doc': postbuildout.sphinx_doc,
     'packaging': postbuildout.packaging,
     'autocommit': postbuildout.autocommit,
     # deprecated aliases
     'standard': deprecate('standard', 'install-modules-test',
                           postbuildout.install_modules_test),
-    'test-openerp': deprecate('test-openerp', 'install-modules-test',
+    'test-odoo': deprecate('test-odoo', 'install-modules-test',
                               postbuildout.install_modules_test),
     'test-odoo': deprecate('test-odoo', 'install-modules-test',
                            postbuildout.install_modules_test),

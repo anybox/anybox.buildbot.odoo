@@ -1,7 +1,7 @@
-anybox.buildbot.openerp.scheduler module
+anybox.buildbot.odoo.scheduler module
 ========================================
 
-.. automodule:: anybox.buildbot.openerp.scheduler
+.. automodule:: anybox.buildbot.odoo.scheduler
     :members:
     :undoc-members:
     :show-inheritance:

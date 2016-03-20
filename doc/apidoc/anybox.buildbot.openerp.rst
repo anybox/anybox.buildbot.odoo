@@ -1,4 +1,4 @@
-anybox.buildbot.openerp package
+anybox.buildbot.odoo package
 ===============================
 
 Subpackages
@@ -6,28 +6,28 @@ Subpackages
 
 .. toctree::
 
-    anybox.buildbot.openerp.subfactories
+    anybox.buildbot.odoo.subfactories
 
 Submodules
 ----------
 
 .. toctree::
 
-   anybox.buildbot.openerp.buildouts
-   anybox.buildbot.openerp.bzr_buildbot
-   anybox.buildbot.openerp.capability
-   anybox.buildbot.openerp.configurator
-   anybox.buildbot.openerp.constants
-   anybox.buildbot.openerp.scheduler
-   anybox.buildbot.openerp.steps
-   anybox.buildbot.openerp.utils
-   anybox.buildbot.openerp.version
-   anybox.buildbot.openerp.watch
+   anybox.buildbot.odoo.buildouts
+   anybox.buildbot.odoo.bzr_buildbot
+   anybox.buildbot.odoo.capability
+   anybox.buildbot.odoo.configurator
+   anybox.buildbot.odoo.constants
+   anybox.buildbot.odoo.scheduler
+   anybox.buildbot.odoo.steps
+   anybox.buildbot.odoo.utils
+   anybox.buildbot.odoo.version
+   anybox.buildbot.odoo.watch
 
 Module contents
 ---------------
 
-.. automodule:: anybox.buildbot.openerp
+.. automodule:: anybox.buildbot.odoo
     :members:
     :undoc-members:
     :show-inheritance:

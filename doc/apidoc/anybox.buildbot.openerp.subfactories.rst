@@ -1,4 +1,4 @@
-anybox.buildbot.openerp.subfactories package
+anybox.buildbot.odoo.subfactories package
 ============================================
 
 Submodules
@@ -6,15 +6,15 @@ Submodules
 
 .. toctree::
 
-   anybox.buildbot.openerp.subfactories.db
-   anybox.buildbot.openerp.subfactories.download
-   anybox.buildbot.openerp.subfactories.postbuildout
-   anybox.buildbot.openerp.subfactories.postdownload
+   anybox.buildbot.odoo.subfactories.db
+   anybox.buildbot.odoo.subfactories.download
+   anybox.buildbot.odoo.subfactories.postbuildout
+   anybox.buildbot.odoo.subfactories.postdownload
 
 Module contents
 ---------------
 
-.. automodule:: anybox.buildbot.openerp.subfactories
+.. automodule:: anybox.buildbot.odoo.subfactories
     :members:
     :undoc-members:
     :show-inheritance:

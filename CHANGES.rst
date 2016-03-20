@@ -7,18 +7,18 @@ Changes
  - GitHub #1: auto-watch
  - GitHub #8: transversal buildslave priority
  - launchpad #1391227: introduced a ``buildout-part`` option in
-   MANIFEST, defaulting to the previously hardcoded ``openerp`` value.
+   MANIFEST, defaulting to the previously hardcoded ``odoo`` value.
    Also introduced options ``start-command`` and ``test-command``
  - launchpad #1388566: dump bootstrap options to a separate file, with
                        format expected by anybox-oe-tarball-deploy
-                       (part of anybox-openerp-host package)
+                       (part of anybox-odoo-host package)
  - new dispatching option: by requiring 'postgresql not-used', one
    gets a *unique* build that's not pg version filtered.
  - launchpad #1323234: introduced wkhtmltopdf capability, with display option
  - launchpad #1320321: port reservation and binding for
-   ``test-openerp``, and ``openerpcommand-initialize-tests``.
+   ``test-odoo``, and ``odoocommand-initialize-tests``.
    (requires PhantomJS to actually run).
-   Introduction of ``test-odoo`` as an alias (for now) of ``test-openerp``
+   Introduction of ``test-odoo`` as an alias (for now) of ``test-odoo``
  - launchpad #1320507: bootstrap script now configurable in standalone
    buildouts
  - new download subfactory: archive from buildmaster (for further packaging
@@ -48,7 +48,7 @@ Changes
 0.8.1
 -----
  - launchpad #1130838: build-only-if-requires buildslave option
- - Using the uniform test launcher script provided by anybox.recipe.openerp 1.2
+ - Using the uniform test launcher script provided by anybox.recipe.odoo 1.2
  - launchpad #1086066: detecting unittest2 failures and errors
  - launchpad #1086392: resilience wrt missing remote mercurial
    branches by retrying one branch after the other

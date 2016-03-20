@@ -20,7 +20,7 @@ port_lock = locks.SlaveLock("port-reserve")
 def steps_odoo_port_reservation(configurator, options, environ=()):
     """Return steps for port reservation.
 
-    The chosen port is stored in ``openerp_port`` property.
+    The chosen port is stored in ``odoo_port`` property.
 
     Available manifest file options:
 
@@ -35,7 +35,7 @@ def steps_odoo_port_reservation(configurator, options, environ=()):
             slavedest='port_reserve.py'),
 
         SetPropertyFromCommand(
-            property='openerp_port',
+            property='odoo_port',
             description=['Port', 'reservation'],
             locks=[port_lock.access('exclusive')],
             command=[
@@ -71,9 +71,9 @@ def install_modules(configurator, options, buildout_slave_path,
     install_cmd = [options.get('start-command',
                                'bin/start_' + buildout_part),
                    '-i',
-                   comma_list_sanitize(options['openerp-addons']),
+                   comma_list_sanitize(options['odoo-addons']),
                    '--stop-after-init',
-                   # openerp --logfile does not work with relative paths !
+                   # odoo --logfile does not work with relative paths !
                    WithProperties('--logfile=%(workdir)s/build/install.log')]
     with_demo = options.get('install.demo-data', 'true').lower()
     if with_demo == 'false':
@@ -106,7 +106,7 @@ def install_modules_test(configurator, options, buildout_slave_path,
 
     Available manifest file options:
 
-      :openerp-addons: passed to the command in the ``-i`` argument.
+      :odoo-addons: passed to the command in the ``-i`` argument.
                        Defaults to 'all', which actually only installs/tests
                        the base addons (this is Odoo's doing)
       :odoo.use-port: if set to ``true``, necessary free ports will be chosen,
@@ -128,14 +128,14 @@ def install_modules_test(configurator, options, buildout_slave_path,
     test_cmd = [options.get('test-command',
                             'bin/test_' + buildout_part),
                 '-i',
-                comma_list_sanitize(options.get('openerp-addons', 'all')),
-                # openerp --logfile does not work with relative paths !
+                comma_list_sanitize(options.get('odoo-addons', 'all')),
+                # odoo --logfile does not work with relative paths !
                 WithProperties('--logfile=%(workdir)s/build/test.log')]
 
     if options.get('odoo.use-port', '').strip().lower() == 'true':
         steps.extend(steps_odoo_port_reservation(configurator, options,
                                                  environ=environ))
-        test_cmd.append(WithProperties('--xmlrpc-port=%(openerp_port)s'))
+        test_cmd.append(WithProperties('--xmlrpc-port=%(odoo_port)s'))
 
     steps.append(ShellCommand(command=test_cmd,
                               name='test',
@@ -155,7 +155,7 @@ def install_modules_test(configurator, options, buildout_slave_path,
     return steps
 
 
-def openerp_command_initialize_tests(configurator, options,
+def odoo_command_initialize_tests(configurator, options,
                                      buildout_slave_path,
                                      environ=()):
     """Return steps to run bin/<PART>_command initialize --tests.
@@ -176,7 +176,7 @@ def openerp_command_initialize_tests(configurator, options,
     command = ['bin/%s_command' % buildout_part, 'initialize',
                '--no-create', '--tests',
                '--database', WithProperties('%(testing_db)s')]
-    modules = options.get('openerp-addons', 'all')
+    modules = options.get('odoo-addons', 'all')
     if modules == 'all':
         command += ['--all-modules',
                     '--exclude', 'auth_ldap',
@@ -188,7 +188,7 @@ def openerp_command_initialize_tests(configurator, options,
     if options.get('odoo.use-port', 'false').strip().lower() == 'true':
         steps.extend(steps_odoo_port_reservation(configurator, options,
                                                  environ=environ))
-        command.append(WithProperties('--port=%(openerp_port)s'))
+        command.append(WithProperties('--port=%(odoo_port)s'))
 
     steps.append(ShellCommand(command=command,
                               name='testing',
@@ -237,10 +237,10 @@ def update_modules(configurator, options, buildout_slave_path,
             options.get('start-command', 'bin/start_' + buildout_part),
             '--stop-after-init',
             '-u',
-            comma_list_sanitize(options.get('openerp-addons', 'all')),
+            comma_list_sanitize(options.get('odoo-addons', 'all')),
             '--logfile',
         ]
-    # openerp --logfile does not work with relative paths !
+    # odoo --logfile does not work with relative paths !
     # (dedicated script may, but uniformity is best)
     command.append(WithProperties('%(workdir)s/build/update.log'))
 
@@ -271,11 +271,11 @@ def install_modules_nose(configurator, options, buildout_slave_path,
 
     Available manifest file options:
 
-      :openerp-addons: comma-separated list of addons to test
+      :odoo-addons: comma-separated list of addons to test
       :install-as-upgrade: use the upgrade script to install the project
 
         If this is False, the step will simply issue a start_<PART> -i on
-        openerp-addons
+        odoo-addons
 
       :upgrade.script: name of the upgrade script (defaults to
         ``bin/upgrade_<PART>``)
@@ -300,7 +300,7 @@ def install_modules_nose(configurator, options, buildout_slave_path,
                               name="Log cleanup",
                               descriptionDone=['Cleaned', 'logs'],
                               ))
-    addons = comma_list_sanitize(options.get('openerp-addons', ''))
+    addons = comma_list_sanitize(options.get('odoo-addons', ''))
 
     buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
     if options.get('install-as-upgrade', 'false').lower().strip() == 'true':
@@ -310,7 +310,7 @@ def install_modules_nose(configurator, options, buildout_slave_path,
             '--init-load-demo-data',
             '--log-file', 'install.log']
     else:
-        # openerp --logfile does not work with relative paths !
+        # odoo --logfile does not work with relative paths !
         install_cmd = [
             options.get('start-command', 'bin/start_' + buildout_part),
             '--stop-after-init', '-i',
@@ -418,7 +418,7 @@ def install_modules_nose(configurator, options, buildout_slave_path,
 
 def functional(configurator, options, buildout_slave_path,
                environ=()):
-    """Reserve a port, start openerp, launch testing commands, stop openerp.
+    """Reserve a port, start odoo, launch testing commands, stop odoo.
 
     Available manifest file options:
 
@@ -455,14 +455,14 @@ def functional(configurator, options, buildout_slave_path,
         slavedest='port_reserve.py'))
 
     steps.append(SetPropertyFromCommand(
-        property='openerp_port',
+        property='odoo_port',
         description=['Port', 'reservation'],
         locks=[port_lock.access('exclusive')],
         command=['python', 'port_reserve.py', '--port-min=9069',
                  '--port-max=11069', '--step=5']))
 
     steps.append(ShellCommand(
-        command=['rm', '-f', WithProperties('%(workdir)s/openerp.pid')],
+        command=['rm', '-f', WithProperties('%(workdir)s/odoo.pid')],
         name='cleanup',
         description='clean pid file',
         descriptionDone='cleaned pid file',
@@ -478,7 +478,7 @@ def functional(configurator, options, buildout_slave_path,
     buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
     steps.append(ShellCommand(
         command=['/sbin/start-stop-daemon',
-                 '--pidfile', WithProperties('%(workdir)s/openerp.pid'),
+                 '--pidfile', WithProperties('%(workdir)s/odoo.pid'),
                  '--exec',
                  WithProperties(
                      '%(workdir)s/build/' +
@@ -486,7 +486,7 @@ def functional(configurator, options, buildout_slave_path,
                                  'bin/start_' + buildout_part)),
                  '--background',
                  '--make-pidfile', '-v', '--start',
-                 '--', '--xmlrpc-port', Property('openerp_port'),
+                 '--', '--xmlrpc-port', Property('odoo_port'),
                  WithProperties('--logfile=%(workdir)s/build/'
                                 'server-functional.log')],
         name='start',
@@ -501,7 +501,7 @@ def functional(configurator, options, buildout_slave_path,
         command=['sleep', options.get('functional.wait', '30')]))
 
     steps.extend(ShellCommand(
-        command=[cmd, Property('openerp_port'), Property('testing_db')],
+        command=[cmd, Property('odoo_port'), Property('testing_db')],
         name=cmd.rsplit('/')[-1],
         description="running %s" % cmd,
         descriptionDone="ran %s" % cmd,
@@ -513,11 +513,11 @@ def functional(configurator, options, buildout_slave_path,
 
     steps.append(ShellCommand(
         command=['/sbin/start-stop-daemon',
-                 '--pidfile', WithProperties('%(workdir)s/openerp.pid'),
+                 '--pidfile', WithProperties('%(workdir)s/odoo.pid'),
                  '--stop', '--oknodo', '--retry', '5'],
         name='start',
-        description='stoping openerp',
-        descriptionDone='openerp stopped',
+        description='stoping odoo',
+        descriptionDone='odoo stopped',
         haltOnFailure=True,
         env=environ,
     ))
@@ -586,7 +586,7 @@ def sphinx_doc(configurator, options,
     """Adds sphinx doc to the build.
 
     For more information, especially about api/autodoc with OpenERP, see
-    http://anybox.fr/blog/sphinx-autodoc-et-modules-openerp (in French, sorry).
+    http://anybox.fr/blog/sphinx-autodoc-et-modules-odoo (in French, sorry).
 
     Available manifest file options:
 

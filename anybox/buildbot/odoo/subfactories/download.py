@@ -6,7 +6,7 @@ These functions have a common signature:
 where:
 
   :configurator: is an instance of
-           :class:`anybox.buildbot.openerp.configurator.BuildoutsConfigurator`
+           :class:`anybox.buildbot.odoo.configurator.BuildoutsConfigurator`
   :options: is a :class:`dict` of options, read from the MANIFEST
   :cfg_tokens: are taken from the parsing of the ``buildout`` (also in
               ``options``)

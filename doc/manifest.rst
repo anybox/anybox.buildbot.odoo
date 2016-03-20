@@ -18,7 +18,7 @@ several sources. `Anybox's public buildbot
 <http://buildbot.anybox.fr>`_ demonstrates this by running:
 
 * the buildouts included in this package
-* the buildouts shipping with `anybox.recipe.openerp <http://pypi.python.org/pypi/anybox.recipe.openerp>`_. These actually play the role of integration tests for the recipe itself.
+* the buildouts shipping with `anybox.recipe.odoo <http://pypi.python.org/pypi/anybox.recipe.odoo>`_. These actually play the role of integration tests for the recipe itself.
 * `other combinations
   <https://bitbucket.org/anybox/public_buildbot_buildouts>`_ of OpenERP
   versions and community addons that are of interest for Anybox.
@@ -140,7 +140,7 @@ Prototype::
 Each line takes the form of a software name
 (currently ``postgresql`` only) and a version requirement (see
 included example and docstrings in
-``anybox.buildout.openerp.version`` for format). See also
+``anybox.buildout.odoo.version`` for format). See also
 :ref:`slave_capability`.
 
 The ``build-requires`` option
@@ -180,7 +180,7 @@ filtering in the waterfall display.
 The ``buildout-part`` option
 ----------------------------
 This is the name of the expected main part driving Odoo/OpenERP
-(defaults to ``openerp`` for backwards compatibility)
+(defaults to ``odoo`` for backwards compatibility)
 
 Startup script options
 ----------------------
