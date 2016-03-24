@@ -2,7 +2,7 @@ import random
 from twisted.python import log
 
 
-def loggingNextSlave(builder, slaves):
+def loggingNextSlave(builder, slaves, brequest):
     """Useful for debugging."""
     if slaves:
         try:
@@ -12,14 +12,15 @@ def loggingNextSlave(builder, slaves):
                  for sl in slaves]))
         except:
             log.msg("Got slaves, wrong logging")
-            return random.choice(slaves)
+        return random.choice(slaves)
 
 
 def slaveBuilderPriority(slb):
     return slb.slave.properties.getProperty('slave_priority', 0)
 
 
-def priorityAwareNextSlave(builder, slaves, get_priority=slaveBuilderPriority):
+def priorityAwareNextSlave(builder, slaves, brequest,
+                           get_priority=slaveBuilderPriority):
     """Always return a slave from those having the highest priority.
 
     Actually, buildbot calls the ``nextSlave`` function several times, because
