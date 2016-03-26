@@ -25,7 +25,7 @@ from . import buildouts
 
 from .utils import BUILD_UTILS_PATH
 from .constants import DEFAULT_BUILDOUT_PART
-from .buildslave import priorityAwareNextSlave
+from .worker import priorityAwareNextWorker
 from .version import VersionFilter
 
 BUILDSLAVE_KWARGS = {  # name -> validating callable
@@ -499,7 +499,7 @@ class BuildoutsConfigurator(object):
                     'build-category', '').strip(),
                 build_for=factory.build_for,
                 build_requires=factory.build_requires,
-                next_slave=priorityAwareNextSlave,
+                next_worker=priorityAwareNextWorker,
             )
             builders.extend(fact_builders)
             fact_to_builders[fact_name] = [b.name for b in fact_builders]

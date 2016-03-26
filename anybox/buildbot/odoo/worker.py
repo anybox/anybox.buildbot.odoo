@@ -2,7 +2,7 @@ import random
 from twisted.python import log
 
 
-def loggingNextSlave(builder, slaves, brequest):
+def loggingNextWorker(builder, slaves, brequest):
     """Useful for debugging."""
     if slaves:
         try:
@@ -15,33 +15,36 @@ def loggingNextSlave(builder, slaves, brequest):
         return random.choice(slaves)
 
 
-def slaveBuilderPriority(slb):
-    return slb.slave.properties.getProperty('slave_priority', 0)
+def workerBuilderPriority(slb):
+    return slb.worker.properties.getProperty('worker_priority', 0)
 
 
-def priorityAwareNextSlave(builder, slaves, brequest,
-                           get_priority=slaveBuilderPriority):
-    """Always return a slave from those having the highest priority.
+def priorityAwareNextWorker(builder, workers, brequest,
+                           get_priority=workerBuilderPriority):
+    """Always return a worker from those having the highest priority.
 
-    Actually, buildbot calls the ``nextSlave`` function several times, because
+    TODO: is this still true with Nine:
+
+    Actually, buildbot calls the ``nextWorker`` function several times, because
     that's before actual check whether the buildslave can really run the build.
     Therefore if only slaves with lower priority are available, this function
     will eventually be called with a list of slaves having it
     """
-    if not slaves:
+    # TODO check it still works with the iterable we actually get, now
+    if not workers:
         # Don't think this can happen, since default impl is random.choice
         # but who knows how it'll evolve
         return
 
     highest_priority = None
-    for slave in slaves:
-        priority = get_priority(slave)
+    for worker in workers:
+        priority = get_priority(worker)
         # technically None compares to all floats and is lower, but
         # for the sake of expliciteness:
         if highest_priority is None or priority > highest_priority:
-            highest_slaves = [slave]
+            highest_workers = [worker]
             highest_priority = priority
         elif priority == highest_priority:
-            highest_slaves.append(slave)
+            highest_workers.append(worker)
 
-    return random.choice(highest_slaves)
+    return random.choice(highest_workers)

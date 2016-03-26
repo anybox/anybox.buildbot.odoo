@@ -5,7 +5,7 @@ import re
 from copy import deepcopy
 
 from buildbot.process.properties import WithProperties
-from buildbot.config import BuilderConfig
+from buildbot.plugins import util
 
 from .constants import CAPABILITY_PROP_FMT
 from .steps import SetCapabilityProperties
@@ -139,7 +139,7 @@ class BuilderDispatcher(object):
         self.capabilities = capabilities
 
     def make_builders(self, name, factory, build_category=None, build_for=None,
-                      build_requires=(), next_slave=None):
+                      build_requires=(), next_worker=None):
         """Produce the builders for the given factory.
 
         :param name: base name for the builders.
@@ -151,8 +151,8 @@ class BuilderDispatcher(object):
                           corresponding :class:`VersionFilter` instances.
         :param build_category: forwarded to :class:`BuilderConfig`
                                instantiation
-        :param next_slave: forwarded to :class:`BuilderConfig` instantiation as
-                           ``nextSlave``.
+        :param next_worker: forwarded to :class:`BuilderConfig` instantiation as
+                            ``nextWorker``.
         """
         slavenames = self.filter_slaves_by_requires(build_requires)
         if not slavenames:
@@ -162,7 +162,7 @@ class BuilderDispatcher(object):
         base_conf = dict(name=name,
                          category=build_category,
                          factory=factory,
-                         nextSlave=next_slave,
+                         nextWorker=next_worker,
                          slavenames=list(slavenames))
 
         # forward requirement in the build properties
@@ -175,7 +175,7 @@ class BuilderDispatcher(object):
             preconfs = self.dispatch_builders_by_capability(
                 preconfs, cap_name, cap_vf)
 
-        return [BuilderConfig(**conf) for conf in preconfs]
+        return [util.BuilderConfig(**conf) for conf in preconfs]
 
     def dispatch_builders_by_capability(self, builders, cap, cap_vf):
         """Take a list of builders parameters and redispatch by capability.
