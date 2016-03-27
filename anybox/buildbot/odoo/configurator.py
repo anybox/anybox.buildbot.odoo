@@ -9,7 +9,6 @@ from buildbot.buildslave import BuildSlave
 
 from buildbot import locks
 from buildbot.process.factory import BuildFactory
-from steps import PgSetProperties
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.transfer import FileDownload
 from buildbot.steps.transfer import FileUpload
@@ -17,6 +16,10 @@ from buildbot.process.properties import WithProperties
 from buildbot.process.properties import Property
 from buildbot.process.properties import Interpolate
 from buildbot.schedulers.basic import SingleBranchScheduler
+
+from anybox.buildbot.capability import dispatcher
+from anybox.buildbot.capability.version import VersionFilter
+from .steps import PgSetProperties
 
 from . import capability
 from . import watch
@@ -26,7 +29,6 @@ from . import buildouts
 from .utils import BUILD_UTILS_PATH
 from .constants import DEFAULT_BUILDOUT_PART
 from .worker import priorityAwareNextWorker
-from .version import VersionFilter
 
 BUILDSLAVE_KWARGS = {  # name -> validating callable
     'max_builds': int,
@@ -467,7 +469,7 @@ class BuildoutsConfigurator(object):
     def builder_dispatcher(self, master_config):
         all_slaves = {slave.slavename: slave
                       for slave in master_config['slaves']}
-        return capability.BuilderDispatcher(all_slaves,
+        return dispatcher.BuilderDispatcher(all_slaves,
                                             self.capabilities)
 
     def make_builders(self, master_config=None):
@@ -495,11 +497,11 @@ class BuildoutsConfigurator(object):
         for fact_name, factory in self.build_factories.items():
             fact_builders = dispatcher.make_builders(
                 fact_name, factory,
-                build_category=factory.options.get(
+                category=factory.options.get(
                     'build-category', '').strip(),
                 build_for=factory.build_for,
                 build_requires=factory.build_requires,
-                next_worker=priorityAwareNextWorker,
+                nextWorker=priorityAwareNextWorker,
             )
             builders.extend(fact_builders)
             fact_to_builders[fact_name] = [b.name for b in fact_builders]

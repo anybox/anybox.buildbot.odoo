@@ -4,9 +4,6 @@ from buildbot.process.buildstep import BuildStep
 from buildbot.process.buildstep import SUCCESS
 from buildbot.process.buildstep import FAILURE  # NOQA
 
-from .constants import CAPABILITY_PROP_FMT
-from .version import Version, VersionFilter
-
 
 class DescriptionBuildStep(BuildStep):
     """A base buildstep with description class.
@@ -60,73 +57,4 @@ class PgSetProperties(DescriptionBuildStep):
         db_prefix = self.getProperty('db_prefix', 'odoo_buildbot')
         self.setProperty('testing_db',
                          '-'.join((db_prefix, self.factory_name)), '')
-        self.finished(SUCCESS)
-
-
-class SetCapabilityProperties(DescriptionBuildStep):
-    """Set capability related properties.
-
-    Example behaviour::
-
-          capa_name 1.3 port=1234
-
-    will produce a property ``capability_capa_name_port`` with value ``1234``.
-    """
-
-    def __init__(self, capability_name,
-                 capability_prop='capability',
-                 build_requires_prop='build_requires',
-                 capability_version_prop=None,
-                 **kw):
-        """
-
-        capability_prop is the name of the complex slave-level property
-        entirely describing the capabilities
-        capability_version_prop is the name of the property (builder-level)
-        giving the version capability to take into account.
-        """
-        DescriptionBuildStep.__init__(self, **kw)
-        self.capability_name = capability_name
-        self.capability_prop = capability_prop
-        self.build_requires_prop = build_requires_prop
-        self.capability_version_prop = capability_version_prop
-
-    def start(self):
-        cap_details = self.getProperty(self.capability_prop)[
-            self.capability_name]
-        if not cap_details:
-            self.finished(SUCCESS)
-
-        # apply build_requires, if submitted
-        build_requires = self.getProperty(self.build_requires_prop, {})
-        for req in build_requires:
-            req = VersionFilter.parse(req)
-            if req.cap != self.capability_name:
-                continue
-            cap_details = dict(
-                (v, o) for (v, o) in cap_details.items()
-                if req.match(Version.parse(v)))
-
-        options = None
-        if self.capability_version_prop:
-            cap_version = self.getProperty(self.capability_version_prop)
-            if cap_version == 'not-used':
-                self.finished(SUCCESS)
-                return
-            elif cap_version is not None:
-                options = cap_details[cap_version]
-
-        if options is None:
-            # could not get options by a capacity version from props
-            # works if there's only one capacity version on this buildslave
-            # TODO replace assert() by a FAILURE status with message
-            assert len(cap_details) == 1, (
-                "No version of capability %r in properties, but"
-                " slave %r has several applicable versions of it." % (
-                    self.capability_name, self.getProperty('slavename')))
-            options = cap_details.values()[0]
-
-        for k, v in options.items():
-            self.setProperty(CAPABILITY_PROP_FMT % (self.capability_name, k),
-                             v, 'capability')
         self.finished(SUCCESS)

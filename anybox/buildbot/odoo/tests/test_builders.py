@@ -1,7 +1,8 @@
 from base import BaseTestCase
 
 from ..configurator import BuildoutsConfigurator
-from ..steps import SetCapabilityProperties
+# TODO use plugin system
+from anybox.buildbot.capability.steps import SetCapabilityProperties
 
 
 class TestBuilders(BaseTestCase):
