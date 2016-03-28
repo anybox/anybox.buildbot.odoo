@@ -14,6 +14,7 @@ class TestBuilders(BaseTestCase):
 
     def test_register_odoo_addons(self):
         """The ``addons-list`` builder factory installs given addons."""
+        self.configurator.make_dispatcher({})
         self.configurator.register_build_factories(
             self.data_join('manifest_1.cfg'))
 
@@ -44,6 +45,7 @@ class TestBuilders(BaseTestCase):
         Useful for suggested usage pattern in steps with upload (doc,
         packaging) that need a base_dir etc.
         """
+        self.configurator.make_dispatcher({})
         self.configurator.register_build_factories(
             self.data_join('manifest_1.cfg'))
 
@@ -58,6 +60,7 @@ class TestBuilders(BaseTestCase):
         master = {}
         conf = self.configurator
         master['slaves'] = conf.make_slaves(self.data_join('one_slave.cfg'))
+        self.configurator.make_dispatcher(master)
         conf.register_build_factories(self.data_join('manifest_category.cfg'))
         builders = self.configurator.make_builders(master_config=master)
         self.assertEquals(len(builders), 2)
@@ -71,6 +74,7 @@ class TestBuilders(BaseTestCase):
         conf = self.configurator
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_build_for.cfg'))
+        self.configurator.make_dispatcher(master)
         conf.register_build_factories(self.data_join('manifest_build_for.cfg'))
         builders = self.configurator.make_builders(master_config=master)
         names = set(builder.name for builder in builders)
@@ -87,6 +91,7 @@ class TestBuilders(BaseTestCase):
         conf = self.configurator
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_build_for.cfg'))
+        self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_double_build_for.cfg'))
         builders = self.configurator.make_builders(master_config=master)
@@ -104,6 +109,7 @@ class TestBuilders(BaseTestCase):
         conf = self.configurator
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_build_for2.cfg'))
+        self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_double_build_for.cfg'))
         builders = self.configurator.make_builders(master_config=master)
@@ -130,6 +136,7 @@ class TestBuilders(BaseTestCase):
 
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_build_requires.cfg'))
+        self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_build_requires.cfg'))
         builders = self.configurator.make_builders(master_config=master)
@@ -178,6 +185,7 @@ class TestBuilders(BaseTestCase):
 
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_build_requires.cfg'))
+        self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_build_requires2.cfg'))
         builders = self.configurator.make_builders(master_config=master)
@@ -196,6 +204,7 @@ class TestBuilders(BaseTestCase):
 
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_build_requires.cfg'))
+        self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_build_requires_pg_not_used.cfg'))
         builders = self.configurator.make_builders(master_config=master)
@@ -214,6 +223,7 @@ class TestBuilders(BaseTestCase):
 
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_build_requires_only_if.cfg'))
+        self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_build_requires.cfg'))
         builders = self.configurator.make_builders(master_config=master)
@@ -269,6 +279,7 @@ class TestBuilders(BaseTestCase):
 
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_capability.cfg'))
+        self.configurator.make_dispatcher(master)
 
         conf.register_build_factories(
             self.data_join('manifest_capability.cfg'))
@@ -278,14 +289,14 @@ class TestBuilders(BaseTestCase):
 
         test_environ = factory.steps[-2].kwargs['env']
         self.assertEquals(test_environ['PYTHONBIN'].fmtstring,
-                          '%(cap_python_bin-)s')
+                          '%(prop:cap_python_bin-)s')
         self.assertEquals(test_environ['PGPORT'].fmtstring,
-                          '%(cap_postgresql_port:-)s')
+                          '%(prop:cap_postgresql_port:-)s')
 
         # special case for PATH
         path = test_environ['PATH']
         self.assertEquals(path[1], '${PATH}')
-        self.assertEquals(path[0].fmtstring, '%(cap_postgresql_bin:-)s')
+        self.assertEquals(path[0].fmtstring, '%(prop:cap_postgresql_bin:-)s')
 
         steps = dict((s.kwargs['name'], s) for s in factory.steps
                      if s.factory is SetCapabilityProperties)
@@ -318,6 +329,7 @@ class TestBuilders(BaseTestCase):
 
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_capability.cfg'))
+        self.configurator.make_dispatcher(master)
 
         conf.register_build_factories(
             self.data_join('manifest_capability.cfg'))
@@ -327,7 +339,7 @@ class TestBuilders(BaseTestCase):
 
         test_environ = factory.steps[-2].kwargs['env']
         self.assertEquals(test_environ['PYTHONBIN'].fmtstring,
-                          '%(cap_python_bin-)s')
+                          '%(prop:cap_python_bin-)s')
 
         steps = dict((s.kwargs['name'], s) for s in factory.steps
                      if s.factory is SetCapabilityProperties)
@@ -343,6 +355,7 @@ class TestBuilders(BaseTestCase):
 
         master['slaves'] = conf.make_slaves(
             self.data_join('slaves_build_requires.cfg'))
+        self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_inherit.cfg'))
         builders = self.configurator.make_builders(master_config=master)

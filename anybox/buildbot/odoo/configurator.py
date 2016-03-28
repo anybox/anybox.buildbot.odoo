@@ -69,7 +69,7 @@ class BuildoutsConfigurator(object):
                                  'PGHOST': '%(cap(host):-)s',
                                  'LD_LIBRARY_PATH': '%(cap(lib):-)s',
                                  'PATH': '%(cap(bin):-)s',
-                                 'PGCLUSTER': '%(pg_version:-)s/main',
+                                 'PGCLUSTER': '%(prop:pg_version:-)s/main',
                                  },
                         ))
 
@@ -101,6 +101,9 @@ class BuildoutsConfigurator(object):
     def populate(self, config):
         config.setdefault('slaves', []).extend(
             self.make_slaves(self.slaves_path))
+        # TODO stop pretending that config is not part of the state, while
+        # we have self.factories_to_builders etc
+        self.make_dispatcher(config)
         map(self.register_build_factories, self.manifest_paths)
         config.setdefault('builders', []).extend(
             self.make_builders(master_config=config))
@@ -285,8 +288,10 @@ class BuildoutsConfigurator(object):
                                      ))
         map(factory.addStep, buildout_dl_steps)
 
-        capability_env = capability.set_properties_make_environ(
-            self.capabilities, factory)
+        all_caps = set(factory.build_for)
+        all_caps.update(r.cap for r in factory.build_requires)
+        capability_env = self.dispatcher.set_properties_make_environ(
+            factory, all_caps)
 
         for line in options.get('post-dl-steps', 'noop').split(os.linesep):
             subfactory = subfactories.post_download[line]
@@ -466,11 +471,11 @@ class BuildoutsConfigurator(object):
                 self, options, buildout[1:], manifest_dir)
             self.make_factory(name, conf_slave_path, dl_steps)
 
-    def builder_dispatcher(self, master_config):
+    def make_dispatcher(self, master_config):
         all_slaves = {slave.slavename: slave
-                      for slave in master_config['slaves']}
-        return dispatcher.BuilderDispatcher(all_slaves,
-                                            self.capabilities)
+                      for slave in master_config.get('slaves', ())}
+        self.dispatcher = dispatcher.BuilderDispatcher(all_slaves,
+                                                       self.capabilities)
 
     def make_builders(self, master_config=None):
         """Spawn builders from build factories.
@@ -492,10 +497,9 @@ class BuildoutsConfigurator(object):
 
         builders = []
         fact_to_builders = self.factories_to_builders
-        dispatcher = self.builder_dispatcher(master_config)
 
         for fact_name, factory in self.build_factories.items():
-            fact_builders = dispatcher.make_builders(
+            fact_builders = self.dispatcher.make_builders(
                 fact_name, factory,
                 category=factory.options.get(
                     'build-category', '').strip(),
