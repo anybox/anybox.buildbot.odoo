@@ -25,7 +25,7 @@ returns a list of buildbot steps. Instead of calling
 where ``mycase_callable`` is typically a function, and must have
 this signature::
 
-  def mycase_callable(configurator, options, buildout_slave_path,
+  def mycase_callable(configurator, options, buildout_worker_path,
                       environ=()):
 
 where we the paramters are:
@@ -37,7 +37,7 @@ where we the paramters are:
 ``options``:
     the whole manifest file section, seen as a dict.
 
-``buildout_slave_path``:
+``buildout_worker_path``:
     the path to the buildout configuration file, relative to the build
     directory.
 

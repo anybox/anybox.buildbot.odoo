@@ -7,7 +7,7 @@ FAKE_PRIOS = dict(low1=0, low2=0, low3=0,
 
 
 def fake_prio(fakeslb):
-    """Instead of a ``SlaveBuilder`` instance, we'll use strings."""
+    """Instead of a ``WorkerBuilder`` instance, we'll use strings."""
     return FAKE_PRIOS[fakeslb]
 
 

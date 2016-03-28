@@ -10,11 +10,11 @@ class TestSchedulers(BaseTestCase):
         self.configurator = BuildoutsConfigurator(self.master_join(
             'master.cfg'))
 
-    def schedulers(self, manifest, slaves):
-        self.populate(manifest, slaves)['schedulers']
+    def schedulers(self, manifest, workers):
+        self.populate(manifest, workers)['schedulers']
 
     def test_simple_schedulers(self):
-        schs = self.populate('manifest_1.cfg', 'one_slave.cfg')['schedulers']
+        schs = self.populate('manifest_1.cfg', 'one_worker.cfg')['schedulers']
         self.assertEquals(len(schs), 1)
         sch = schs[0]
         self.assertEquals(sch.name, 'simple')
@@ -30,7 +30,7 @@ class TestSchedulers(BaseTestCase):
 
     def test_tree_stable_timer_global(self):
         self.configurator.tree_stable_timer = 123
-        schs = self.populate('manifest_1.cfg', 'one_slave.cfg')['schedulers']
+        schs = self.populate('manifest_1.cfg', 'one_worker.cfg')['schedulers']
         self.assertEquals(len(schs), 1)
         sch = schs[0]
         self.assertEquals(sch.name, 'simple')
@@ -39,7 +39,7 @@ class TestSchedulers(BaseTestCase):
     def test_tree_stable_timer_local(self):
         self.configurator.tree_stable_timer = 123
         schs = self.populate('manifest_tree_stable_timer.cfg',
-                             'one_slave.cfg')['schedulers']
+                             'one_worker.cfg')['schedulers']
         self.assertEquals(len(schs), 1)
         sch = schs[0]
         self.assertEquals(sch.name, 'simple')

@@ -25,10 +25,10 @@ c = BuildmasterConfig = {}
 from anybox.buildbot.openerp import configure_from_buildouts
 configure_from_buildouts(basedir, BuildmasterConfig)
 
-# 'slavePortnum' defines the TCP port to listen on for connections from slaves.
-# This must match the value configured into the buildslaves (with their
+# 'workerPortnum' defines the TCP port to listen on for connections from workers.
+# This must match the value configured into the workers (with their
 # --master option)
-c['slavePortnum'] = 9989
+c['workerPortnum'] = 9989
 
 ####### SCHEDULERS
 

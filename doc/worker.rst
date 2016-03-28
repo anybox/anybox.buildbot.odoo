@@ -1,27 +1,27 @@
-Slave setup
-~~~~~~~~~~~
+Worker setup
+~~~~~~~~~~~~
 
-We strongly recommend that you install and run the buildslave with its
+We strongly recommend that you install and run the worker with its
 own dedicated POSIX user, e.g.::
 
-  sudo adduser --system buildslave
-  sudo -su buildslave
+  sudo adduser --system worker
+  sudo -su worker
   cd
 
 (the ``--system`` option forbids direct logins by setting the default
 shell to ``/bin/false``, see ``man adduser``)
 
-Buildbot slave software
+Buildbot worker software
 -----------------------
-For slave software itself, just follow the official buildbot way of doing::
+For worker software itself, just follow the official buildbot way of doing::
 
-  virtualenv buildslave-env
-  buildslave-env/bin/pip install buildbot-slave
-  buildslave-env/bin/buildslave create-slave --help
+  virtualenv worker-env
+  worker-env/bin/pip install buildbot-worker
+  worker-env/bin/worker create-worker --help
 
 System build dependencies
 -------------------------
-The slave host system must have all build dependencies
+The worker host system must have all build dependencies
 for the available buildouts to run. Indeed, the required python eggs may have
 to be installed from pypi, and this can trigger some compilations. In
 turn, these usually require build utilities (gcc, make, etc),
@@ -29,25 +29,25 @@ libraries and headers.
 
 There are `packages for debian-based systems <http://anybox.fr/blog/debian-package-helpers-for-odoo-buildouts>`_ that install all needed dependencies for OpenERP buildouts.
 
-.. _slave_capability:
+.. _worker_capability:
 
-Registration and slave capabilities
+Registration and worker capabilities
 -----------------------------------
-Have your slave registered to the master admin, specifying the
+Have your worker registered to the master admin, specifying the
 available versions of PostgreSQL (e.g, 8.4, 9.0), and other
 capabilities if there are special builds that make use of them.
 See "PostgreSQL requirements" below for details about Postgresql
 capability properties.
 
 The best is to provide a
-``slaves.cfg`` fragment (see ``slaves.cfg.sample`` for syntax and
+``workers.cfg`` fragment (see ``workers.cfg.sample`` for syntax and
 supported options).
 
-Capabilities are defined as a ``slaves.cfg`` option, with one line per
+Capabilities are defined as a ``workers.cfg`` option, with one line per
 capability and version pair. Each line ends with additional
 *capability properties*::
 
- [my-slave]
+ [my-worker]
  capability = postgresql 8.4
               postgresql 9.1 port=5433
 	      private-bzr+ssh-access
@@ -57,8 +57,8 @@ Capabilities are used for
 
  * *filtering* : running builds only on those that can take them (see
    ``build-requires`` option)
- * *slave-local conditions*: applying parameters that depend on the
-   slave (here the port for PostgreSQL 9.1) through build properties
+ * *worker-local conditions*: applying parameters that depend on the
+   worker (here the port for PostgreSQL 9.1) through build properties
    and environment variables. Everything is already tuned by
    default for the ``postgresql`` capability, but an advanced user can
    register environment variables mappings in ``master.cfg`` for other
@@ -71,11 +71,11 @@ some private repositories, assuming that the master's
 
   build-requires=private-bzr+ssh-access
 
-In some cases, it's meaningful to further restrict a buildslave to run
+In some cases, it's meaningful to further restrict a worker to run
 only those builds that really need it. This is useful for rare or
-expensive resources. Sample ``slave.cfg`` extract for that::
+expensive resources. Sample ``worker.cfg`` extract for that::
 
-  [mybuildslave]
+  [myworker]
   build-only-if-requires=selenium
 
 PostgreSQL requirements and capability declaration
@@ -83,26 +83,26 @@ PostgreSQL requirements and capability declaration
 
 You must of course provide one or several working PostgreSQL
 installation (clusters). These are described as *capabilities* in the
-configuration file that makes the master know about your slave and how
+configuration file that makes the master know about your worker and how
 to run builds on it.
 
 The default values assumes a standard PostgreSQL cluster on the
-same system as the slave, with a PostgreSQL user having the same name
-as the POSIX user running the slave, having database creation rights.
-Assuming the slave POSIX user is ``buildslave``, just do::
+same system as the worker, with a PostgreSQL user having the same name
+as the POSIX user running the worker, having database creation rights.
+Assuming the worker POSIX user is ``worker``, just do::
 
   sudo -u postgres createuser --createdb --no-createrole \
-       --no-superuser buildslave
+       --no-superuser worker
 
 Alternatively, you can provide host, port, and password (see
-``slaves.cfg`` file to see how to express in the master configuration).
+``workers.cfg`` file to see how to express in the master configuration).
 
 .. warning:: currently, setting user/password is not
              supported. Only Unix-socket domains will work (see below).
 
 The default blank value for host on Debian-based distributions will make the
-slave connect to the PostgreSQL cluster through a Unix-domain socket, ie, the
-user name is the same as the POSIX user running the slave. Default
+worker connect to the PostgreSQL cluster through a Unix-domain socket, ie, the
+user name is the same as the POSIX user running the worker. Default
 PostgreSQL configurations allow such connections without a password (``ident``
 authentication method in ``pg_hba.conf``).
 
@@ -157,7 +157,7 @@ instead of the ``configure_from_buildouts`` helper function::
   abo_conf.populate(BuildmasterConfig)
 
 
-Now with ``rabbitmq`` capability defined this way on slaves::
+Now with ``rabbitmq`` capability defined this way on workers::
 
   rabbitmq 2.8.4 base_uri=amqp://guest:guest@localhost:5672/ binary=rabbitmqctl sudo=True
 
@@ -172,13 +172,13 @@ to capability options.
 Tweaks, optimization and traps
 ------------------------------
 
-* eggs and odoo downloads are shared on a per-slave basis. A lock
+* eggs and odoo downloads are shared on a per-worker basis. A lock
   system prevents concurrency in buildout runs.
 
-* Windows slaves are currently unsupported : some steps use '/'
+* Windows workers are currently unsupported : some steps use '/'
   separators in arguments.
 
-* Do *not* start the slave while its virtualenv is "activated"; also take
+* Do *not* start the worker while its virtualenv is "activated"; also take
   care that the bin/ directory of the virtualenv *must not* be on the
   POSIX user default PATH. Many build steps are not designed for that,
   and would miss some dependencies. This is notably the case for the
@@ -191,8 +191,8 @@ Tweaks, optimization and traps
   make sure that the default system python has virtualenv >=1.5. Prior
   versions have hardcoded file names in /tmp, that lead to permission
   errors in case virtualenv is run again with a different system user
-  (meaning that any invocation of virtualenv outside the slave will
-  break subsequent builds in the slave that need it). In particular,
+  (meaning that any invocation of virtualenv outside the worker will
+  break subsequent builds in the worker that need it). In particular,
   note that in Debian 6.0 (Squeeze), python-virtualenv is currently
   1.4.9, and is absent from squeeze-backports. You'll have to set it
   up manually (install python-pip first).

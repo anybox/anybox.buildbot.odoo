@@ -13,7 +13,7 @@ Contents:
 
    master
    manifest
-   slave
+   worker
    subfactories
    contributing
 

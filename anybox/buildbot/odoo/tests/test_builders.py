@@ -59,7 +59,7 @@ class TestBuilders(BaseTestCase):
         """
         master = {}
         conf = self.configurator
-        master['slaves'] = conf.make_slaves(self.data_join('one_slave.cfg'))
+        master['workers'] = conf.make_workers(self.data_join('one_worker.cfg'))
         self.configurator.make_dispatcher(master)
         conf.register_build_factories(self.data_join('manifest_category.cfg'))
         builders = self.configurator.make_builders(master_config=master)
@@ -72,8 +72,8 @@ class TestBuilders(BaseTestCase):
     def test_build_for(self):
         master = {}
         conf = self.configurator
-        master['slaves'] = conf.make_slaves(
-            self.data_join('slaves_build_for.cfg'))
+        master['workers'] = conf.make_workers(
+            self.data_join('workers_build_for.cfg'))
         self.configurator.make_dispatcher(master)
         conf.register_build_factories(self.data_join('manifest_build_for.cfg'))
         builders = self.configurator.make_builders(master_config=master)
@@ -89,8 +89,8 @@ class TestBuilders(BaseTestCase):
         """build-for dispatching for two capabilities."""
         master = {}
         conf = self.configurator
-        master['slaves'] = conf.make_slaves(
-            self.data_join('slaves_build_for.cfg'))
+        master['workers'] = conf.make_workers(
+            self.data_join('workers_build_for.cfg'))
         self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_double_build_for.cfg'))
@@ -107,8 +107,8 @@ class TestBuilders(BaseTestCase):
         """build-for dispatching for two capabilities."""
         master = {}
         conf = self.configurator
-        master['slaves'] = conf.make_slaves(
-            self.data_join('slaves_build_for2.cfg'))
+        master['workers'] = conf.make_workers(
+            self.data_join('workers_build_for2.cfg'))
         self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_double_build_for.cfg'))
@@ -134,15 +134,15 @@ class TestBuilders(BaseTestCase):
         master = {}
         conf = self.configurator
 
-        master['slaves'] = conf.make_slaves(
-            self.data_join('slaves_build_requires.cfg'))
+        master['workers'] = conf.make_workers(
+            self.data_join('workers_build_requires.cfg'))
         self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_build_requires.cfg'))
         builders = self.configurator.make_builders(master_config=master)
         builders = dict((b.name, b) for b in builders)
 
-        # note how there is no slave for pg 9.0 that meets the requirements
+        # note how there is no worker for pg 9.0 that meets the requirements
         # hence no builder (buildbot would otherwise throw an error)
         self.assertEquals(
             set(name for name in builders.keys()
@@ -150,10 +150,10 @@ class TestBuilders(BaseTestCase):
             set(('priv-pgall-pg8.4',
                  'priv-pgall-pg9.1-devel',)))
 
-        self.assertEquals(builders['priv-pgall-pg8.4'].slavenames,
+        self.assertEquals(builders['priv-pgall-pg8.4'].workernames,
                           ['privcode', 'privcode-84'])
         self.assertEquals(
-            builders['priv-pgall-pg9.1-devel'].slavenames,
+            builders['priv-pgall-pg9.1-devel'].workernames,
             ['privcode', 'privcode-91'])
 
         # now build-for and build-requires together
@@ -163,7 +163,7 @@ class TestBuilders(BaseTestCase):
             set(('priv-sup90-pg9.1-devel',)))
 
         self.assertEquals(
-            builders['priv-sup90-pg9.1-devel'].slavenames,
+            builders['priv-sup90-pg9.1-devel'].workernames,
             ['privcode', 'privcode-91'])
 
         # now with a version
@@ -174,7 +174,7 @@ class TestBuilders(BaseTestCase):
 
         builder = builders['rabb-sup20-pg9.0']
 
-        self.assertEqual(builder.slavenames, ['rabb284'])
+        self.assertEqual(builder.workernames, ['rabb284'])
         build_requires = builder.properties['build_requires']
         self.assertEqual(len(build_requires), 1)
         self.assertEqual(build_requires.pop(), "rabbitmq >= 2.0")
@@ -183,8 +183,8 @@ class TestBuilders(BaseTestCase):
         master = {}
         conf = self.configurator
 
-        master['slaves'] = conf.make_slaves(
-            self.data_join('slaves_build_requires.cfg'))
+        master['workers'] = conf.make_workers(
+            self.data_join('workers_build_requires.cfg'))
         self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_build_requires2.cfg'))
@@ -194,7 +194,7 @@ class TestBuilders(BaseTestCase):
         self.assertEquals(builders.keys(), ['rabb-18-pg9.0'])
 
         self.assertEquals(
-            builders['rabb-18-pg9.0'].slavenames,
+            builders['rabb-18-pg9.0'].workernames,
             ['rabb18'])
 
     def test_build_requires_pg_not_used(self):
@@ -202,8 +202,8 @@ class TestBuilders(BaseTestCase):
         master = {}
         conf = self.configurator
 
-        master['slaves'] = conf.make_slaves(
-            self.data_join('slaves_build_requires.cfg'))
+        master['workers'] = conf.make_workers(
+            self.data_join('workers_build_requires.cfg'))
         self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_build_requires_pg_not_used.cfg'))
@@ -214,15 +214,15 @@ class TestBuilders(BaseTestCase):
         self.assertEquals(builders.keys(), ['priv-pgall'])
 
         # PG did not matter but 'requires' filtering as been applied
-        self.assertEquals(builders['priv-pgall'].slavenames,
+        self.assertEquals(builders['priv-pgall'].workernames,
                           ['privcode', 'privcode-91', 'privcode-84'])
 
     def test_build_requires_only_if(self):
         master = {}
         conf = self.configurator
 
-        master['slaves'] = conf.make_slaves(
-            self.data_join('slaves_build_requires_only_if.cfg'))
+        master['workers'] = conf.make_workers(
+            self.data_join('workers_build_requires_only_if.cfg'))
         self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_build_requires.cfg'))
@@ -231,7 +231,7 @@ class TestBuilders(BaseTestCase):
 
         # 'privcode' doesn't run a the sup90 builders, since they don't
         # need private-code-access cap
-        self.assertEquals(builders['sup90-pg9.1-devel'].slavenames,
+        self.assertEquals(builders['sup90-pg9.1-devel'].workernames,
                           ['privcode-91', 'pg90-91'])
 
         # Redoing the tests of normal build_requires about builds that do
@@ -242,10 +242,10 @@ class TestBuilders(BaseTestCase):
             set(('priv-pgall-pg8.4',
                  'priv-pgall-pg9.1-devel',)))
 
-        self.assertEquals(builders['priv-pgall-pg8.4'].slavenames,
+        self.assertEquals(builders['priv-pgall-pg8.4'].workernames,
                           ['privcode', 'privcode-84'])
         self.assertEquals(
-            builders['priv-pgall-pg9.1-devel'].slavenames,
+            builders['priv-pgall-pg9.1-devel'].workernames,
             ['privcode', 'privcode-91'])
 
         # now build-for and build-requires together
@@ -255,7 +255,7 @@ class TestBuilders(BaseTestCase):
             set(('priv-sup90-pg9.1-devel',)))
 
         self.assertEquals(
-            builders['priv-sup90-pg9.1-devel'].slavenames,
+            builders['priv-sup90-pg9.1-devel'].workernames,
             ['privcode', 'privcode-91'])
 
         # now with a version
@@ -265,7 +265,7 @@ class TestBuilders(BaseTestCase):
             set(('rabb-sup20-pg9.0',)))
 
         self.assertEquals(
-            builders['rabb-sup20-pg9.0'].slavenames,
+            builders['rabb-sup20-pg9.0'].workernames,
             ['rabb284'])
 
     def test_capability_env(self):
@@ -277,8 +277,8 @@ class TestBuilders(BaseTestCase):
             version_prop='py_version',
             environ={'PYTHONBIN': '%(cap(bin)-)s'})
 
-        master['slaves'] = conf.make_slaves(
-            self.data_join('slaves_capability.cfg'))
+        master['workers'] = conf.make_workers(
+            self.data_join('workers_capability.cfg'))
         self.configurator.make_dispatcher(master)
 
         conf.register_build_factories(
@@ -317,7 +317,7 @@ class TestBuilders(BaseTestCase):
         """Test behaviour if no version property is defined.
 
         (in that case, SetCapabilityStep is supposed to look for None,
-        meaning eventually the line in slave conf with no version indication.
+        meaning eventually the line in worker conf with no version indication.
         """
 
         master = {}
@@ -327,8 +327,8 @@ class TestBuilders(BaseTestCase):
         conf.capabilities['python'] = dict(
             environ={'PYTHONBIN': '%(cap(bin)-)s'})
 
-        master['slaves'] = conf.make_slaves(
-            self.data_join('slaves_capability.cfg'))
+        master['workers'] = conf.make_workers(
+            self.data_join('workers_capability.cfg'))
         self.configurator.make_dispatcher(master)
 
         conf.register_build_factories(
@@ -353,8 +353,8 @@ class TestBuilders(BaseTestCase):
         master = {}
         conf = self.configurator
 
-        master['slaves'] = conf.make_slaves(
-            self.data_join('slaves_build_requires.cfg'))
+        master['workers'] = conf.make_workers(
+            self.data_join('workers_build_requires.cfg'))
         self.configurator.make_dispatcher(master)
         conf.register_build_factories(
             self.data_join('manifest_inherit.cfg'))
@@ -362,7 +362,7 @@ class TestBuilders(BaseTestCase):
         builders = dict((b.name, b) for b in builders)
 
         # we got the same builders as for 'simple', without 9.0, because
-        # no slave has 'private-code-access' capability.
+        # no worker has 'private-code-access' capability.
         self.assertEquals(set(builders.keys()),
                           set(['simple-pg9.0',
                                'simple-pg8.4',

@@ -1,8 +1,8 @@
-# Each section is a slave name
-# A closed list of options turns into parameters for that slave,
+# Each section is a worker name
+# A closed list of options turns into parameters for that worker,
 # the others go in build properties
 
-[my-slave]
+[my-worker]
 #
 # required
 #

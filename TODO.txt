@@ -1,8 +1,5 @@
 * HARD (lots of boring work): provide unit tests
 
-* MEDIUM: have the slaves retrieve ``build_utils`` directly from VCS. This
-  will probably complicate the scheduling setup.
-
 * EASY: use (also) test log analyzer and test launching commands from
   openerp-runbot.
 

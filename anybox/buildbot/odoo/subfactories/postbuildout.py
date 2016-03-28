@@ -14,7 +14,7 @@ from ..utils import bool_opt
 from ..utils import BUILD_UTILS_PATH
 from ..constants import DEFAULT_BUILDOUT_PART
 
-port_lock = locks.SlaveLock("port-reserve")
+port_lock = locks.WorkerLock("port-reserve")
 
 
 def steps_odoo_port_reservation(configurator, options, environ=()):
@@ -32,7 +32,7 @@ def steps_odoo_port_reservation(configurator, options, environ=()):
     return (
         FileDownload(
             mastersrc=os.path.join(BUILD_UTILS_PATH, 'port_reserve.py'),
-            slavedest='port_reserve.py'),
+            workerdest='port_reserve.py'),
 
         SetPropertyFromCommand(
             property='odoo_port',
@@ -47,7 +47,7 @@ def steps_odoo_port_reservation(configurator, options, environ=()):
     )
 
 
-def install_modules(configurator, options, buildout_slave_path,
+def install_modules(configurator, options, buildout_worker_path,
                     environ=()):
     """Return steps to just install modules
 
@@ -99,7 +99,7 @@ def install_modules(configurator, options, buildout_slave_path,
     return steps
 
 
-def install_modules_test(configurator, options, buildout_slave_path,
+def install_modules_test(configurator, options, buildout_worker_path,
                          environ=()):
     """Return steps to run bin/test_<PART> -i.
 
@@ -156,8 +156,8 @@ def install_modules_test(configurator, options, buildout_slave_path,
 
 
 def odoo_command_initialize_tests(configurator, options,
-                                     buildout_slave_path,
-                                     environ=()):
+                                  buildout_worker_path,
+                                  environ=()):
     """Return steps to run bin/<PART>_command initialize --tests.
 
     Available manifest file options:
@@ -201,7 +201,7 @@ def odoo_command_initialize_tests(configurator, options,
     return steps
 
 
-def update_modules(configurator, options, buildout_slave_path,
+def update_modules(configurator, options, buildout_worker_path,
                    environ=()):
     """Return steps to update the OpenERP application.
 
@@ -262,7 +262,7 @@ def update_modules(configurator, options, buildout_slave_path,
     return steps
 
 
-def install_modules_nose(configurator, options, buildout_slave_path,
+def install_modules_nose(configurator, options, buildout_worker_path,
                          environ=()):
     """Install addons, run nose tests, upload result.
 
@@ -392,14 +392,14 @@ def install_modules_nose(configurator, options, buildout_slave_path,
     if upload:
         upload_path = options.get('nose.upload-path', '').replace('$', '%')
         upload_url = options.get('nose.upload-url', '').replace('$', '%')
-        steps.append(DirectoryUpload(slavesrc=nose_output_dir,
+        steps.append(DirectoryUpload(workersrc=nose_output_dir,
                                      haltOnFailure=True,
                                      compress='gz',
                                      masterdest=WithProperties(upload_path),
                                      url=WithProperties(upload_url)))
 
         # Fixing perms on uploaded files. Yes we could have unmask = 022 in
-        # all slaves, see note at the end of
+        # all workers, see note at the end of
         # http://buildbot.net/buildbot/docs/0.8.7/full.html#
         #     buildbot.steps.source.buildbot.steps.transfer.DirectoryUpload
         # but it's less work to fix the perms from here than to check all of
@@ -416,7 +416,7 @@ def install_modules_nose(configurator, options, buildout_slave_path,
     return steps
 
 
-def functional(configurator, options, buildout_slave_path,
+def functional(configurator, options, buildout_worker_path,
                environ=()):
     """Reserve a port, start odoo, launch testing commands, stop odoo.
 
@@ -438,7 +438,7 @@ def functional(configurator, options, buildout_slave_path,
     if buildout_parts:
         steps.append(ShellCommand(
             command=['bin/buildout',
-                     '-c', buildout_slave_path,
+                     '-c', buildout_worker_path,
                      WithProperties('buildout:eggs-directory='
                                     '%(builddir)s/../buildout-caches/eggs'),
                      'install'] + buildout_parts,
@@ -452,7 +452,7 @@ def functional(configurator, options, buildout_slave_path,
 
     steps.append(FileDownload(
         mastersrc=os.path.join(BUILD_UTILS_PATH, 'port_reserve.py'),
-        slavedest='port_reserve.py'))
+        workerdest='port_reserve.py'))
 
     steps.append(SetPropertyFromCommand(
         property='odoo_port',
@@ -525,7 +525,7 @@ def functional(configurator, options, buildout_slave_path,
     return steps
 
 
-def static_analysis(configurator, options, buildout_slave_path, environ=()):
+def static_analysis(configurator, options, buildout_worker_path, environ=()):
     """Adds static analysis to the build.
 
     Available manifest file options:
@@ -543,7 +543,7 @@ def static_analysis(configurator, options, buildout_slave_path, environ=()):
 
     steps.append(
         ShellCommand(command=['bin/buildout',
-                              '-c', buildout_slave_path,
+                              '-c', buildout_worker_path,
                               WithProperties(
                                   'buildout:eggs-directory='
                                   '%(builddir)s/../buildout-caches/eggs'),
@@ -582,7 +582,7 @@ def static_analysis(configurator, options, buildout_slave_path, environ=()):
 
 
 def sphinx_doc(configurator, options,
-               buildout_slave_path, environ=()):
+               buildout_worker_path, environ=()):
     """Adds sphinx doc to the build.
 
     For more information, especially about api/autodoc with OpenERP, see
@@ -660,14 +660,14 @@ def sphinx_doc(configurator, options,
         master_doc_path = '/'.join((base_dir, sub_path))
         steps.append(
             DirectoryUpload(
-                slavesrc=html_builddir,
+                workersrc=html_builddir,
                 haltOnFailure=True,
                 compress='gz',
                 masterdest=WithProperties(master_doc_path),
                 url=WithProperties(waterfall_url) if waterfall_url else None))
 
         # Fixing perms on uploaded files. Yes we could have unmask = 022 in
-        # all slaves,
+        # all workers,
         # see note at the end of
         #  <http://buildbot.net/buildbot/docs/0.8.7/full.html
         #   #buildbot.steps.source.buildbot.steps.transfer.DirectoryUpload>
@@ -689,7 +689,7 @@ def sphinx_doc(configurator, options,
 
 
 def packaging(configurator, options,
-              buildout_slave_path, environ=()):
+              buildout_worker_path, environ=()):
     """Final steps for upload after testing of tarball.
 
     See :func:`postdownload.packaging` for explanation of options.
@@ -702,14 +702,14 @@ def packaging(configurator, options,
     base_url = options['packaging.base-url']
     return [
         FileUpload(
-            slavesrc=WithProperties(
+            workersrc=WithProperties(
                 '../dist/' + archive_name_interp + '.tar.bz2'),
             masterdest=WithProperties(master_path),
             url='/'.join((base_url, upload_dir)),
             mode=0644,
         ),
         FileUpload(
-            slavesrc=WithProperties(
+            workersrc=WithProperties(
                 '../dist/' + archive_name_interp + '.tar.bz2.md5'),
             masterdest=WithProperties(master_path + '.md5'),
             url='/'.join((base_url, upload_dir)),
@@ -718,7 +718,7 @@ def packaging(configurator, options,
     ]
 
 
-def autocommit(configurator, options, buildout_slave_path, environ=()):
+def autocommit(configurator, options, buildout_worker_path, environ=()):
     """Invoke recipe's autocommit script.
 
     Available manifest file options:
@@ -734,7 +734,7 @@ def autocommit(configurator, options, buildout_slave_path, environ=()):
             command=[
                 options.get('autocommit.script',
                             'bin/autocommit_' + buildout_part),
-                '-c', buildout_slave_path,
+                '-c', buildout_worker_path,
                 '--push',
                 '-m',
                 options.get('autocommit.message', "Commit by buildbot"),

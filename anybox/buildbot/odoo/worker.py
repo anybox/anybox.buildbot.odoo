@@ -2,17 +2,17 @@ import random
 from twisted.python import log
 
 
-def loggingNextWorker(builder, slaves, brequest):
+def loggingNextWorker(builder, workers, brequest):
     """Useful for debugging."""
-    if slaves:
+    if workers:
         try:
-            log.msg("nextSlaves, got %r " % (
-                [(sl.slave.slavename,
-                  sl.slave.properties.getProperty('slave_priority', default=0))
-                 for sl in slaves]))
+            log.msg("nextWorker, got %r " % (
+                [(sl.worker.workername,
+                  sl.worker.properties.getProperty('worker_priority', default=0))
+                 for sl in workers]))
         except:
-            log.msg("Got slaves, wrong logging")
-        return random.choice(slaves)
+            log.msg("Got workers, wrong logging")
+        return random.choice(workers)
 
 
 def workerBuilderPriority(slb):
@@ -20,15 +20,15 @@ def workerBuilderPriority(slb):
 
 
 def priorityAwareNextWorker(builder, workers, brequest,
-                           get_priority=workerBuilderPriority):
+                            get_priority=workerBuilderPriority):
     """Always return a worker from those having the highest priority.
 
     TODO: is this still true with Nine:
 
     Actually, buildbot calls the ``nextWorker`` function several times, because
-    that's before actual check whether the buildslave can really run the build.
-    Therefore if only slaves with lower priority are available, this function
-    will eventually be called with a list of slaves having it
+    that's before actual check whether the worker can really run the build.
+    Therefore if only workers with lower priority are available, this function
+    will eventually be called with a list of workers having it
     """
     # TODO check it still works with the iterable we actually get, now
     if not workers:

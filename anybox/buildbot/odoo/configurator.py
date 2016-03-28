@@ -5,7 +5,7 @@ from collections import OrderedDict
 from ConfigParser import ConfigParser
 from ConfigParser import NoOptionError
 from twisted.python import log
-from buildbot.buildslave import BuildSlave
+from buildbot.plugins import worker
 
 from buildbot import locks
 from buildbot.process.factory import BuildFactory
@@ -30,26 +30,28 @@ from .utils import BUILD_UTILS_PATH
 from .constants import DEFAULT_BUILDOUT_PART
 from .worker import priorityAwareNextWorker
 
-BUILDSLAVE_KWARGS = {  # name -> validating callable
+Worker = worker.Worker
+
+WORKER_KWARGS = {  # name -> validating callable
     'max_builds': int,
     'notify_on_missing': str,
 }
 
-BUILDSLAVE_PROPERTIES = {  # name -> validating callable (only for non-str)
-    'slave_priority': float,
+WORKER_PROPERTIES = {  # name -> validating callable (only for non-str)
+    'worker_priority': float,
 }
 
-BUILDSLAVE_REQUIRED = ('password',)
+WORKER_REQUIRED = ('password',)
 
 logger = logging.getLogger(__name__)
 
-# Running buildouts in parallel on one slave fails
+# Running buildouts in parallel on one worker fails
 # if they used shared eggs or downloads area
-buildout_caches_lock = locks.SlaveLock("buildout caches")
+buildout_caches_lock = locks.WorkerLock("buildout caches")
 
 
 class BuildoutsConfigurator(object):
-    """Populate buildmaster configs from buildouts and external slaves.cfg.
+    """Populate buildmaster configs from buildouts and external workers.cfg.
 
     Use the three subfactories of steps from ``subfactories``:
        - buildout_download (see ``subfactories.download``)
@@ -79,7 +81,7 @@ class BuildoutsConfigurator(object):
 
     def __init__(self, buildmaster_dir,
                  manifest_paths=('buildouts/MANIFEST.cfg',),
-                 slaves_path='slaves.cfg',
+                 workers_path='workers.cfg',
                  capabilities=None):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
@@ -87,7 +89,7 @@ class BuildoutsConfigurator(object):
         self.build_factories = {}  # build factories by name
         self.factories_to_builders = {}  # factory name -> builders playing it
         self.manifest_paths = manifest_paths
-        self.slaves_path = slaves_path
+        self.workers_path = workers_path
         if capabilities is not None:
             self.capabilities = capabilities
         self.build_manifests = {}  # factory name -> dict(options, path)
@@ -99,8 +101,8 @@ class BuildoutsConfigurator(object):
         self.capabilities[capability_name] = options2environ
 
     def populate(self, config):
-        config.setdefault('slaves', []).extend(
-            self.make_slaves(self.slaves_path))
+        config.setdefault('workers', []).extend(
+            self.make_workers(self.workers_path))
         # TODO stop pretending that config is not part of the state, while
         # we have self.factories_to_builders etc
         self.make_dispatcher(config)
@@ -131,56 +133,56 @@ class BuildoutsConfigurator(object):
         # lp resolution can lead to dupes
         return list(set(self.watcher.make_pollers()))
 
-    def make_slaves(self, conf_path='slaves.cfg'):
-        """Create the slave objects from the file at conf_path.
+    def make_workers(self, conf_path='workers.cfg'):
+        """Create the worker objects from the file at conf_path.
 
         ``conf_path`` is interpreted relative from buildmaster_dir. It can of
         course be an absolute path.
 
-        The configuration file is in INI format. There's one section per slave,
-        The section name is the slave name.
+        The configuration file is in INI format. There's one section per worker,
+        The section name is the worker name.
         The password must be specified as 'password'
-        Other values either go to slave properties, unless they are from the
-        BUILDSLAVE_KWARGS constant, in which case they are used directly in
+        Other values either go to worker properties, unless they are from the
+        WORKER_KWARGS constant, in which case they are used directly in
         instantiation keyword arguments.
 
-        For properties, the BUILDSLAVE_PROPERTIES dict of validators is
+        For properties, the WORKER_PROPERTIES dict of validators is
         also used (with default to ``str``)
 
         There is for now no limitation on which properties can be set.
         """
         parser = ConfigParser()
         parser.read(self.path_from_buildmaster(conf_path))
-        slaves = []
+        workers = []
 
-        for slavename in parser.sections():
+        for workername in parser.sections():
             kw = {}
             kw['properties'] = props = {}
             props['capability'] = caps = {}  # name -> versions
             seen = set()
-            for key, value in parser.items(slavename):
+            for key, value in parser.items(workername):
                 seen.add(key)
                 if key in ('passwd', 'password'):
                     pwd = value
                 elif key == 'capability':
-                    caps.update(capability.parse_slave_declaration(value))
-                elif key in BUILDSLAVE_KWARGS:
-                    kw[key] = BUILDSLAVE_KWARGS[key](value)
+                    caps.update(capability.parse_worker_declaration(value))
+                elif key in WORKER_KWARGS:
+                    kw[key] = WORKER_KWARGS[key](value)
                 else:
-                    props[key] = BUILDSLAVE_PROPERTIES.get(key, str)(value)
+                    props[key] = WORKER_PROPERTIES.get(key, str)(value)
 
-            for option in BUILDSLAVE_REQUIRED:
+            for option in WORKER_REQUIRED:
                 if option not in seen:
-                    logger.error("Buildslave %r lacks option %r. Ignored.",
-                                 slavename, option)
+                    logger.error("Buildworker %r lacks option %r. Ignored.",
+                                 workername, option)
                     break
             else:
-                slave = BuildSlave(slavename, pwd, **kw)
-                slaves.append(slave)
+                worker = Worker(workername, pwd, **kw)
+                workers.append(worker)
 
-        return slaves
+        return workers
 
-    def steps_unibootstrap(self, buildout_slave_path, options, eggs_cache,
+    def steps_unibootstrap(self, buildout_worker_path, options, eggs_cache,
                            dump_options_to=None,
                            **step_kw):
         """return a list of steps for buildout bootstrap, using uniform script.
@@ -208,7 +210,7 @@ class BuildoutsConfigurator(object):
         command = [Property('cap_python_bin', default='python'),
                    'unibootstrap.py',
                    '--dists-directory', WithProperties(eggs_cache),
-                   '--buildout-config', buildout_slave_path]
+                   '--buildout-config', buildout_worker_path]
         if dump_options_to is None:
             command.append('--no-output-bootstrap-config')
         else:
@@ -220,7 +222,7 @@ class BuildoutsConfigurator(object):
 
         return [FileDownload(mastersrc=os.path.join(BUILD_UTILS_PATH,
                                                     'unibootstrap.py'),
-                             slavedest='unibootstrap.py',
+                             workerdest='unibootstrap.py',
                              name="download",
                              description=['download', 'unibootstrap'],
                              **step_kw),
@@ -233,13 +235,13 @@ class BuildoutsConfigurator(object):
                              haltOnFailure=True,
                              **step_kw)]
 
-    def make_factory(self, name, buildout_slave_path, buildout_dl_steps):
+    def make_factory(self, name, buildout_worker_path, buildout_dl_steps):
         """Return a build factory using name and buildout config at cfg_path.
 
-        :param buildout_path: the slave-side path from build directory to the
+        :param buildout_path: the worker-side path from build directory to the
                               buildout configuration file.
         :param buildout_dl_steps: an iterable of :class:`BuildStep` instances
-                                  to retrieve slave-side the buildout
+                                  to retrieve worker-side the buildout
                                   configuration file and its dependencies
                                   (bootstrap, extended conf files)
         :param name: the factory name in registry,
@@ -253,7 +255,7 @@ class BuildoutsConfigurator(object):
         :buildout part: the Odoo/OpenERP part that the whole build is about
         :build-for: dispatch onto available PostgreSQL versions that
                     match these criteria
-        :build-requires: used to run only on buildslaves having the correct
+        :build-requires: used to run only on workers having the correct
                          capabilities
         :post-dl-steps: list of subfactories to call right after initial
                         download
@@ -295,14 +297,14 @@ class BuildoutsConfigurator(object):
 
         for line in options.get('post-dl-steps', 'noop').split(os.linesep):
             subfactory = subfactories.post_download[line]
-            buildout_slave_path, steps = subfactory(
-                self, options, buildout_slave_path, environ=capability_env)
+            buildout_worker_path, steps = subfactory(
+                self, options, buildout_worker_path, environ=capability_env)
             map(factory.addStep, steps)
 
         factory.addStep(FileDownload(
             mastersrc=os.path.join(
                 BUILD_UTILS_PATH, 'analyze_oerp_tests.py'),
-            slavedest='analyze_oerp_tests.py'))
+            workerdest='analyze_oerp_tests.py'))
 
         factory.addStep(PgSetProperties(
             name, description=["Setting", "Testing DB", "property"],
@@ -322,7 +324,7 @@ class BuildoutsConfigurator(object):
                                      description="prepare cache dirs"))
 
         map(factory.addStep,
-            self.steps_unibootstrap(buildout_slave_path, options, eggs_cache))
+            self.steps_unibootstrap(buildout_worker_path, options, eggs_cache))
 
         buildout_cache_options = [
             WithProperties('buildout:eggs-directory=' + eggs_cache),
@@ -353,7 +355,7 @@ class BuildoutsConfigurator(object):
 
         factory.addStep(
             ShellCommand(
-                command=['bin/buildout', '-c', buildout_slave_path] +
+                command=['bin/buildout', '-c', buildout_worker_path] +
                 buildout_cache_options +
                 buildout_vcs_options + buildout_pgcnx_options +
                 [buildout_part + ':with_devtools=true',
@@ -373,12 +375,12 @@ class BuildoutsConfigurator(object):
                 haltOnFailure=False,
                 mastersrc=os.path.join(
                     BUILD_UTILS_PATH, 'buildbot_dump_watch.py'),
-                slavedest='buildbot_dump_watch.py'))
+                workerdest='buildbot_dump_watch.py'))
             factory.addStep(ShellCommand(
                 command=[
                     'bin/python_' + buildout_part,
                     'buildbot_dump_watch.py',
-                    '-c', buildout_slave_path,
+                    '-c', buildout_worker_path,
                     '--part', buildout_part,
                     dumped_watches],
                 description=['introspect', 'watches'],
@@ -390,7 +392,7 @@ class BuildoutsConfigurator(object):
             # that intermediate dirs are created master-side during init
             factory.addStep(FileUpload(
                 haltOnFailure=False,
-                slavesrc=dumped_watches,
+                workersrc=dumped_watches,
                 masterdest=watch.watchfile_path(self.buildmaster_dir, name),
                 mode=0644))
 
@@ -410,7 +412,7 @@ class BuildoutsConfigurator(object):
 
             map(factory.addStep,
                 subfactories.post_buildout[line](
-                    self, options, buildout_slave_path,
+                    self, options, buildout_worker_path,
                     environ=capability_env))
 
         return factory
@@ -467,14 +469,14 @@ class BuildoutsConfigurator(object):
                 raise ValueError("Buildout type %r in %r not supported" % (
                     btype, name))
 
-            conf_slave_path, dl_steps = buildout_downloader(
+            conf_worker_path, dl_steps = buildout_downloader(
                 self, options, buildout[1:], manifest_dir)
-            self.make_factory(name, conf_slave_path, dl_steps)
+            self.make_factory(name, conf_worker_path, dl_steps)
 
     def make_dispatcher(self, master_config):
-        all_slaves = {slave.slavename: slave
-                      for slave in master_config.get('slaves', ())}
-        self.dispatcher = dispatcher.BuilderDispatcher(all_slaves,
+        all_workers = {worker.workername: worker
+                       for worker in master_config.get('workers', ())}
+        self.dispatcher = dispatcher.BuilderDispatcher(all_workers,
                                                        self.capabilities)
 
     def make_builders(self, master_config=None):
@@ -483,11 +485,11 @@ class BuildoutsConfigurator(object):
         build_factories is a dict names -> build_factories
         the fact_to_builders dict is updated in the process.
 
-        Builders join factories and slaves. A builder is a column in the
+        Builders join factories and workers. A builder is a column in the
         waterfall. It is therefore recommended to make different builders for
         significant environment differences (e.g., postgresql version).
 
-        The idea is notably to sort slaves according to capabilities (for
+        The idea is notably to sort workers according to capabilities (for
         specific requirements, such as ability to build a tricky python
         package) and environmental parameters (postgresql version etc.)
         """

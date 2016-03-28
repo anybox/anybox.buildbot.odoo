@@ -4,12 +4,12 @@ from buildbot.steps.shell import ShellCommand
 from buildbot.steps.master import MasterShellCommand
 
 
-def noop(configurator, options, buildout_slave_path, environ=()):
-    return buildout_slave_path, ()
+def noop(configurator, options, buildout_worker_path, environ=()):
+    return buildout_worker_path, ()
 
 
 def packaging(configurator, options,
-              buildout_slave_path, environ=()):
+              buildout_worker_path, environ=()):
     """Post download steps for packaging, meant for hg-versioned buildouts.
 
     Extraction is made from src/ to dist/, then the buildout dir is
@@ -75,12 +75,12 @@ def packaging(configurator, options,
     parts = options.get('packaging.parts').split()
 
     steps.extend(configurator.steps_unibootstrap(
-        buildout_slave_path, options, eggs_cache, workdir='./src',
+        buildout_worker_path, options, eggs_cache, workdir='./src',
         dump_options_to=WithProperties('../dist/' + archive_name_interp +
                                        '/bootstrap.ini')))
 
     steps.append(
-        ShellCommand(command=['bin/buildout', '-c', buildout_slave_path,
+        ShellCommand(command=['bin/buildout', '-c', buildout_worker_path,
                               WithProperties(
                                   'buildout:eggs-directory=' + eggs_cache),
                               WithProperties('buildout:odoo-downloads-'
@@ -91,7 +91,7 @@ def packaging(configurator, options,
                      haltOnFailure=True
                      ))
 
-    extract_cmd = ['bin/buildout', '-o', '-c', buildout_slave_path,
+    extract_cmd = ['bin/buildout', '-o', '-c', buildout_worker_path,
                    WithProperties('buildout:eggs-directory=' + eggs_cache),
                    WithProperties('buildout:odoo-downloads-'
                                   'directory=' + odoo_cache),

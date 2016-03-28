@@ -141,14 +141,14 @@ Each line takes the form of a software name
 (currently ``postgresql`` only) and a version requirement (see
 included example and docstrings in
 ``anybox.buildout.odoo.version`` for format). See also
-:ref:`slave_capability`.
+:ref:`worker_capability`.
 
 The ``build-requires`` option
 -----------------------------
-This is use for capability-based buildslave filtering.
+This is use for capability-based worker filtering.
 
-The build will happen only on those buildslaves that have
-the required :ref:`capabilities <slave_capability>`.
+The build will happen only on those workers that have
+the required :ref:`capabilities <worker_capability>`.
 
 Some known use-cases:
 

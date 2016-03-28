@@ -34,7 +34,7 @@ class DescriptionBuildStep(BuildStep):
 class PgSetProperties(DescriptionBuildStep):
     """Set PostgreSQL related properties according to pg_version property.
 
-    All properties defined in the slave capability line for the
+    All properties defined in the worker capability line for the
     builder-level ``pg_version`` property are applied to the build,
     with pg_prefix.
 

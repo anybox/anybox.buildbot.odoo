@@ -16,7 +16,7 @@ where:
 They must return:
       - the main buildout config file path (from build directory)
       - an iterable of steps to construct the buildout configuration
-        slave-side.
+        worker-side.
 """
 
 import os
@@ -46,7 +46,7 @@ def standalone_buildout(configurator, options, cfg_tokens, manifest_dir):
     conf_path = os.path.join(manifest_dir, conf_path)
     return conf_name, (
         FileDownload(mastersrc=conf_path,
-                     slavedest=conf_name,
+                     workerdest=conf_name,
                      name="download",
                      description=["Download", "buildout", "conf"],
                      haltOnFailure=True),
@@ -67,7 +67,7 @@ def hg_buildout(self, options, cfg_tokens, manifest_dir):
     return conf_path, (
         FileDownload(
             mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_hg_dl.py'),
-            slavedest='buildout_hg_dl.py',
+            workerdest='buildout_hg_dl.py',
             haltOnFailure=True),
         ShellCommand(
             command=['python', 'buildout_hg_dl.py', url, branch],
@@ -108,7 +108,7 @@ def git_buildout(self, options, cfg_tokens, manifest_dir, subdir=None):
     steps = [
         FileDownload(
             mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_git_dl.py'),
-            slavedest='buildout_git_dl.py',
+            workerdest='buildout_git_dl.py',
             workdir='.',  # not inside what could be a stale symlink
             haltOnFailure=True),
     ]
@@ -165,7 +165,7 @@ def bzr_buildout(self, options, cfg_tokens, manifest_dir, subdir=None):
     steps = [
         FileDownload(
             mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_bzr_dl.py'),
-            slavedest='buildout_bzr_dl.py',
+            workerdest='buildout_bzr_dl.py',
             haltOnFailure=True),
     ]
     if subdir is None:
@@ -208,7 +208,7 @@ def hg_tag_buildout(self, options, cfg_tokens, manifest_dir):
     return conf_path, (
         FileDownload(
             mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_hg_dl.py'),
-            slavedest='buildout_hg_dl.py',
+            workerdest='buildout_hg_dl.py',
             workdir='src',
             haltOnFailure=True),
         ShellCommand(
@@ -246,9 +246,9 @@ def archive_buildout(self, options, cfg_tokens, manifest_dir):
     master_path = os.path.join(options['packaging.root-dir'],
                                '%%(prop:%s)s' % subdir_prop,
                                '%%(prop:%s)s' % archive_prop + archive_type)
-    slave_name_unpacked = '%%(prop:%s)s' % archive_prop
-    slave_fname = slave_name_unpacked + archive_type
-    slave_path = '../' + slave_fname
+    worker_name_unpacked = '%%(prop:%s)s' % archive_prop
+    worker_fname = worker_name_unpacked + archive_type
+    worker_path = '../' + worker_fname
     return conf_name, [
         ShellCommand(
             command=['find', '.', '-maxdepth', '1',
@@ -257,17 +257,17 @@ def archive_buildout(self, options, cfg_tokens, manifest_dir):
             workdir='.',
             name='clean_arch',
             description=['remove', 'prev', 'downloads']),
-        FileDownload(slavedest=Interpolate(slave_path),
+        FileDownload(workerdest=Interpolate(worker_path),
                      mastersrc=Interpolate(master_path)),
-        FileDownload(slavedest=Interpolate(slave_path + '.md5'),
+        FileDownload(workerdest=Interpolate(worker_path + '.md5'),
                      mastersrc=Interpolate(master_path + '.md5')),
         ShellCommand(
-            command=['md5sum', '-c', Interpolate(slave_fname + '.md5')],
+            command=['md5sum', '-c', Interpolate(worker_fname + '.md5')],
             workdir='.',
             name="checksum",
             haltOnFailure=True),
         ShellCommand(
-            command=['tar', 'xjf', Interpolate(slave_fname)],
+            command=['tar', 'xjf', Interpolate(worker_fname)],
             workdir='.',
             name="untar",
             description=['unpacking', 'archive'],
@@ -280,7 +280,7 @@ def archive_buildout(self, options, cfg_tokens, manifest_dir):
             description=['removing', 'previous', 'build'],
             descriptionDone=['removed', 'previous', 'build']),
         ShellCommand(
-            command=['mv', Interpolate(slave_name_unpacked), 'build'],
+            command=['mv', Interpolate(worker_name_unpacked), 'build'],
             workdir='.',
             name='mv',
             description=['setting', 'at', 'build/'])

@@ -52,7 +52,7 @@ post_buildout = {
     'standard': deprecate('standard', 'install-modules-test',
                           postbuildout.install_modules_test),
     'test-odoo': deprecate('test-odoo', 'install-modules-test',
-                              postbuildout.install_modules_test),
+                           postbuildout.install_modules_test),
     'test-odoo': deprecate('test-odoo', 'install-modules-test',
                            postbuildout.install_modules_test),
 }

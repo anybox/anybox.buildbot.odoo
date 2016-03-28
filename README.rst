@@ -16,14 +16,14 @@ Its main features are:
 * execution of the buildout and scheduling according to the VCS
   sources it holds
 * installation of Odoo modules and various way to run the tests
-* capability-based dispatching to buildslaves and in particular
+* capability-based dispatching to workers and in particular
   PostgreSQL version filtering and/or building against several
   PostgreSQL versions
 * build of project documentation (with Sphinx)
 * creation and upload of extracted releases in tarball format
 
 Having a new OpenERP generic or custom installation buildbotted
-against all the slaves attached to the
+against all the workers attached to the
 master is just a matter of copying the corresponding buildout in the
 ``buildouts`` subdirectory of the master and referencing it in
 ``buildouts/MANIFEST.cfg``.
@@ -77,8 +77,8 @@ These steps are for a first setup.
    ``buildouts/MANIFEST.cfg`` for an example on how to do
    that). In previous step, one can actually provide explicit
    locations for buildouts directories.
-#. Put a ``slaves.cfg`` file in the master directory. See the included
-   ``slaves.cfg.sample`` for instructions.
+#. Put a ``workers.cfg`` file in the master directory. See the included
+   ``workers.cfg.sample`` for instructions.
 
 Then check the main package documentation for intructions about
 referencing your buildouts and the numerous options.
