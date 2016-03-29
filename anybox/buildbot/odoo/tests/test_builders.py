@@ -198,7 +198,14 @@ class TestBuilders(BaseTestCase):
             ['rabb18'])
 
     def test_build_requires_pg_not_used(self):
-        """Builder generation for builds that don't use PG."""
+        """Builder generation for builds that don't use PG.
+
+        build_for used to be harcoded for postgresql and to include version
+        in builder name no matter what.
+
+        if we don't mention a capability in build-requires nor build-for,
+        nowadays nothing happens
+        """
         master = {}
         conf = self.configurator
 
