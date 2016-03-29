@@ -474,10 +474,8 @@ class BuildoutsConfigurator(object):
             self.make_factory(name, conf_worker_path, dl_steps)
 
     def make_dispatcher(self, master_config):
-        all_workers = {worker.workername: worker
-                       for worker in master_config.get('workers', ())}
-        self.dispatcher = dispatcher.BuilderDispatcher(all_workers,
-                                                       self.capabilities)
+        self.dispatcher = dispatcher.BuilderDispatcher(
+            master_config.get('workers', ()), self.capabilities)
 
     def make_builders(self, master_config=None):
         """Spawn builders from build factories.
