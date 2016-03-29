@@ -290,8 +290,8 @@ class BuildoutsConfigurator(object):
                                      ))
         map(factory.addStep, buildout_dl_steps)
 
-        all_caps = set(factory.build_for)
-        all_caps.update(r.cap for r in factory.build_requires)
+        all_caps = set(vf.cap for vf in factory.build_for)
+        all_caps.update(vf.cap for vf in factory.build_requires)
         capability_env = self.dispatcher.set_properties_make_environ(
             factory, all_caps)
 
@@ -425,12 +425,11 @@ class BuildoutsConfigurator(object):
         manifest = self.build_manifests[name]
         options = manifest['options']
         factory.options = options  # should become gradually useless
-        build_for = options.get('build-for')
-        factory.build_for = OrderedDict()
-        if build_for is not None:
-            for line in build_for.split(os.linesep):
-                vf = VersionFilter.parse(line)
-                factory.build_for[vf.cap] = vf
+        build_for = OrderedDict()
+        for line in options.get('build-for', '').splitlines():
+            vf = VersionFilter.parse(line)
+            build_for[vf.cap] = vf
+        factory.build_for = tuple(build_for.values())
 
         requires = options.get('build-requires')
         if requires is None:
