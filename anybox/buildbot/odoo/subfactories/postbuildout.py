@@ -155,7 +155,7 @@ def install_modules_test(configurator, options, buildout_worker_path,
     return steps
 
 
-def odoo_command_initialize_tests(configurator, options,
+def openerp_command_initialize_tests(configurator, options,
                                   buildout_worker_path,
                                   environ=()):
     """Return steps to run bin/<PART>_command initialize --tests.

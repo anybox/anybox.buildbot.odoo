@@ -16,7 +16,7 @@ Changes
    gets a *unique* build that's not pg version filtered.
  - launchpad #1323234: introduced wkhtmltopdf capability, with display option
  - launchpad #1320321: port reservation and binding for
-   ``test-odoo``, and ``odoocommand-initialize-tests``.
+   ``test-odoo``, and ``openerpcommand-initialize-tests``.
    (requires PhantomJS to actually run).
    Introduction of ``test-odoo`` as an alias (for now) of ``test-odoo``
  - launchpad #1320507: bootstrap script now configurable in standalone

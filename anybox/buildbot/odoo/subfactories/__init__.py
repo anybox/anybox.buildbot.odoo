@@ -43,8 +43,8 @@ post_buildout = {
     'nose': postbuildout.install_modules_nose,
     'functional': postbuildout.functional,
     'static-analysis': postbuildout.static_analysis,
-    'odoocommand-initialize-tests':
-    postbuildout.odoo_command_initialize_tests,
+    'openerpcommand-initialize-tests':
+    postbuildout.openerp_command_initialize_tests,
     'doc': postbuildout.sphinx_doc,
     'packaging': postbuildout.packaging,
     'autocommit': postbuildout.autocommit,
