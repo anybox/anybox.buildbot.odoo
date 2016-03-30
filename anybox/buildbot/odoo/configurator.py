@@ -5,30 +5,32 @@ from collections import OrderedDict
 from ConfigParser import ConfigParser
 from ConfigParser import NoOptionError
 from twisted.python import log
-from buildbot.plugins import worker
 
-from buildbot import locks
-from buildbot.process.factory import BuildFactory
-from buildbot.steps.shell import ShellCommand
-from buildbot.steps.transfer import FileDownload
-from buildbot.steps.transfer import FileUpload
-from buildbot.process.properties import WithProperties
-from buildbot.process.properties import Property
-from buildbot.process.properties import Interpolate
-from buildbot.schedulers.basic import SingleBranchScheduler
+from buildbot.plugins import worker
+from buildbot.plugins import util
+from buildbot.plugins import steps
+from buildbot.plugins import schedulers
 
 from anybox.buildbot.capability import dispatcher
 from anybox.buildbot.capability.version import VersionFilter
-from .steps import PgSetProperties
 
 from . import capability
 from . import watch
 from . import subfactories
 from . import buildouts
 
+from .steps import PgSetProperties
 from .utils import BUILD_UTILS_PATH
 from .constants import DEFAULT_BUILDOUT_PART
 from .worker import priorityAwareNextWorker
+
+BuildFactory = util.BuildFactory
+Property = util.Property
+Interpolate = util.Interpolate
+
+ShellCommand = steps.ShellCommand
+FileDownload = steps.FileDownload
+FileUpload = steps.FileUpload
 
 Worker = worker.Worker
 
@@ -47,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 # Running buildouts in parallel on one worker fails
 # if they used shared eggs or downloads area
-buildout_caches_lock = locks.WorkerLock("buildout caches")
+buildout_caches_lock = util.WorkerLock("buildout caches")
 
 
 class BuildoutsConfigurator(object):
@@ -221,7 +223,7 @@ class BuildoutsConfigurator(object):
 
         command = [Property('cap_python_bin', default='python'),
                    'unibootstrap.py',
-                   '--dists-directory', WithProperties(eggs_cache),
+                   '--dists-directory', Interpolate(eggs_cache),
                    '--buildout-config', buildout_worker_path]
         if dump_options_to is None:
             command.append('--no-output-bootstrap-config')
@@ -325,12 +327,12 @@ class BuildoutsConfigurator(object):
         ))
 
         buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
-        cache = '%(builddir)s/../buildout-caches'
+        cache = '%(prop:builddir)s/../buildout-caches'
         eggs_cache = cache + '/eggs'
         odoo_cache = cache + '/odoo'
         factory.addStep(ShellCommand(command=['mkdir', '-p',
-                                              WithProperties(eggs_cache),
-                                              WithProperties(odoo_cache)],
+                                              Interpolate(eggs_cache),
+                                              Interpolate(odoo_cache)],
                                      name="cachedirs",
                                      workdir='.',
                                      description="prepare cache dirs"))
@@ -339,9 +341,8 @@ class BuildoutsConfigurator(object):
             self.steps_unibootstrap(buildout_worker_path, options, eggs_cache))
 
         buildout_cache_options = [
-            WithProperties('buildout:eggs-directory=' + eggs_cache),
-            WithProperties('buildout:odoo-downloads-directory=' +
-                           odoo_cache),
+            Interpolate('buildout:eggs-directory=' + eggs_cache),
+            Interpolate('buildout:odoo-downloads-directory=' + odoo_cache),
         ]
         buildout_vcs_options = [buildout_part + ':vcs-clear-locks=true',
                                 buildout_part + ':vcs-clear-retry=true',
@@ -352,18 +353,18 @@ class BuildoutsConfigurator(object):
             buildout_vcs_options.append(buildout_part + ':git-depth=2')
 
         buildout_pgcnx_options = [
-            WithProperties(buildout_part +
-                           ':options.db_port=%(cap_postgresql_port:-5432)s'),
-            WithProperties(buildout_part +
-                           ':options.db_host=%(cap_postgresql_host:-False)s'),
-            WithProperties(buildout_part +
-                           ':options.db_user=%(cap_postgresql_user:-False)s'),
-            WithProperties(buildout_part +
-                           ':options.db_password='
-                           '%(cap_postgresql_passwd:-False)s'),
+            Interpolate(buildout_part +
+                        ':options.db_port=%(prop:cap_postgresql_port:-5432)s'),
+            Interpolate(buildout_part +
+                        ':options.db_host=%(prop:cap_postgresql_host:-False)s'),
+            Interpolate(buildout_part +
+                        ':options.db_user=%(prop:cap_postgresql_user:-False)s'),
+            Interpolate(buildout_part +
+                        ':options.db_password='
+                        '%(prop:cap_postgresql_passwd:-False)s'),
         ]
-        buildout_db_name_option = WithProperties(
-            buildout_part + ':options.db_name=%(testing_db)s')
+        buildout_db_name_option = Interpolate(
+            buildout_part + ':options.db_name=%(prop:testing_db)s')
 
         factory.addStep(
             ShellCommand(
@@ -531,7 +532,7 @@ class BuildoutsConfigurator(object):
         not be preferable for buildmaster performance.
         """
 
-        schedulers = []
+        schs = []
         for factory_name, builders in self.factories_to_builders.items():
             options = self.build_factories[factory_name].options
 
@@ -544,7 +545,7 @@ class BuildoutsConfigurator(object):
             change_filter = self.watcher.change_filter(factory_name)
             if change_filter is None:
                 continue
-            schedulers.append(SingleBranchScheduler(
+            schs.append(schedulers.SingleBranchScheduler(
                 name=factory_name,
                 change_filter=change_filter,
                 treeStableTimer=tree_stable_timer,
@@ -552,4 +553,4 @@ class BuildoutsConfigurator(object):
             log.msg("Scheduler %r is for builders %r "
                     "with %r" % (factory_name, builders, change_filter))
 
-        return schedulers
+        return schs
