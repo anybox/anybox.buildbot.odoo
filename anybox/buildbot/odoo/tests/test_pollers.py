@@ -8,7 +8,7 @@ class TestPollers(BaseTestCase):
     def setUp(self):
         super(TestPollers, self).setUp()
         self.configurator = BuildoutsConfigurator(self.master_join(
-            'master.cfg'))
+            'master.cfg'), {})
 
     def test_make_pollers(self):
         """The ``addons-list`` builder factory installs given addons."""

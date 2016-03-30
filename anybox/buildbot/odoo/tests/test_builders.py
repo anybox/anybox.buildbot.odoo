@@ -10,7 +10,7 @@ class TestBuilders(BaseTestCase):
     def setUp(self):
         super(TestBuilders, self).setUp()
         self.configurator = BuildoutsConfigurator(self.master_join(
-            'master.cfg'))
+            'master.cfg'), {})
 
     def test_register_odoo_addons(self):
         """The ``addons-list`` builder factory installs given addons."""
@@ -52,50 +52,40 @@ class TestBuilders(BaseTestCase):
         factories = self.configurator.build_factories
         self.assertFalse('DEFAULT' in factories)
 
+    def make_builders(self, workers_cfg, manifest_cfg):
+        conf = self.configurator
+        conf.make_workers(self.data_join(workers_cfg))
+        conf.register_build_factories(self.data_join(manifest_cfg))
+        return {b.name: b for b in self.configurator.make_builders()}
+
     def test_build_category(self):
         """The ``build_category`` option becomes builders categories.
 
         TODO NINE: replace with tags
         """
-        master = {}
-        conf = self.configurator
-        master['workers'] = conf.make_workers(self.data_join('one_worker.cfg'))
-        self.configurator.make_dispatcher(master)
-        conf.register_build_factories(self.data_join('manifest_category.cfg'))
-        builders = self.configurator.make_builders(master_config=master)
+        builders = self.make_builders('one_worker.cfg',
+                                      'manifest_category.cfg')
         self.assertEquals(len(builders), 2)
         expected = {'ready': 'mature',
                     'wip': 'unstable'}
-        for b in builders:
+        for b in builders.values():
             self.assertEquals(b.tags, [expected[b.name]])
 
     def test_build_for(self):
-        master = {}
-        conf = self.configurator
-        master['workers'] = conf.make_workers(
-            self.data_join('workers_build_for.cfg'))
-        self.configurator.make_dispatcher(master)
-        conf.register_build_factories(self.data_join('manifest_build_for.cfg'))
-        builders = self.configurator.make_builders(master_config=master)
-        names = set(builder.name for builder in builders)
-        self.assertEquals(names, set(('sup90-pg9.1-devel',
-                                      'range-pg9.1-devel',
-                                      'range-pg9.0',
-                                      'range-pg8.4',
-                                      'or-statement-pg9.1-devel',
-                                      'or-statement-pg8.4')))
+        builders = self.make_builders('workers_build_for.cfg',
+                                      'manifest_build_for.cfg')
+        self.assertEquals(set(builders),
+                          set(('sup90-pg9.1-devel',
+                               'range-pg9.1-devel',
+                               'range-pg9.0',
+                               'range-pg8.4',
+                               'or-statement-pg9.1-devel',
+                               'or-statement-pg8.4')))
 
     def test_build_for_double(self):
         """build-for dispatching for two capabilities."""
-        master = {}
-        conf = self.configurator
-        master['workers'] = conf.make_workers(
-            self.data_join('workers_build_for.cfg'))
-        self.configurator.make_dispatcher(master)
-        conf.register_build_factories(
-            self.data_join('manifest_double_build_for.cfg'))
-        builders = self.configurator.make_builders(master_config=master)
-        builders = {b.name: b for b in builders}
+        builders = self.make_builders('workers_build_for.cfg',
+                                      'manifest_double_build_for.cfg')
         # our precise combination actually does not have so much possibilities
         self.assertEquals(set(builders),
                           set(('range-pg9.0-py2.6',
@@ -105,14 +95,11 @@ class TestBuilders(BaseTestCase):
 
     def test_build_for_double2(self):
         """build-for dispatching for two capabilities."""
-        master = {}
         conf = self.configurator
-        master['workers'] = conf.make_workers(
-            self.data_join('workers_build_for2.cfg'))
-        self.configurator.make_dispatcher(master)
+        conf.make_workers(self.data_join('workers_build_for2.cfg'))
         conf.register_build_factories(
             self.data_join('manifest_double_build_for.cfg'))
-        builders = self.configurator.make_builders(master_config=master)
+        builders = conf.make_builders()
         builders = {b.name: b for b in builders}
         self.assertEquals(set(builders),
                           set(('range-pg9.0-py2.6',
@@ -131,17 +118,8 @@ class TestBuilders(BaseTestCase):
             dict(pg_version='9.1-devel', py_version='2.6'))
 
     def test_build_requires(self):
-        master = {}
-        conf = self.configurator
-
-        master['workers'] = conf.make_workers(
-            self.data_join('workers_build_requires.cfg'))
-        self.configurator.make_dispatcher(master)
-        conf.register_build_factories(
-            self.data_join('manifest_build_requires.cfg'))
-        builders = self.configurator.make_builders(master_config=master)
-        builders = dict((b.name, b) for b in builders)
-
+        builders = self.make_builders('workers_build_requires.cfg',
+                                      'manifest_build_requires.cfg')
         # note how there is no worker for pg 9.0 that meets the requirements
         # hence no builder (buildbot would otherwise throw an error)
         self.assertEquals(
@@ -180,22 +158,11 @@ class TestBuilders(BaseTestCase):
         self.assertEqual(build_requires.pop(), "rabbitmq >= 2.0")
 
     def test_build_requires2(self):
-        master = {}
-        conf = self.configurator
-
-        master['workers'] = conf.make_workers(
-            self.data_join('workers_build_requires.cfg'))
-        self.configurator.make_dispatcher(master)
-        conf.register_build_factories(
-            self.data_join('manifest_build_requires2.cfg'))
-        builders = self.configurator.make_builders(master_config=master)
-        builders = dict((b.name, b) for b in builders)
-
+        builders = self.make_builders('workers_build_requires.cfg',
+                                      'manifest_build_requires2.cfg')
         self.assertEquals(builders.keys(), ['rabb-18-pg9.0'])
-
-        self.assertEquals(
-            builders['rabb-18-pg9.0'].workernames,
-            ['rabb18'])
+        self.assertEquals(builders['rabb-18-pg9.0'].workernames,
+                          ['rabb18'])
 
     def test_build_requires_pg_not_used(self):
         """Builder generation for builds that don't use PG.
@@ -206,16 +173,8 @@ class TestBuilders(BaseTestCase):
         if we don't mention a capability in build-requires nor build-for,
         nowadays nothing happens
         """
-        master = {}
-        conf = self.configurator
-
-        master['workers'] = conf.make_workers(
-            self.data_join('workers_build_requires.cfg'))
-        self.configurator.make_dispatcher(master)
-        conf.register_build_factories(
-            self.data_join('manifest_build_requires_pg_not_used.cfg'))
-        builders = self.configurator.make_builders(master_config=master)
-        builders = dict((b.name, b) for b in builders)
+        builders = self.make_builders('workers_build_requires.cfg',
+                                      'manifest_build_requires_pg_not_used.cfg')
 
         # in particular, the 'rabb-23' gave no builder
         self.assertEquals(builders.keys(), ['priv-pgall'])
@@ -225,17 +184,8 @@ class TestBuilders(BaseTestCase):
                           ['privcode', 'privcode-91', 'privcode-84'])
 
     def test_build_requires_only_if(self):
-        master = {}
-        conf = self.configurator
-
-        master['workers'] = conf.make_workers(
-            self.data_join('workers_build_requires_only_if.cfg'))
-        self.configurator.make_dispatcher(master)
-        conf.register_build_factories(
-            self.data_join('manifest_build_requires.cfg'))
-        builders = self.configurator.make_builders(master_config=master)
-        builders = dict((b.name, b) for b in builders)
-
+        builders = self.make_builders('workers_build_requires_only_if.cfg',
+                                      'manifest_build_requires.cfg')
         # 'privcode' doesn't run a the sup90 builders, since they don't
         # need private-code-access cap
         self.assertEquals(builders['sup90-pg9.1-devel'].workernames,
@@ -276,7 +226,6 @@ class TestBuilders(BaseTestCase):
             ['rabb284'])
 
     def test_capability_env(self):
-        master = {}
         conf = self.configurator
         # it's a bit weird now that there is a Python capability, but that
         # changes nothing to the validity of the test
@@ -284,15 +233,9 @@ class TestBuilders(BaseTestCase):
             version_prop='py_version',
             environ={'PYTHONBIN': '%(cap(bin)-)s'})
 
-        master['workers'] = conf.make_workers(
-            self.data_join('workers_capability.cfg'))
-        self.configurator.make_dispatcher(master)
-
-        conf.register_build_factories(
-            self.data_join('manifest_capability.cfg'))
-
-        builders = conf.make_builders(master_config=master)
-        factory = builders[0].factory
+        builders = self.make_builders('workers_capability.cfg',
+                                      'manifest_capability.cfg')
+        factory = builders.values()[0].factory
 
         test_environ = factory.steps[-2].kwargs['env']
         self.assertEquals(test_environ['PYTHONBIN'].fmtstring,
@@ -327,21 +270,16 @@ class TestBuilders(BaseTestCase):
         meaning eventually the line in worker conf with no version indication.
         """
 
-        master = {}
         conf = self.configurator
         # it's a bit weird now that there is a Python capability, but that
         # changes nothing to the validity of the test
         conf.capabilities['python'] = dict(
             environ={'PYTHONBIN': '%(cap(bin)-)s'})
 
-        master['workers'] = conf.make_workers(
-            self.data_join('workers_capability.cfg'))
-        self.configurator.make_dispatcher(master)
+        conf.make_workers(self.data_join('workers_capability.cfg'))
+        conf.register_build_factories(self.data_join('manifest_capability.cfg'))
+        builders = conf.make_builders()
 
-        conf.register_build_factories(
-            self.data_join('manifest_capability.cfg'))
-
-        builders = conf.make_builders(master_config=master)
         factory = builders[0].factory
 
         test_environ = factory.steps[-2].kwargs['env']
@@ -357,15 +295,10 @@ class TestBuilders(BaseTestCase):
         self.assertEquals(prop_step.kwargs['capability_version_prop'], None)
 
     def test_inherit_build_req(self):
-        master = {}
         conf = self.configurator
-
-        master['workers'] = conf.make_workers(
-            self.data_join('workers_build_requires.cfg'))
-        self.configurator.make_dispatcher(master)
-        conf.register_build_factories(
-            self.data_join('manifest_inherit.cfg'))
-        builders = self.configurator.make_builders(master_config=master)
+        conf.make_workers(self.data_join('workers_build_requires.cfg'))
+        conf.register_build_factories(self.data_join('manifest_inherit.cfg'))
+        builders = conf.make_builders()
         builders = dict((b.name, b) for b in builders)
 
         # we got the same builders as for 'simple', without 9.0, because

@@ -79,13 +79,14 @@ class BuildoutsConfigurator(object):
 
     tree_stable_timer = 600
 
-    def __init__(self, buildmaster_dir,
+    def __init__(self, buildmaster_dir, buildmaster_config,
                  manifest_paths=('buildouts/MANIFEST.cfg',),
                  workers_path='workers.cfg',
                  capabilities=None):
         """Attach to buildmaster in which master_cfg_file path sits.
         """
         self.buildmaster_dir = buildmaster_dir
+        self.buildmaster_config = buildmaster_config
         self.build_factories = {}  # build factories by name
         self.factories_to_builders = {}  # factory name -> builders playing it
         self.manifest_paths = manifest_paths
@@ -100,15 +101,11 @@ class BuildoutsConfigurator(object):
                       "Please use simply the capabilities attribute.")
         self.capabilities[capability_name] = options2environ
 
-    def populate(self, config):
-        config.setdefault('workers', []).extend(
-            self.make_workers(self.workers_path))
-        # TODO stop pretending that config is not part of the state, while
-        # we have self.factories_to_builders etc
-        self.make_dispatcher(config)
+    def populate(self):
+        config = self.buildmaster_config
+        self.make_workers()
         map(self.register_build_factories, self.manifest_paths)
-        config.setdefault('builders', []).extend(
-            self.make_builders(master_config=config))
+        config.setdefault('builders', []).extend(self.make_builders())
         self.init_watch()
         config.setdefault('change_source', []).extend(self.make_pollers())
         config.setdefault('schedulers', []).extend(self.make_schedulers())
@@ -133,15 +130,20 @@ class BuildoutsConfigurator(object):
         # lp resolution can lead to dupes
         return list(set(self.watcher.make_pollers()))
 
-    def make_workers(self, conf_path='workers.cfg'):
+    def make_workers(self, conf_path=None):
         """Create the worker objects from the file at conf_path.
 
-        ``conf_path`` is interpreted relative from buildmaster_dir. It can of
-        course be an absolute path.
+        :param conf_path: Path to workers configuration file.
+                          This is mostly useful for unit tests.
+                          If missing, :attr:woerkers_path: will be used.
+                          It is interpreted relative from
+                          :attr:`buildmaster_dir` and can of course be an
+                          absolute path.
 
         The configuration file is in INI format. There's one section per worker,
         The section name is the worker name.
-        The password must be specified as 'password'
+        The password must be specified as the ``password`` option.
+
         Other values either go to worker properties, unless they are from the
         WORKER_KWARGS constant, in which case they are used directly in
         instantiation keyword arguments.
@@ -151,8 +153,12 @@ class BuildoutsConfigurator(object):
 
         There is for now no limitation on which properties can be set.
         """
+        if conf_path is None:
+            conf_path = self.workers_path
+        else:
+            conf_path = self.path_from_buildmaster(conf_path)
         parser = ConfigParser()
-        parser.read(self.path_from_buildmaster(conf_path))
+        parser.read(conf_path)
         workers = []
 
         for workername in parser.sections():
@@ -180,7 +186,13 @@ class BuildoutsConfigurator(object):
                 worker = Worker(workername, pwd, **kw)
                 workers.append(worker)
 
+        self.buildmaster_config.setdefault('workers', []).extend(workers)
+        self.make_dispatcher(workers)
         return workers
+
+    def make_dispatcher(self, workers):
+        self.dispatcher = dispatcher.BuilderDispatcher(workers,
+                                                       self.capabilities)
 
     def steps_unibootstrap(self, buildout_worker_path, options, eggs_cache,
                            dump_options_to=None,
@@ -472,11 +484,7 @@ class BuildoutsConfigurator(object):
                 self, options, buildout[1:], manifest_dir)
             self.make_factory(name, conf_worker_path, dl_steps)
 
-    def make_dispatcher(self, master_config):
-        self.dispatcher = dispatcher.BuilderDispatcher(
-            master_config.get('workers', ()), self.capabilities)
-
-    def make_builders(self, master_config=None):
+    def make_builders(self):
         """Spawn builders from build factories.
 
         build_factories is a dict names -> build_factories
@@ -490,10 +498,6 @@ class BuildoutsConfigurator(object):
         specific requirements, such as ability to build a tricky python
         package) and environmental parameters (postgresql version etc.)
         """
-
-        # this parameter is passed as kwarg for the sake of expliciteness
-        assert master_config is not None
-
         builders = []
         fact_to_builders = self.factories_to_builders
 

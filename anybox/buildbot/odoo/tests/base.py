@@ -30,13 +30,12 @@ class BaseTestCase(unittest.TestCase):
 
         Return master conf dict
         """
-        master = {}
         conf = self.configurator
         conf.workers_path = self.data_join(workers)
         conf.manifest_paths = (self.data_join(manifest),)
         conf.init_watch()
-        conf.populate(master)
-        return master
+        conf.populate()
+        return conf.buildmaster_config
 
 
 def assertIsNone(testcase, v, msg=None):

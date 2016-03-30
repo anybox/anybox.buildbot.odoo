@@ -7,7 +7,7 @@ class TestWorkers(BaseTestCase):
 
     def setUp(self):
         super(TestWorkers, self).setUp()
-        self.conf = BuildoutsConfigurator(self.master_join('master.cfg'))
+        self.conf = BuildoutsConfigurator(self.master_join('master.cfg'), {})
 
     def test_capability(self):
         workers = self.conf.make_workers(self.data_join('workers_capability.cfg'))
