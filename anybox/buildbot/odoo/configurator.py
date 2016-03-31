@@ -505,8 +505,8 @@ class BuildoutsConfigurator(object):
         for fact_name, factory in self.build_factories.items():
             fact_builders = self.dispatcher.make_builders(
                 fact_name, factory,
-                category=factory.options.get(
-                    'build-category', '').strip(),
+                tags=[factory.options.get(
+                      'build-category', '').strip()],
                 build_for=factory.build_for,
                 build_requires=factory.build_requires,
                 nextWorker=priorityAwareNextWorker,
