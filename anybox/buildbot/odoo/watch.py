@@ -9,7 +9,7 @@ import logging
 from buildbot.util import safeTranslate
 from buildbot.changes.hgpoller import HgPoller
 from buildbot.changes.gitpoller import GitPoller
-from .bzr_buildbot import BzrPoller
+# from .bzr_buildbot import BzrPoller
 
 from . import utils
 from .buildouts import parse_manifest
@@ -113,9 +113,11 @@ class MultiWatcher(object):
                                    workdir=os.path.join('hgpoller', h),
                                    pollInterval=poll_interval)
             elif vcs == 'bzr':
-                branch_name = url
-                yield BzrPoller(url, poll_interval=poll_interval,
-                                branch_name=branch_name)
+                # branch_name = url
+                logger.error("Sorry, BzrPoller does not work on Buildbot 9 "
+                             "yet")
+                # yield BzrPoller(url, poll_interval=poll_interval,
+                #                 branch_name=branch_name)
             elif vcs == 'git':
                 branches = [ms[0] for ms in minor_specs]
                 yield GitPoller(url, branches=branches,
