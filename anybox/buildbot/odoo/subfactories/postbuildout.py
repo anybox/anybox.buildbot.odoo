@@ -74,7 +74,7 @@ def install_modules(configurator, options, buildout_worker_path,
                    comma_list_sanitize(options['odoo-addons']),
                    '--stop-after-init',
                    # odoo --logfile does not work with relative paths !
-                   WithProperties('--logfile=%(workdir)s/build/install.log')]
+                   WithProperties('--logfile=%(builddir)s/build/install.log')]
     with_demo = options.get('install.demo-data', 'true').lower()
     if with_demo == 'false':
         install_cmd.append('--without-demo=true')
@@ -130,7 +130,7 @@ def install_modules_test(configurator, options, buildout_worker_path,
                 '-i',
                 comma_list_sanitize(options.get('odoo-addons', 'all')),
                 # odoo --logfile does not work with relative paths !
-                WithProperties('--logfile=%(workdir)s/build/test.log')]
+                WithProperties('--logfile=%(builddir)s/build/test.log')]
 
     if options.get('odoo.use-port', '').strip().lower() == 'true':
         steps.extend(steps_odoo_port_reservation(configurator, options,
@@ -242,7 +242,7 @@ def update_modules(configurator, options, buildout_worker_path,
         ]
     # odoo --logfile does not work with relative paths !
     # (dedicated script may, but uniformity is best)
-    command.append(WithProperties('%(workdir)s/build/update.log'))
+    command.append(WithProperties('%(builddir)s/build/update.log'))
 
     steps.append(ShellCommand(command=command,
                               name='updating',
@@ -316,7 +316,7 @@ def install_modules_nose(configurator, options, buildout_worker_path,
             '--stop-after-init', '-i',
             addons if addons else 'all',
             WithProperties(
-                '--logfile=%(workdir)s/build/install.log')]
+                '--logfile=%(builddir)s/build/install.log')]
 
     steps.append(ShellCommand(
         command=install_cmd,
@@ -462,7 +462,7 @@ def functional(configurator, options, buildout_worker_path,
                  '--port-max=11069', '--step=5']))
 
     steps.append(ShellCommand(
-        command=['rm', '-f', WithProperties('%(workdir)s/odoo.pid')],
+        command=['rm', '-f', WithProperties('%(builddir)s/odoo.pid')],
         name='cleanup',
         description='clean pid file',
         descriptionDone='cleaned pid file',
@@ -478,16 +478,16 @@ def functional(configurator, options, buildout_worker_path,
     buildout_part = options.get('buildout-part', DEFAULT_BUILDOUT_PART)
     steps.append(ShellCommand(
         command=['/sbin/start-stop-daemon',
-                 '--pidfile', WithProperties('%(workdir)s/odoo.pid'),
+                 '--pidfile', WithProperties('%(builddir)s/odoo.pid'),
                  '--exec',
                  WithProperties(
-                     '%(workdir)s/build/' +
+                     '%(builddir)s/build/' +
                      options.get('start-command',
                                  'bin/start_' + buildout_part)),
                  '--background',
                  '--make-pidfile', '-v', '--start',
                  '--', '--xmlrpc-port', Property('odoo_port'),
-                 WithProperties('--logfile=%(workdir)s/build/'
+                 WithProperties('--logfile=%(builddir)s/build/'
                                 'server-functional.log')],
         name='start',
         description=['starting', 'application'],
@@ -513,7 +513,7 @@ def functional(configurator, options, buildout_worker_path,
 
     steps.append(ShellCommand(
         command=['/sbin/start-stop-daemon',
-                 '--pidfile', WithProperties('%(workdir)s/odoo.pid'),
+                 '--pidfile', WithProperties('%(builddir)s/odoo.pid'),
                  '--stop', '--oknodo', '--retry', '5'],
         name='start',
         description='stoping odoo',
