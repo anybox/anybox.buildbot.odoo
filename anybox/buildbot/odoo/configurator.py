@@ -59,6 +59,19 @@ class BuildoutsConfigurator(object):
        - buildout_download (see ``subfactories.download``)
        - post_download (see ``subfactories.postdownload``)
        - post_buildout (see ``subfactories.postbuildout``)
+
+    :param buildmaster_dir: must be the actual buildmaster directory.
+                            all paths in other parameters are taken
+                            relatively to that one if not absolute.
+    :param buildmaster_config: the ``BuildmasterConfig`` dict that will
+                               be written into.
+    :param manifest_paths: list of paths to configuration files
+                           ("manifests') describing the builds.
+    :param workers_path: path to the configuration files describing workers.
+    :param poll_interval: if specified, will be passed to
+                          :meth:`the poller spawning method <anybox.buildbot.odoo.watch.MultiWatcher.make_pollers>`
+    :param capabilities: if specified, replaces the class :attr:`capabilities`
+                         attribute
     """
 
     capabilities = dict(
@@ -76,7 +89,20 @@ class BuildoutsConfigurator(object):
                                  'PGCLUSTER': '%(prop:pg_version:-)s/main',
                                  },
                         ))
+    """Main register of capabilities.
 
+    Each capability subdict is made of these keys:
+
+    * ``version_prop``: name of the buildbot property in which to provide
+                        the version
+    * ``abbrev``: (optional) will be used in the name of builder spawned
+                  with the ``build-for`` manifest option.
+    * ``environ``: governs how capability-deduced information can land into
+                   build environment variables.
+
+    The default value is tweaked for Odoo builds, with notably the
+    ``postgresql`` capability.
+    """
     vcs_master_url_rewrite_rules = ()
 
     tree_stable_timer = 600
@@ -84,9 +110,8 @@ class BuildoutsConfigurator(object):
     def __init__(self, buildmaster_dir, buildmaster_config,
                  manifest_paths=('buildouts/MANIFEST.cfg',),
                  workers_path='workers.cfg',
+                 poll_interval=None,
                  capabilities=None):
-        """Attach to buildmaster in which master_cfg_file path sits.
-        """
         self.buildmaster_dir = buildmaster_dir
         self.buildmaster_config = buildmaster_config
         self.build_factories = {}  # build factories by name
@@ -96,6 +121,7 @@ class BuildoutsConfigurator(object):
         if capabilities is not None:
             self.capabilities = capabilities
         self.build_manifests = {}  # factory name -> dict(options, path)
+        self.poll_interval = poll_interval
 
     def add_capability_environ(self, capability_name, options2environ):
         """Add a dict of capability options to environment mapping."""
@@ -129,8 +155,11 @@ class BuildoutsConfigurator(object):
     def make_pollers(self):
         """Return pollers for watched repositories.
         """
+        opts = {}
+        if self.poll_interval is not None:
+            opts['poll_interval'] = self.poll_interval
         # lp resolution can lead to dupes
-        return list(set(self.watcher.make_pollers()))
+        return list(set(self.watcher.make_pollers(**opts)))
 
     def make_workers(self, conf_path=None):
         """Create the worker objects from the file at conf_path.
