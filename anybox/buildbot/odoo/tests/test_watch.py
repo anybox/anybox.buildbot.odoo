@@ -59,6 +59,30 @@ class TestMultiWatcher(BaseTestCase):
         self.assertFalse(chf.filter_change(
             self.change(None, 'bzr+ssh://illusion.test')))
 
+    def test_make_pollers_poll_interval(self):
+        updater = self.watcher(source='manifest_watch.cfg')
+        updater.read_branches()
+
+        def poll_interval(vcs=None, url=None, minor_specs=None):
+            return dict(hg=86400, git=3600, bzr=1200).get(vcs)
+
+        pollers = {o.__class__.__name__: o
+                   for o in updater.make_pollers(poll_interval=poll_interval)}
+        self.assertEquals(pollers['HgPoller'].pollInterval, 86400)
+        self.assertEquals(pollers['GitPoller'].pollInterval, 3600)
+
+    def test_make_pollers_poll_interval_no_polling(self):
+        updater = self.watcher(source='manifest_watch.cfg')
+        updater.read_branches()
+
+        def poll_interval(vcs=None, url=None, minor_specs=None):
+            return dict(hg=86400, git=-1).get(vcs)
+
+        pollers = {o.__class__.__name__: o
+                   for o in updater.make_pollers(poll_interval=poll_interval)}
+        self.assertEquals(pollers['HgPoller'].pollInterval, 86400)
+        self.assertFalse('GitPoller' in pollers)
+
     def test_url_rewrite(self):
         updater = self.watcher(
             source='manifest_watch.cfg',

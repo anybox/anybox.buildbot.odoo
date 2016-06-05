@@ -105,24 +105,46 @@ class MultiWatcher(object):
         self.rewritten_urls = {}  # original -> final
 
     def make_pollers(self, poll_interval=10 * 60):
-        """Return an iterable of pollers for the watched repos."""
+        """Return an iterable of pollers for the watched repos.
+
+        :param poll_interval: either the time (in seconds) between successive
+                              polls (will be applied to all pollers), or a
+                              callable returning that value, taking the
+                              following keyword arguments:
+
+                                * vcs: will be ``'hg'``, ``'git'`` etc.
+                                * url
+                                * minor_specs: depending on vcs, can e.g.
+                                  indicate the branch, or any relevant info
+                                  from the watch line
+
+                              if the value is -1 (useful mostly with the
+                              callable), polling will not occur at all.
+        """
         for h, (vcs, url, minor_specs) in self.repos.items():
+            if callable(poll_interval):
+                interval = poll_interval(vcs=vcs, url=url,
+                                         minor_specs=minor_specs)
+            else:
+                interval = poll_interval
+            if interval == -1:
+                continue
             if vcs == 'hg':
                 for ms in minor_specs:
                     yield HgPoller(url, branch=ms[0],
                                    workdir=os.path.join('hgpoller', h),
-                                   pollInterval=poll_interval)
+                                   pollInterval=interval)
             elif vcs == 'bzr':
                 # branch_name = url
                 logger.error("Sorry, BzrPoller does not work on Buildbot 9 "
                              "yet")
-                # yield BzrPoller(url, poll_interval=poll_interval,
+                # yield BzrPoller(url, poll_interval=interval,
                 #                 branch_name=branch_name)
             elif vcs == 'git':
                 branches = [ms[0] for ms in minor_specs]
                 yield GitPoller(url, branches=branches,
                                 workdir=os.path.join('gitpoller', h),
-                                pollInterval=poll_interval)
+                                pollInterval=interval)
 
     def check_paths(self, paths):
         missing = [path for path in paths if not os.path.isfile(path)]
