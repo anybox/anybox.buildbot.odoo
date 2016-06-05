@@ -23,8 +23,8 @@ class TestSchedulers(BaseTestCase):
 
         self.assertEqual(len(filt.interesting), 1)
         url, details = filt.interesting.items()[0]
-        self.assertTrue('openobject-server/6.1' in url)
-        self.assertEqual(details, ('bzr', ()))
+        self.assertEqual(url, 'https://github.com/odoo/odoo.git')
+        self.assertEqual(details, ('git', ('6.1', )))
         self.assertEqual(repr(filt),
                          "PollerChangeFilter('simple', %r)" % filt.interesting)
 
