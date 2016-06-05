@@ -1,11 +1,16 @@
 import os
 import json
 from copy import deepcopy
+from unittest import skipIf
 
 from buildbot.changes.changes import Change
 from .base import BaseTestCase
 
 from ..watch import MultiWatcher, watchfile_path
+try:
+    from ..watch import BzrPoller
+except ImportError:
+    BzrPoller = None
 
 
 class TestMultiWatcher(BaseTestCase):
@@ -26,12 +31,18 @@ class TestMultiWatcher(BaseTestCase):
     def test_make_pollers_change_filters(self):
         updater = self.watcher(source='manifest_watch.cfg')
         updater.read_branches()
-        bzr, git, hg = sorted(updater.make_pollers(),
-                              key=lambda o: o.__class__.__name__)
+        pollers = sorted(updater.make_pollers(),
+                         key=lambda o: o.__class__.__name__)
+        if BzrPoller is not None:
+            bzr, git, hg = pollers
+        else:
+            git, hg = pollers
         self.assertEquals(hg.repourl, 'http://mercurial.example/some/repo')
         self.assertEquals(hg.branch, 'default')
-        # BzrPoller does translation of lp: addresses
-        self.assertTrue(bzr.url.endswith('openobject-server/6.1'))
+        if BzrPoller is not None:
+            # BzrPoller does translation of lp: addresses
+            self.assertTrue(bzr.url.endswith('openobject-server/6.1'))
+
         self.assertEquals(git.repourl, 'user@git.example:my/repo')
         self.assertEquals(sorted(git.branches), ['develop', 'master'])
 
@@ -53,11 +64,13 @@ class TestMultiWatcher(BaseTestCase):
         self.assertFalse(chf.filter_change(
             self.change('user@git.example:my/repo', 'master')))
 
-        chf = updater.change_filter('w_bzr')
-        self.assertTrue(chf.filter_change(
-            self.change(None, bzr.url)))
-        self.assertFalse(chf.filter_change(
-            self.change(None, 'bzr+ssh://illusion.test')))
+        if BzrPoller is not None:
+            # BzrPoller does translation of lp: addresses
+            chf = updater.change_filter('w_bzr')
+            self.assertTrue(chf.filter_change(
+                self.change(None, bzr.url)))
+            self.assertFalse(chf.filter_change(
+                self.change(None, 'bzr+ssh://illusion.test')))
 
     def test_make_pollers_poll_interval(self):
         updater = self.watcher(source='manifest_watch.cfg')
@@ -253,6 +266,7 @@ class TestMultiWatcher(BaseTestCase):
             'user@git.example:direct/dep': ('git', ('master',)),
         })
 
+    @skipIf(BzrPoller is None, "BzrPoller not available")
     def test_bzr_lp_consistency(self):
         watcher = self.watcher(source='manifest_watch.cfg')
         watcher.read_branches()
@@ -271,10 +285,10 @@ class TestMultiWatcher(BaseTestCase):
         watcher.read_branches()
         pollers = list(watcher.make_pollers())
         self.assertEqual(len(pollers), 1)
-        bzr = pollers[0]
-        # BzrPoller does translation of lp: addresses
-        self.assertTrue('anybox.buildbot.odoo' in bzr.url)
+        git = pollers[0]
+        self.assertEqual(git.repourl,
+                         'https://github.com/anybox/anybox.buildbot.odoo')
 
         chf = watcher.change_filter('w_no_buildout')
         self.assertIsNotNone(chf)
-        self.assertEqual(chf.interesting[bzr.url], ('bzr', ()))
+        self.assertEqual(chf.interesting[git.repourl], ('git', ('nine', )))
