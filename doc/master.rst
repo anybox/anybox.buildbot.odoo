@@ -55,7 +55,7 @@ These steps are for a first setup.
    If you are extending an existing buildbot master, add these lines in
    ``master.cfg`` right after the definition of ``BuildMasterConfig``::
 
-      from anybox.buildbot.odoo import configure_from_buildouts
+      from anybox.buildbot.odoo.configurator import configure_from_buildouts
       configure_from_buildouts(basedir, BuildmasterConfig)
 
 #. Copy the ``buildouts`` directory included in the source
@@ -66,5 +66,19 @@ These steps are for a first setup.
 #. Put a ``workers.cfg`` file in the master directory. See the included
    ``workers.cfg.sample`` for instructions.
 
-Then check the main package documentation for intructions about
+More customization and further reading
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+See :doc:`manifest` for instructions about about
 referencing your buildouts and the numerous options.
+
+To get more flexibility, notably use several manifest files, you may
+instantiate
+:py:class:`the configurator object <anybox.buildbot.odoo.configurator.BuildoutsConfigurator>` and have it populate the configuration separately.
+
+Here's an example with two manifest files, check the aboved linked
+API documentation for more possibilities::
+
+  from abybox.buildbot.odoo.configurator import BuildoutsConfigurator
+  configurator = BuildoutConfigurator(basedir, BuildmasterConfig,
+                                      manifest_paths=('man1.cfg', 'man2.cfg'))
+  configurator.populate()
