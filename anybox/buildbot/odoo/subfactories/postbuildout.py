@@ -693,7 +693,7 @@ def packaging(configurator, options,
 
     archive_name_interp = options['packaging.prefix'] + '-%(buildout-tag)s'
     upload_dir = options['packaging.upload-dir']
-    master_root_dir = '/var/www/livraison'
+    master_root_dir = options['packaging.root-dir']
     master_dir = os.path.join(master_root_dir, upload_dir)
     master_path = os.path.join(master_dir, archive_name_interp + '.tar.bz2')
     base_url = options['packaging.base-url']
