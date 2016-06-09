@@ -59,7 +59,7 @@ def packaging(configurator, options,
                               description="cleaning",
                               workdir='.'))
 
-    cache = '%(builddir)s/../buildout-caches'  # lame duplication
+    cache = '%(prop:builddir)s/../buildout-caches'  # lame duplication
     eggs_cache = cache + '/eggs'
     odoo_cache = cache + '/odoo'
     archive_name_interp = options['packaging.prefix'] + '-%(buildout-tag)s'
