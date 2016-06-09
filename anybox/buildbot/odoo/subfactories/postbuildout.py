@@ -403,16 +403,14 @@ def install_modules_nose(configurator, options, buildout_worker_path,
         # http://buildbot.net/buildbot/docs/0.8.7/full.html#
         #     buildbot.steps.source.buildbot.steps.transfer.DirectoryUpload
         # but it's less work to fix the perms from here than to check all of
-        # them
-        steps.append(MasterShellCommand(
-            description=["nose", "output", "read", "permissions"],
-            command=['chmod', '-R', 'a+r',
-                     WithProperties(upload_path)]))
-        steps.append(MasterShellCommand(
-            description=["nose", "output", "dirx", "permissions"],
-            command=['find', WithProperties(upload_path),
-                     '-type', 'd', '-exec',
-                     'chmod', '755', '{}', ';']))
+        # them and has less security implications
+        steps.append(
+            MasterShellCommand(
+                name='nose_perms',
+                description=["nose", "uploads", "read", "permissions"],
+                command=[os.path.join(BUILD_UTILS_PATH,
+                                      'open_group_perms.py'),
+                         WithProperties(upload_path)]))
     return steps
 
 
@@ -672,18 +670,16 @@ def sphinx_doc(configurator, options,
         #  <http://buildbot.net/buildbot/docs/0.8.7/full.html
         #   #buildbot.steps.source.buildbot.steps.transfer.DirectoryUpload>
         # but it's less work to fix the perms from here than to check all of
-        # them
+        # them, and it doesn't have the same security implications
+
         steps.append(
             MasterShellCommand(
+                name='doc_perms',
                 description=["doc", "read", "permissions"],
-                command=['chmod', '-R', 'a+r',
-                         WithProperties(master_doc_path)]))
-        steps.append(
-            MasterShellCommand(
-                description=["doc", "dirx", "permissions"],
-                command=['find', WithProperties(master_doc_path),
-                         '-type', 'd', '-exec',
-                         'chmod', '755', '{}', ';']))
+                command=[os.path.join(BUILD_UTILS_PATH,
+                                      'open_group_perms.py'),
+                         WithProperties(master_doc_path),
+                         '--up-to-dir', base_dir]))
 
     return steps
 
@@ -697,7 +693,8 @@ def packaging(configurator, options,
 
     archive_name_interp = options['packaging.prefix'] + '-%(buildout-tag)s'
     upload_dir = options['packaging.upload-dir']
-    master_dir = os.path.join('/var/www/livraison', upload_dir)
+    master_root_dir = '/var/www/livraison'
+    master_dir = os.path.join(master_root_dir, upload_dir)
     master_path = os.path.join(master_dir, archive_name_interp + '.tar.bz2')
     base_url = options['packaging.base-url']
     return [
@@ -706,15 +703,22 @@ def packaging(configurator, options,
                 '../dist/' + archive_name_interp + '.tar.bz2'),
             masterdest=WithProperties(master_path),
             url='/'.join((base_url, upload_dir)),
-            mode=0644,
+            mode=0o644,
         ),
         FileUpload(
             workersrc=WithProperties(
                 '../dist/' + archive_name_interp + '.tar.bz2.md5'),
             masterdest=WithProperties(master_path + '.md5'),
             url='/'.join((base_url, upload_dir)),
-            mode=0644,
+            mode=0o644,
         ),
+        MasterShellCommand(
+            name='perms',
+            description=["read", "permissions"],
+            command=[os.path.join(BUILD_UTILS_PATH,
+                                  'open_group_perms.py'),
+                     WithProperties(master_dir),
+                     '--up-to-dir', WithProperties(master_root_dir)])
     ]
 
 
