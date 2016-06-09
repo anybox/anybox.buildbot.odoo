@@ -1,7 +1,10 @@
 import os
-from buildbot.process.properties import WithProperties
-from buildbot.steps.shell import ShellCommand
-from buildbot.steps.master import MasterShellCommand
+from buildbot import util
+from buidbot.plugins import steps
+
+Interpolate = util.Interpolate
+ShellCommand = steps.ShellCommand
+MasterShellCommand = steps.MasterShellCommand
 
 
 def noop(configurator, options, buildout_worker_path, environ=()):
@@ -51,7 +54,7 @@ def packaging(configurator, options,
     # already exists. It is NOT meant to create parent directories:
     # the -m option applies only to the innermost directory
     steps.append(MasterShellCommand(command=["mkdir", "-p", "-m", "755",
-                                             WithProperties(master_dir)],
+                                             Interpolate(master_dir)],
                                     haltOnFailure=True,
                                     hideStepIf=True,
                                     ))
@@ -62,12 +65,14 @@ def packaging(configurator, options,
     cache = '%(prop:builddir)s/../buildout-caches'  # lame duplication
     eggs_cache = cache + '/eggs'
     odoo_cache = cache + '/odoo'
-    archive_name_interp = options['packaging.prefix'] + '-%(buildout-tag)s'
+    archive_name_interp = (options['packaging.prefix'] +
+                           '-%(prop:buildout-tag)s')
 
     steps.append(
         ShellCommand(
             command=['hg', 'archive',
-                     WithProperties('../dist/' + archive_name_interp)],
+                     Interpolate('../dist/' + archive_name_interp)],
+            name='hg',
             description=["Archive", "buildout"],
             haltOnFailure=True,
             workdir='./src'))
@@ -76,15 +81,15 @@ def packaging(configurator, options,
 
     steps.extend(configurator.steps_unibootstrap(
         buildout_worker_path, options, eggs_cache, workdir='./src',
-        dump_options_to=WithProperties('../dist/' + archive_name_interp +
-                                       '/bootstrap.ini')))
+        dump_options_to=Interpolate('../dist/' + archive_name_interp +
+                                    '/bootstrap.ini')))
 
     steps.append(
         ShellCommand(command=['bin/buildout', '-c', buildout_worker_path,
-                              WithProperties(
-                                  'buildout:eggs-directory=' + eggs_cache),
-                              WithProperties('buildout:odoo-downloads-'
-                                             'directory=' + odoo_cache),
+                              Interpolate('buildout:eggs-directory=' +
+                                          eggs_cache),
+                              Interpolate('buildout:odoo-downloads-'
+                                          'directory=' + odoo_cache),
                               'install'] + parts,
                      description=["buildout", "install"],
                      workdir='./src',
@@ -92,11 +97,11 @@ def packaging(configurator, options,
                      ))
 
     extract_cmd = ['bin/buildout', '-o', '-c', buildout_worker_path,
-                   WithProperties('buildout:eggs-directory=' + eggs_cache),
-                   WithProperties('buildout:odoo-downloads-'
-                                  'directory=' + odoo_cache),
+                   Interpolate('buildout:eggs-directory=' + eggs_cache),
+                   Interpolate('buildout:odoo-downloads-'
+                               'directory=' + odoo_cache),
                    ]
-    extract_cmd.extend(WithProperties(
+    extract_cmd.extend(Interpolate(
         ('%s:extract-downloads-to=../dist/' % part) + archive_name_interp)
         for part in parts)
 
@@ -107,22 +112,22 @@ def packaging(configurator, options,
                               ))
     steps.append(
         ShellCommand(command=['tar', 'cjf',
-                              WithProperties(archive_name_interp + '.tar.bz2'),
-                              WithProperties(archive_name_interp)],
+                              Interpolate(archive_name_interp + '.tar.bz2'),
+                              Interpolate(archive_name_interp)],
                      description=["tar"],
                      haltOnFailure=True,
                      workdir='./dist'))
     steps.append(ShellCommand(
-        command=WithProperties('md5sum ' + archive_name_interp +
-                               '.tar.bz2 > ' + archive_name_interp +
-                               '.tar.bz2.md5'),
+        command=Interpolate('md5sum ' + archive_name_interp +
+                            '.tar.bz2 > ' + archive_name_interp +
+                            '.tar.bz2.md5'),
         description=["md5"],
         warnOnFailure=False,
         workdir='./dist'))
     steps.append(
         ShellCommand(workdir='.',
                      command=['mv',
-                              WithProperties('./dist/' + archive_name_interp),
+                              Interpolate('./dist/' + archive_name_interp),
                               'build'],
                      ))
 
