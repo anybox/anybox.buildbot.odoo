@@ -715,6 +715,11 @@ def packaging(configurator, options,
             url='/'.join((base_url, upload_dir)),
             mode=0644,
         ),
+        ShellCommand(command=['rm', '-rf', 'build', 'dist'],
+                     description=["final", "cleanup"],
+                     haltOnFailure=False,
+                     flunkOnFailure=False,
+                     workdir='.'),
     ]
 
 
