@@ -3,8 +3,10 @@ from base import BaseTestCase
 from ..configurator import BuildoutsConfigurator
 from ..steps import SetCapabilityProperties
 
+
 def step_name(step):
     return step.kwargs.get('name')
+
 
 class TestBuilders(BaseTestCase):
 
