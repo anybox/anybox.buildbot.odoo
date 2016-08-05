@@ -406,6 +406,21 @@ class BuildoutsConfigurator(object):
                     self, options, buildout_slave_path,
                     environ=capability_env))
 
+        # all standard steps use the %(testing_db)s property
+        # it will be soon enough to introduce modularity if that
+        # changes (and it should be in Nine branch anyway)
+        factory.addStep(ShellCommand(
+            command=[
+                'psql', 'postgres', '-c',
+                WithProperties('DROP DATABASE IF EXISTS "%(testing_db)s"'),
+            ],
+            name='dropdb',
+            description=["dropdb", Property('testing_db')],
+            env=capability_env,
+            haltOnFailure=False,
+            flunkOnFailure=False,
+        ))
+
         return factory
 
     def register_build_factory(self, name, factory):
