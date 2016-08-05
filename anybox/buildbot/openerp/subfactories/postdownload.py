@@ -127,3 +127,16 @@ def packaging(configurator, options,
                      ))
 
     return 'release.cfg', steps
+
+
+def packaging_cleanup(configurator, options, environ=()):
+    return [ShellCommand(command=['rm', '-rf', 'build', 'dist'],
+                         name='final_rm',
+                         description=["final", "cleanup"],
+                         haltOnFailure=False,
+                         flunkOnFailure=False,
+                         alwaysRun=True,
+                         workdir='.'),
+            ]
+
+packaging.final_cleanup_steps = packaging_cleanup
