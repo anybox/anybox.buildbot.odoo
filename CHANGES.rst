@@ -5,6 +5,8 @@ Changes
 ----------------
 
  - GitHub #1: auto-watch
+ - Space-savings by redoing start cleanups at the end of build : drop database,
+   remove dist/build for packaging
  - GitHub #8: transversal buildslave priority
  - launchpad #1391227: introduced a ``buildout-part`` option in
    MANIFEST, defaulting to the previously hardcoded ``openerp`` value.
