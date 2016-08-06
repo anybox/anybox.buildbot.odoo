@@ -50,5 +50,3 @@ for curpath, subdirs, fnames in os.walk(target):
         grant_file(os.path.join(curpath, fname))
     for subdir in subdirs:
         grant_dir(os.path.join(curpath, subdir))
-
-

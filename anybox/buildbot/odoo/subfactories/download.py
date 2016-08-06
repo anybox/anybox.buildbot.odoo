@@ -248,7 +248,6 @@ def archive_buildout(self, options, cfg_tokens, manifest_dir):
                                '%%(prop:%s)s' % archive_prop + archive_type)
     worker_name_unpacked = '%%(prop:%s)s' % archive_prop
     worker_fname = worker_name_unpacked + archive_type
-    worker_path = '../' + worker_fname
     return conf_name, [
         ShellCommand(
             command=['find', '.', '-maxdepth', '1',

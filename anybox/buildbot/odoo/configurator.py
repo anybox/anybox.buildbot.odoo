@@ -69,7 +69,8 @@ class BuildoutsConfigurator(object):
                            ("manifests') describing the builds.
     :param workers_path: path to the configuration files describing workers.
     :param poll_interval: if specified, will be passed to
-                          :meth:`the poller spawning method <anybox.buildbot.odoo.watch.MultiWatcher.make_pollers>`
+                          :meth:`the poller spawning method
+                          <anybox.buildbot.odoo.watch.MultiWatcher.make_pollers>`
     :param capabilities: if specified, replaces the class :attr:`capabilities`
                          attribute
     """
@@ -534,8 +535,7 @@ class BuildoutsConfigurator(object):
         for fact_name, factory in self.build_factories.items():
             fact_builders = self.dispatcher.make_builders(
                 fact_name, factory,
-                tags=factory.options.get(
-                     'build-category', '').split(),
+                tags=factory.options.get('build-category', '').split(),
                 build_for=factory.build_for,
                 build_requires=factory.build_requires,
                 nextWorker=priorityAwareNextWorker,
