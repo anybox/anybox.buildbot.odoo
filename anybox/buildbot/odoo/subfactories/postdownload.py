@@ -1,6 +1,6 @@
 import os
-from buildbot import util
-from buidbot.plugins import steps
+from buildbot.plugins import util
+from buildbot.plugins import steps
 
 Interpolate = util.Interpolate
 ShellCommand = steps.ShellCommand
