@@ -135,7 +135,6 @@ def packaging_cleanup(configurator, options, environ=()):
                          description=["final", "cleanup"],
                          haltOnFailure=False,
                          flunkOnFailure=False,
-                         alwaysRun=True,
                          workdir='.'),
             ]
 
