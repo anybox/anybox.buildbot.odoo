@@ -5,6 +5,11 @@ Changes
 ----------------
 
  - GitHub #1: auto-watch
+ - Pluggable system for final cleanups, used for space savings by
+   doing the startup cleanups at the end of build : drop database,
+   remove dist/build for packaging. The startup ones are good for build
+   reliability, the final ones are good to avoid massive amounts of sleeping
+   data but can sometimes not be run (master or worker stop etc)
  - GitHub #8: transversal buildslave priority
  - launchpad #1391227: introduced a ``buildout-part`` option in
    MANIFEST, defaulting to the previously hardcoded ``odoo`` value.

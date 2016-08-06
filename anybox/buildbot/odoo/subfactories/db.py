@@ -31,6 +31,23 @@ def simple_create(configurator, options, environ=()):
     return steps
 
 
+def final_dropdb(configurator, options, environ=()):
+    return [
+        ShellCommand(
+            command=[
+                'psql', 'postgres', '-c',
+                WithProperties('DROP DATABASE IF EXISTS "%(testing_db)s"'),
+            ],
+            name='final_dropdb',
+            description=["dropdb", Property('testing_db')],
+            env=environ,
+            haltOnFailure=False,
+            flunkOnFailure=False,
+        )]
+
+simple_create.final_cleanup_steps = final_dropdb
+
+
 def pg_remote_copy(configurator, options, environ=()):
     """Use a custom tailored script (a "pg_remote_copy") to mount the DB.
 
@@ -88,3 +105,5 @@ def pg_remote_copy(configurator, options, environ=()):
         timeout=timeout,
     ))
     return steps
+
+pg_remote_copy.final_cleanup_steps = final_dropdb

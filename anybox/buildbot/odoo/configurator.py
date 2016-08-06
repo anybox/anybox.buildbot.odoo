@@ -332,6 +332,16 @@ class BuildoutsConfigurator(object):
                                      hideStepIf=True,
                                      workdir='.',
                                      ))
+        final_cleanups = []
+
+        def register_cleanups(subfactory):
+            cleanups_fun = getattr(subfactory, 'final_cleanup_steps', None)
+            if cleanups_fun is None:
+                return
+            # insert cleanup steps at the beginning
+            final_cleanups[0:0] = cleanups_fun(self, options,
+                                               environ=capability_env)
+
         map(factory.addStep, buildout_dl_steps)
 
         all_caps = set(vf.cap for vf in factory.build_for)
@@ -344,6 +354,7 @@ class BuildoutsConfigurator(object):
             buildout_worker_path, steps = subfactory(
                 self, options, buildout_worker_path, environ=capability_env)
             map(factory.addStep, steps)
+            register_cleanups(subfactory)
 
         factory.addStep(FileDownload(
             mastersrc=os.path.join(
@@ -444,20 +455,23 @@ class BuildoutsConfigurator(object):
             if not line:
                 continue
 
-            map(factory.addStep,
-                subfactories.db_handling[line.strip()](
-                    self, options, environ=capability_env))
+            subfactory = subfactories.db_handling[line.strip()]
+            map(factory.addStep, subfactory(self, options,
+                                            environ=capability_env))
+            register_cleanups(subfactory)
 
         for line in options.get('post-buildout-steps',
                                 'install-modules-test').split(os.linesep):
             if not line:
                 continue
 
+            subfactory = subfactories.post_buildout[line]
             map(factory.addStep,
-                subfactories.post_buildout[line](
-                    self, options, buildout_worker_path,
-                    environ=capability_env))
+                subfactory(self, options, buildout_worker_path,
+                           environ=capability_env))
+            register_cleanups(subfactory)
 
+        map(factory.addStep, final_cleanups)
         return factory
 
     def register_build_factory(self, name, factory):

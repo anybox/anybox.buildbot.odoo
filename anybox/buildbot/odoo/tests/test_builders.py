@@ -5,6 +5,10 @@ from ..configurator import BuildoutsConfigurator
 from anybox.buildbot.capability.steps import SetCapabilityProperties
 
 
+def step_name(step):
+    return step.kwargs.get('name')
+
+
 class TestBuilders(BaseTestCase):
 
     def setUp(self):
@@ -23,7 +27,7 @@ class TestBuilders(BaseTestCase):
         factory = factories['addons-list']
 
         for step in factory.steps:
-            if step.kwargs.get('name') == 'test':
+            if step_name(step) == 'test':
                 break
         else:
             self.fail(
@@ -38,6 +42,36 @@ class TestBuilders(BaseTestCase):
                 "Addons list not found in OpenERP command: %r" % commands)
 
         self.assertEquals(addons, 'stock,crm')
+
+    def test_cleanup_steps(self):
+        """The ``addons-list`` builder factory installs given addons."""
+        self.configurator.make_dispatcher({})
+        self.configurator.register_build_factories(
+            self.data_join('manifest_1.cfg'))
+
+        factories = self.configurator.build_factories
+        self.assertTrue('addons-list' in factories)
+        factory = factories['addons-list']
+
+        for step in factory.steps:
+            if step_name(step) == 'final_dropdb':
+                break
+        else:
+            self.fail(
+                "Step 'final_dropdb' not found in BuilderFactory 'addons-list'")
+
+    def test_cleanup_steps_packaging(self):
+        self.configurator.make_dispatcher({})
+        self.configurator.register_build_factories(
+            self.data_join('manifest_packaging.cfg'))
+
+        factories = self.configurator.build_factories
+        self.assertTrue('project-release' in factories)
+        factory = factories['project-release']
+
+        # yes that's in reverse order
+        self.assertEqual(step_name(factory.steps[-2]), 'final_dropdb')
+        self.assertEqual(step_name(factory.steps[-1]), 'final_rm')
 
     def test_default_section(self):
         """Test that a [DEFAULT] section in MANIFEST does not become a builder.
@@ -237,7 +271,7 @@ class TestBuilders(BaseTestCase):
                                       'manifest_capability.cfg')
         factory = builders.values()[0].factory
 
-        test_environ = factory.steps[-2].kwargs['env']
+        test_environ = factory.steps[-3].kwargs['env']
         self.assertEquals(test_environ['PYTHONBIN'].fmtstring,
                           '%(prop:cap_python_bin-)s')
         self.assertEquals(test_environ['PGPORT'].fmtstring,
@@ -282,7 +316,7 @@ class TestBuilders(BaseTestCase):
 
         factory = builders[0].factory
 
-        test_environ = factory.steps[-2].kwargs['env']
+        test_environ = factory.steps[-3].kwargs['env']
         self.assertEquals(test_environ['PYTHONBIN'].fmtstring,
                           '%(prop:cap_python_bin-)s')
 
