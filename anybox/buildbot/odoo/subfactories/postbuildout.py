@@ -456,8 +456,12 @@ def functional(configurator, options, buildout_worker_path,
         property='odoo_port',
         description=['Port', 'reservation'],
         locks=[port_lock.access('exclusive')],
-        command=['python', 'port_reserve.py', '--port-min=9069',
-                 '--port-max=11069', '--step=5']))
+        command=['python', 'port_reserve.py',
+                 '--port-min', options.get('functional.port-min', '9069'),
+                 '--port-max', options.get('functional.port-max', '11069'),
+                 '--step', options.get('functional.port-step', '5'),
+                 ]
+    ))
 
     steps.append(ShellCommand(
         command=['rm', '-f', WithProperties('%(builddir)s/odoo.pid')],
