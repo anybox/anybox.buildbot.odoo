@@ -508,7 +508,7 @@ def functional(configurator, options, buildout_worker_path,
         description="running %s" % cmd,
         descriptionDone="ran %s" % cmd,
         flunkOnFailure=True,
-        haltOnFailure=False,
+        haltOnFailure=True,
         logfiles=dict(server='server-functional.log'),
         env=environ)
         for cmd in options.get('functional.commands').split())
@@ -517,10 +517,11 @@ def functional(configurator, options, buildout_worker_path,
         command=['/sbin/start-stop-daemon',
                  '--pidfile', WithProperties('%(builddir)s/odoo.pid'),
                  '--stop', '--oknodo', '--retry', '5'],
-        name='start',
+        name='stop',
         description='stoping odoo',
         descriptionDone='odoo stopped',
         haltOnFailure=True,
+        alwaysRun=True,
         env=environ,
     ))
 
