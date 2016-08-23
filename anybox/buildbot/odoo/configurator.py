@@ -409,6 +409,11 @@ class BuildoutsConfigurator(object):
         buildout_db_name_option = Interpolate(
             buildout_part + ':options.db_name=%(prop:testing_db)s')
 
+        buildout_env = capability_env.copy()
+        # for all extensions or recipes using pip vcs features,
+        # never prompt in case of remote change
+        buildout_env['PIP_EXISTS_ACTION'] = options.get(
+            'buildout.pip-exists-action', 's').strip()
         factory.addStep(
             ShellCommand(
                 command=['bin/buildout', '-c', buildout_worker_path] +
@@ -422,7 +427,7 @@ class BuildoutsConfigurator(object):
                 timeout=3600 * 4,
                 haltOnFailure=True,
                 locks=[buildout_caches_lock.access('exclusive')],
-                env=capability_env,
+                env=buildout_env,
             ))
 
         if options.get('auto-watch', 'false').lower() == 'true':

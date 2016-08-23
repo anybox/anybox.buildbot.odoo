@@ -31,6 +31,7 @@ Changes
  - shortcut postgresql distribution of builds with the 'not-used'
    special version filter
  - new pg_remote_copy.timeout option, for the db subfactory
+ - new buildout.pip-exists-action option
 
 0.9 (2015-05-15)
 ----------------

@@ -228,3 +228,13 @@ Options of subfactories
 The format is extensible. Namely, each of the :ref:`subfactories
 <subfactories>` listed in ``post-buildout-steps`` and co can react to
 its own set of options.
+
+Minor options
+-------------
+
+- ``buildout.pip-exists-action`` (default: ``s``):
+
+  Some extensions and recipes make use of ``pip`` to fetch from a remote
+  VCS. This option specifies what to do instead of the interactive
+  prompt if the remote has changed. The possible values are those
+  that could be typed in an interactive session.

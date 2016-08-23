@@ -43,6 +43,29 @@ class TestBuilders(BaseTestCase):
 
         self.assertEquals(addons, 'stock,crm')
 
+    def test_pip_exists_action(self):
+        """The ``buildout.pip-exists-action`` option is passed in environ."""
+        self.configurator.make_dispatcher({})
+        self.configurator.register_build_factories(
+            self.data_join('manifest_1.cfg'))
+
+        factories = self.configurator.build_factories
+
+        def check_factory(name, action):
+            factory = factories.get(name)
+            self.assertIsNotNone(factory)
+            for step in factory.steps:
+                if step_name(step) == 'buildout':
+                    break
+            else:
+                self.fail(
+                    "Step 'buildout' not found in BuilderFactory %r" % name)
+
+            self.assertEqual(step.kwargs['env']['PIP_EXISTS_ACTION'], action)
+
+        check_factory('addons-list', 'w')  # explicit
+        check_factory('simple', 's')  # default value
+
     def test_cleanup_steps(self):
         """The ``addons-list`` builder factory installs given addons."""
         self.configurator.make_dispatcher({})
