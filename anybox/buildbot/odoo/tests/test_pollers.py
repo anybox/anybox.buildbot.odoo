@@ -15,7 +15,8 @@ class TestPollers(BaseTestCase):
         self.configurator.init_watch()
         pollers = self.configurator.make_pollers()
         self.assertEqual(len(pollers), 1)
-        self.assertEqual(pollers[0].repourl, 'https://github.com/odoo/odoo.git')
+        self.assertEqual(pollers[0].repourl,
+                         'https://github.com/odoo/odoo.git')
 
     def test_make_pollers_interval(self):
         """Test that the interval is passed to ``make_pollers()``."""

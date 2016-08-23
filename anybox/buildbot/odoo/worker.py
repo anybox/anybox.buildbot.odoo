@@ -8,7 +8,8 @@ def loggingNextWorker(builder, workers, brequest):
         try:
             log.msg("nextWorker, got %r " % (
                 [(sl.worker.workername,
-                  sl.worker.properties.getProperty('worker_priority', default=0))
+                  sl.worker.properties.getProperty(
+                      'worker_priority', default=0))
                  for sl in workers]))
         except:
             log.msg("Got workers, wrong logging")

@@ -172,8 +172,8 @@ class BuildoutsConfigurator(object):
                           :attr:`buildmaster_dir` and can of course be an
                           absolute path.
 
-        The configuration file is in INI format. There's one section per worker,
-        The section name is the worker name.
+        The configuration file is in INI format.
+        There's one section per worker, and its name is the worker name.
         The password must be specified as the ``password`` option.
 
         Other values either go to worker properties, unless they are from the
@@ -396,10 +396,12 @@ class BuildoutsConfigurator(object):
         buildout_pgcnx_options = [
             Interpolate(buildout_part +
                         ':options.db_port=%(prop:cap_postgresql_port:-5432)s'),
-            Interpolate(buildout_part +
-                        ':options.db_host=%(prop:cap_postgresql_host:-False)s'),
-            Interpolate(buildout_part +
-                        ':options.db_user=%(prop:cap_postgresql_user:-False)s'),
+            Interpolate(
+                buildout_part +
+                ':options.db_host=%(prop:cap_postgresql_host:-False)s'),
+            Interpolate(
+                buildout_part +
+                ':options.db_user=%(prop:cap_postgresql_user:-False)s'),
             Interpolate(buildout_part +
                         ':options.db_password='
                         '%(prop:cap_postgresql_passwd:-False)s'),

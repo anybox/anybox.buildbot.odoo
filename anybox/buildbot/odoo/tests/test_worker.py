@@ -33,7 +33,8 @@ class TestNextWorker(unittest.TestCase):
                              'med1', 'med2', 'med3',
                              ],
                             None,
-                            get_priority=fake_prio) in ('med1', 'med2', 'med3'))
+                            get_priority=fake_prio)
+                in ('med1', 'med2', 'med3'))
 
     def test_next_worker_one(self):
         next_worker = worker.priorityAwareNextWorker

@@ -58,7 +58,8 @@ class TestBuilders(BaseTestCase):
                 break
         else:
             self.fail(
-                "Step 'final_dropdb' not found in BuilderFactory 'addons-list'")
+                "Step 'final_dropdb' not found "
+                "in BuilderFactory 'addons-list'")
 
     def test_cleanup_steps_packaging(self):
         self.configurator.make_dispatcher({})
@@ -207,8 +208,9 @@ class TestBuilders(BaseTestCase):
         if we don't mention a capability in build-requires nor build-for,
         nowadays nothing happens
         """
-        builders = self.make_builders('workers_build_requires.cfg',
-                                      'manifest_build_requires_pg_not_used.cfg')
+        builders = self.make_builders(
+            'workers_build_requires.cfg',
+            'manifest_build_requires_pg_not_used.cfg')
 
         # in particular, the 'rabb-23' gave no builder
         self.assertEquals(builders.keys(), ['priv-pgall'])
@@ -311,7 +313,8 @@ class TestBuilders(BaseTestCase):
             environ={'PYTHONBIN': '%(cap(bin)-)s'})
 
         conf.make_workers(self.data_join('workers_capability.cfg'))
-        conf.register_build_factories(self.data_join('manifest_capability.cfg'))
+        conf.register_build_factories(self.data_join(
+            'manifest_capability.cfg'))
         builders = conf.make_builders()
 
         factory = builders[0].factory

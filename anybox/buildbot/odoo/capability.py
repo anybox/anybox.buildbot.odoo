@@ -2,7 +2,8 @@
 
 
 def parse_worker_declaration(value):
-    """Return a dict representing the contents of a whole worker declaration."""
+    """Return a dict representing the contents of a whole worker declaration.
+    """
     caps = {}
     for cap_line in value.splitlines():
         if not cap_line.strip():
