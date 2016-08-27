@@ -55,7 +55,8 @@ class TestBuilders(BaseTestCase):
                 break
         else:
             self.fail(
-                "Step 'final_dropdb' not found in BuilderFactory 'addons-list'")
+                "Step 'final_dropdb' not found "
+                "in BuilderFactory 'addons-list'")
 
     def test_cleanup_steps_packaging(self):
         self.configurator.register_build_factories(
