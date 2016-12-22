@@ -112,7 +112,10 @@ def read_sources(confpath, part):
     recipe = arobase.BaseRecipe(buildout, part, buildout[part])
     for target, (loc_type, loc, options) in recipe.sources.iteritems():
         if target is arobase.main_software:
-            target = recipe.openerp_dir
+            if hasattr(recipe, 'openerp_dir')
+                target = recipe.openerp_dir
+            else:
+                target = recipe.odoo_dir
         # vcs package is imported into aro.base
         vcs_cls = arobase.vcs.SUPPORTED.get(loc_type)
         if vcs_cls is None:  # probably not a VCS location at all
