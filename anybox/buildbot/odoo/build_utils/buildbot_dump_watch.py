@@ -112,7 +112,7 @@ def read_sources(confpath, part):
     recipe = arobase.BaseRecipe(buildout, part, buildout[part])
     for target, (loc_type, loc, options) in recipe.sources.iteritems():
         if target is arobase.main_software:
-            if hasattr(recipe, 'openerp_dir')
+            if hasattr(recipe, 'openerp_dir'):
                 target = recipe.openerp_dir
             else:
                 target = recipe.odoo_dir
