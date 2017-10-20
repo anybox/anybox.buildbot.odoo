@@ -20,3 +20,4 @@ doc/sphinx_build/
 COVERAGE/
 .coverage
 .noseids
+cover/

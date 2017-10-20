@@ -93,6 +93,7 @@ Author:
 Contributors:
 
  * Stéphane Bidoul (Acsone)
+ * Pierre Verkest (Anybox)
 
 .. note:: this project is currently in the process of being renamed to
           ``anybox.buildbot.odoo``.

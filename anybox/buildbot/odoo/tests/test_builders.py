@@ -92,10 +92,24 @@ class TestBuilders(BaseTestCase):
         factories = self.configurator.build_factories
         self.assertTrue('project-release' in factories)
         factory = factories['project-release']
+        # yes that's in reverse order
+        self.assertEqual(step_name(factory.steps[-2]), 'final_dropdb')
+        self.assertEqual(step_name(factory.steps[-1]), 'final_rm')
+        self.assertEqual(step_name(factory.steps[5]), 'hg')
+
+    def test_cleanup_steps_git_packaging(self):
+        self.configurator.make_dispatcher({})
+        self.configurator.register_build_factories(
+            self.data_join('manifest_git_packaging.cfg'))
+
+        factories = self.configurator.build_factories
+        self.assertTrue('project-release' in factories)
+        factory = factories['project-release']
 
         # yes that's in reverse order
         self.assertEqual(step_name(factory.steps[-2]), 'final_dropdb')
         self.assertEqual(step_name(factory.steps[-1]), 'final_rm')
+        self.assertEqual(step_name(factory.steps[5]), 'git')
 
     def test_default_section(self):
         """Test that a [DEFAULT] section in MANIFEST does not become a builder.

@@ -13,7 +13,8 @@ def noop(configurator, options, buildout_worker_path, environ=()):
 
 def packaging(configurator, options,
               buildout_worker_path, environ=()):
-    """Post download steps for packaging, meant for hg-versioned buildouts.
+    """Post download steps for packaging, meant for hg or git versioned
+    buildouts.
 
     Extraction is made from src/ to dist/, then the buildout dir is
     renamed as build/ to let the testing proceed.
@@ -41,6 +42,8 @@ def packaging(configurator, options,
     :packaging.parts: buildout parts to extract in the tarball.
     :packaging.base-url: URL corresponding to ``packaging.root-dir``, for
                          display in the waterfall.
+    :packaging.vcs: VCS in use to version the buildout file
+                    [hg|git] (default: hg)
     """
 
     options['auto-watch'] = 'false'
@@ -67,15 +70,31 @@ def packaging(configurator, options,
     odoo_cache = cache + '/odoo'
     archive_name_interp = (options['packaging.prefix'] +
                            '-%(prop:buildout-tag)s')
-
-    steps.append(
-        ShellCommand(
-            command=['hg', 'archive',
-                     Interpolate('../dist/' + archive_name_interp)],
-            name='hg',
-            description=["Archive", "buildout"],
-            haltOnFailure=True,
-            workdir='./src'))
+    if options.get('packaging.vcs', 'hg') == 'hg':
+        steps.append(
+            ShellCommand(
+                command=['hg', 'archive',
+                         Interpolate('../dist/' + archive_name_interp)],
+                name='hg',
+                description=["Archive", "buildout"],
+                haltOnFailure=True,
+                workdir='./src'
+            )
+        )
+    else:
+        steps.append(
+            ShellCommand(
+                command=['mkdir', '-p',
+                         Interpolate('../dist/' + archive_name_interp), ';',
+                         'git', 'archive', '--format=tar', 'HEAD', '|',
+                         'tar', '-xv', '-C',
+                         Interpolate('../dist/' + archive_name_interp)],
+                name='git',
+                description=["Archive", "buildout"],
+                haltOnFailure=True,
+                workdir='./src'
+            )
+        )
 
     parts = options.get('packaging.parts').split()
 
