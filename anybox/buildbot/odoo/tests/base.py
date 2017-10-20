@@ -23,7 +23,8 @@ class BaseTestCase(unittest.TestCase):
         return os.path.join(self.bm_dir, *path_segments)
 
     def populate(self, manifest, workers):
-        """Call configurator's populate w/ conf from workers and manifest files.
+        """Call configurator's populate w/ conf from workers and manifest
+        files.
 
         manifest and workers are file names in the data dir.
         This is almost like configurator.populate()

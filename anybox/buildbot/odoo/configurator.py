@@ -70,7 +70,8 @@ class BuildoutsConfigurator(object):
     :param workers_path: path to the configuration files describing workers.
     :param poll_interval: if specified, will be passed to
                           :meth:`the poller spawning method
-                          <anybox.buildbot.odoo.watch.MultiWatcher.make_pollers>`
+                          <anybox.buildbot.odoo.watch.MultiWatcher.
+                          make_pollers>`
     :param capabilities: if specified, replaces the class :attr:`capabilities`
                          attribute
     """
