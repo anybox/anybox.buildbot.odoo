@@ -167,6 +167,16 @@ class TestMultiWatcher(BaseTestCase):
             'http://mercurial.example/buildout': ('hg', ('somebranch',)),
             'http://mercurial.example/some/repo': ('hg', ('default',))})
 
+    def test_auto_git_buildout(self):
+        """A VCS-based buildout must be automatically watched."""
+        watcher = self.watcher(source='manifest_auto_watch.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('git_buildout')
+        self.assertIsNotNone(chf)
+        self.assertEquals(chf.interesting, {
+            'https://git.example/buildout': ('git', ('somebranch',)),
+            'https://git.example/some/repo': ('git', ('master',))})
+
     def test_auto_buildout_bzr_lp(self):
         """A VCS-based buildout must be automatically watched (bzr lp: case).
         """
@@ -199,6 +209,13 @@ class TestMultiWatcher(BaseTestCase):
         watcher = self.watcher(source='manifest_auto_watch.cfg')
         watcher.read_branches()
         chf = watcher.change_filter('hgtag_nowatch')
+        self.assertIsNone(chf)
+
+    def test_auto_git_buildout_inherit_no_watch(self):
+        """Explictely indication of empty watch means no watch at all"""
+        watcher = self.watcher(source='manifest_auto_watch.cfg')
+        watcher.read_branches()
+        chf = watcher.change_filter('gittag_nowatch')
         self.assertIsNone(chf)
 
     def write_separate_watch_conf(self, build_name, contents=None):
