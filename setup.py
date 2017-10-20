@@ -8,7 +8,8 @@ setup(
     version=version,
     author="Anybox SAS",
     author_email="gracinet@anybox.fr",
-    description="Buildbot setup for buildout based Odoo (formerly OpenERP) installations",
+    description="Buildbot setup for buildout based Odoo (formerly OpenERP)"
+                " installations",
     license="Affero GPLv3",
     long_description=open('README.rst').read() + open('CHANGES.rst').read(),
     url="http://pypi.python.org/pypi/anybox.buildbot.odoo",
