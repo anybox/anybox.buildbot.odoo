@@ -16,7 +16,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     namespace_packages=['anybox', 'anybox.buildbot'],
-    install_requires=['buildbot',
+    install_requires=['buildbot>=0.9',
                       'bzr',
                       'anybox.buildbot.capability',
                       ],
