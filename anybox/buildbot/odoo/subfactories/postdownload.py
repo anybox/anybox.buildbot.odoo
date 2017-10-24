@@ -4,6 +4,8 @@ from buildbot.plugins import steps
 
 Interpolate = util.Interpolate
 ShellCommand = steps.ShellCommand
+ShellSequence = steps.ShellSequence
+ShellArg = util.ShellArg
 MasterShellCommand = steps.MasterShellCommand
 
 
@@ -83,12 +85,36 @@ def packaging(configurator, options,
         )
     else:
         steps.append(
-            ShellCommand(
-                command=['mkdir', '-p',
-                         Interpolate('../dist/' + archive_name_interp), ';',
-                         'git', 'archive', '--format=tar', 'HEAD', '|',
-                         'tar', '-xv', '-C',
-                         Interpolate('../dist/' + archive_name_interp)],
+            ShellSequence(
+                commands=[
+                    ShellArg(
+                        command=[
+                            'mkdir', '-p',
+                            Interpolate('../dist/' + archive_name_interp),
+                        ]
+                    ),
+                    ShellArg(
+                        command=[
+                            'git', 'archive', '--format=tar',
+                            '-o', Interpolate(
+                                '../dist/' + archive_name_interp + '.tar'
+                            ),
+                            'HEAD',
+                        ],
+                        haltOnFailure=True
+                    ),
+                    ShellArg(
+                        command=[
+                            'tar', '-xf',
+                            Interpolate(
+                                '../dist/' + archive_name_interp + '.tar'
+                            ),
+                            '-C',
+                            Interpolate('../dist/' + archive_name_interp),
+                        ],
+                        haltOnFailure=True
+                    ),
+                ],
                 name='git',
                 description=["Archive", "buildout"],
                 haltOnFailure=True,
