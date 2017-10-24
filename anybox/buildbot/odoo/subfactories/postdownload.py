@@ -91,7 +91,8 @@ def packaging(configurator, options,
                         command=[
                             'mkdir', '-p',
                             Interpolate('../dist/' + archive_name_interp),
-                        ]
+                        ],
+                        logfile='make-dist-directory'
                     ),
                     ShellArg(
                         command=[
@@ -101,6 +102,7 @@ def packaging(configurator, options,
                             ),
                             'HEAD',
                         ],
+                        logfile='git-archive',
                         haltOnFailure=True
                     ),
                     ShellArg(
@@ -112,6 +114,7 @@ def packaging(configurator, options,
                             '-C',
                             Interpolate('../dist/' + archive_name_interp),
                         ],
+                        logfile='un-tar',
                         haltOnFailure=True
                     ),
                 ],
