@@ -105,7 +105,9 @@ class TestBuilders(BaseTestCase):
             step_name(factory.steps[1]), 'download_buildout_git_dl'
         )
         self.assertEqual(step_name(factory.steps[2]), 'retrieve_gittag')
-        self.assertEqual(step_name(factory.steps[6]), 'git')
+        self.assertEqual(step_name(factory.steps[6]), 'make-dist-directory')
+        self.assertEqual(step_name(factory.steps[7]), 'git-archive')
+        self.assertEqual(step_name(factory.steps[8]), 'un-tar')
 
     def test_hgtag_steps_packaging(self):
         self.configurator.make_dispatcher({})

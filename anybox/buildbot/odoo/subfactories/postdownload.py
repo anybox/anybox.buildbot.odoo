@@ -85,43 +85,46 @@ def packaging(configurator, options,
         )
     else:
         steps.append(
-            ShellSequence(
-                commands=[
-                    ShellArg(
-                        command=[
-                            'mkdir', '-p',
-                            Interpolate('../dist/' + archive_name_interp),
-                        ],
-                        logfile='make-dist-directory'
-                    ),
-                    ShellArg(
-                        command=[
-                            'git', 'archive', '--format=tar',
-                            '-o', Interpolate(
-                                '../dist/' + archive_name_interp + '.tar'
-                            ),
-                            'HEAD',
-                        ],
-                        logfile='git-archive',
-                        haltOnFailure=True
-                    ),
-                    ShellArg(
-                        command=[
-                            'tar', '-xf',
-                            Interpolate(
-                                '../dist/' + archive_name_interp + '.tar'
-                            ),
-                            '-C',
-                            Interpolate('../dist/' + archive_name_interp),
-                        ],
-                        logfile='un-tar',
-                        haltOnFailure=True
-                    ),
+            ShellCommand(
+                command=[
+                    'mkdir', '-p',
+                    Interpolate('../dist/' + archive_name_interp),
                 ],
-                name='git',
-                description=["Archive", "buildout"],
+                name='make-dist-directory',
+                description=["Create", "dist", "directory"],
                 haltOnFailure=True,
-                workdir='./src'
+                workdir='./src',
+            )
+        )
+        steps.append(
+            ShellCommand(
+                command=[
+                    'git', 'archive', '--format=tar',
+                    '-o', Interpolate(
+                        '../dist/' + archive_name_interp + '.tar'
+                    ),
+                    'HEAD',
+                ],
+                name='git-archive',
+                description=["Archive", "git", "project"],
+                haltOnFailure=True,
+                workdir='./src',
+            )
+        )
+        steps.append(
+            ShellCommand(
+                command=[
+                    'tar', '-xf',
+                    Interpolate(
+                        '../dist/' + archive_name_interp + '.tar'
+                    ),
+                    '-C',
+                    Interpolate('../dist/' + archive_name_interp),
+                ],
+                name='un-tar',
+                haltOnFailure=True,
+                workdir='./src',
+                description=["Untar", "git", "archive"],
             )
         )
 
