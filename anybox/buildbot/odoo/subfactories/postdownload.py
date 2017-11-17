@@ -194,4 +194,5 @@ def packaging_cleanup(configurator, options, environ=()):
                          workdir='.'),
             ]
 
+
 packaging.final_cleanup_steps = packaging_cleanup
