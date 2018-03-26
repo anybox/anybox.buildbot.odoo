@@ -4,6 +4,7 @@ Changes
 1.0 (unreleased)
 ----------------
 
+ - Support git project
  - GitHub #1: auto-watch
  - Pluggable system for final cleanups, used for space savings by
    doing the startup cleanups at the end of build : drop database,

@@ -84,7 +84,32 @@ class TestBuilders(BaseTestCase):
                 "Step 'final_dropdb' not found "
                 "in BuilderFactory 'addons-list'")
 
-    def test_cleanup_steps_packaging(self):
+    def test_gittag_setting_error_missing_cfg(self):
+        self.configurator.make_dispatcher({})
+        self.assertRaises(
+            ValueError,
+            self.configurator.register_build_factories,
+            self.data_join('manifest_git_packaging_setting_error.cfg')
+        )
+
+    def test_gittag_steps_packaging(self):
+        self.configurator.make_dispatcher({})
+        self.configurator.register_build_factories(
+            self.data_join('manifest_git_packaging.cfg'))
+
+        factories = self.configurator.build_factories
+        self.assertTrue('project-release' in factories)
+        factory = factories['project-release']
+
+        self.assertEqual(
+            step_name(factory.steps[1]), 'download_buildout_git_dl'
+        )
+        self.assertEqual(step_name(factory.steps[2]), 'retrieve_gittag')
+        self.assertEqual(step_name(factory.steps[6]), 'make-dist-directory')
+        self.assertEqual(step_name(factory.steps[7]), 'git-archive')
+        self.assertEqual(step_name(factory.steps[8]), 'un-tar')
+
+    def test_hgtag_steps_packaging(self):
         self.configurator.make_dispatcher({})
         self.configurator.register_build_factories(
             self.data_join('manifest_packaging.cfg'))
@@ -93,6 +118,20 @@ class TestBuilders(BaseTestCase):
         self.assertTrue('project-release' in factories)
         factory = factories['project-release']
 
+        self.assertEqual(
+            step_name(factory.steps[1]), 'download_buildout_hg_dl'
+        )
+        self.assertEqual(step_name(factory.steps[2]), 'retrieve_hgag')
+        self.assertEqual(step_name(factory.steps[6]), 'hg')
+
+    def test_cleanup_steps_packaging(self):
+        self.configurator.make_dispatcher({})
+        self.configurator.register_build_factories(
+            self.data_join('manifest_packaging.cfg'))
+
+        factories = self.configurator.build_factories
+        self.assertTrue('project-release' in factories)
+        factory = factories['project-release']
         # yes that's in reverse order
         self.assertEqual(step_name(factory.steps[-2]), 'final_dropdb')
         self.assertEqual(step_name(factory.steps[-1]), 'final_rm')

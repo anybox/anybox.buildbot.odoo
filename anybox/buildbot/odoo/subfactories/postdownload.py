@@ -4,6 +4,8 @@ from buildbot.plugins import steps
 
 Interpolate = util.Interpolate
 ShellCommand = steps.ShellCommand
+ShellSequence = steps.ShellSequence
+ShellArg = util.ShellArg
 MasterShellCommand = steps.MasterShellCommand
 
 
@@ -13,7 +15,8 @@ def noop(configurator, options, buildout_worker_path, environ=()):
 
 def packaging(configurator, options,
               buildout_worker_path, environ=()):
-    """Post download steps for packaging, meant for hg-versioned buildouts.
+    """Post download steps for packaging, meant for hg or git versioned
+    buildouts.
 
     Extraction is made from src/ to dist/, then the buildout dir is
     renamed as build/ to let the testing proceed.
@@ -41,6 +44,8 @@ def packaging(configurator, options,
     :packaging.parts: buildout parts to extract in the tarball.
     :packaging.base-url: URL corresponding to ``packaging.root-dir``, for
                          display in the waterfall.
+    :packaging.vcs: VCS in use to version the buildout file
+                    [hg|git] (default: hg)
     """
 
     options['auto-watch'] = 'false'
@@ -67,15 +72,61 @@ def packaging(configurator, options,
     odoo_cache = cache + '/odoo'
     archive_name_interp = (options['packaging.prefix'] +
                            '-%(prop:buildout-tag)s')
-
-    steps.append(
-        ShellCommand(
-            command=['hg', 'archive',
-                     Interpolate('../dist/' + archive_name_interp)],
-            name='hg',
-            description=["Archive", "buildout"],
-            haltOnFailure=True,
-            workdir='./src'))
+    if options.get('packaging.vcs', 'hg') == 'hg':
+        steps.append(
+            ShellCommand(
+                command=['hg', 'archive',
+                         Interpolate('../dist/' + archive_name_interp)],
+                name='hg',
+                description=["Archive", "buildout"],
+                haltOnFailure=True,
+                workdir='./src'
+            )
+        )
+    else:
+        steps.append(
+            ShellCommand(
+                command=[
+                    'mkdir', '-p',
+                    Interpolate('../dist/' + archive_name_interp),
+                ],
+                name='make-dist-directory',
+                description=["Create", "dist", "directory"],
+                haltOnFailure=True,
+                workdir='./src',
+            )
+        )
+        steps.append(
+            ShellCommand(
+                command=[
+                    'git', 'archive', '--format=tar',
+                    '-o', Interpolate(
+                        '../dist/' + archive_name_interp + '.tar'
+                    ),
+                    'HEAD',
+                ],
+                name='git-archive',
+                description=["Archive", "git", "project"],
+                haltOnFailure=True,
+                workdir='./src',
+            )
+        )
+        steps.append(
+            ShellCommand(
+                command=[
+                    'tar', '-xf',
+                    Interpolate(
+                        '../dist/' + archive_name_interp + '.tar'
+                    ),
+                    '-C',
+                    Interpolate('../dist/' + archive_name_interp),
+                ],
+                name='un-tar',
+                haltOnFailure=True,
+                workdir='./src',
+                description=["Untar", "git", "archive"],
+            )
+        )
 
     parts = options.get('packaging.parts').split()
 
@@ -142,5 +193,6 @@ def packaging_cleanup(configurator, options, environ=()):
                          flunkOnFailure=False,
                          workdir='.'),
             ]
+
 
 packaging.final_cleanup_steps = packaging_cleanup

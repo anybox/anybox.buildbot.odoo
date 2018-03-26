@@ -210,12 +210,52 @@ def hg_tag_buildout(self, options, cfg_tokens, manifest_dir):
             mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_hg_dl.py'),
             workerdest='buildout_hg_dl.py',
             workdir='src',
-            haltOnFailure=True),
+            haltOnFailure=True,
+            name="download_buildout_hg_dl",
+        ),
         ShellCommand(
             command=['python', 'buildout_hg_dl.py', '-t', 'tag', url, tag],
             workdir='./src',
             description=("Retrieve buildout", "tag", tag, "from hg",),
             haltOnFailure=True,
+            name="retrieve_hgag",
+        )
+    )
+
+
+def git_tag_buildout(self, options, cfg_tokens, manifest_dir):
+    """Steps to retrieve the buildout dir as a Git tag.
+
+    Useful for release/packaging oriented builds.
+    The tag name is read from build properties.
+    The clone is made outside of the main build/ directory, that must
+    stay pristine to test the produced packages.
+
+    See module docstring for signature and return values.
+    """
+
+    if len(cfg_tokens) != 2:
+        raise ValueError(
+            "Wrong gittag buildout specification: %r" % cfg_tokens)
+
+    url, conf_path = cfg_tokens
+    tag = Property('buildout-tag')
+    return conf_path, (
+        FileDownload(
+            mastersrc=os.path.join(BUILD_UTILS_PATH, 'buildout_git_dl.py'),
+            workerdest='buildout_git_dl.py',
+            workdir='.',
+            haltOnFailure=True,
+            name="download_buildout_git_dl",
+        ),
+        ShellCommand(
+            command=[
+                'python', 'buildout_git_dl.py', '--tag', url, tag, "./src"
+            ],
+            workdir='.',
+            description=("Retrieve buildout", "tag", tag, "from git",),
+            haltOnFailure=True,
+            name="retrieve_gittag",
         )
     )
 

@@ -9,6 +9,7 @@ buildout_download = dict(standalone=download.standalone_buildout,
                          bzr=download.bzr_buildout,
                          hg=download.hg_buildout,
                          git=download.git_buildout,
+                         gittag=download.git_tag_buildout,
                          archive=download.archive_buildout,
                          )
 

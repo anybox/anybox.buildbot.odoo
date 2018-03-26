@@ -110,7 +110,12 @@ def read_sources(confpath, part):
     # one) bzr. But we don't really need the latter. Actually we are better
     # off with our FakeLaunchpadDirectory
     recipe = arobase.BaseRecipe(buildout, part, buildout[part])
-    for target, (loc_type, loc, options) in recipe.sources.iteritems():
+    for target, values in recipe.sources.iteritems():
+        if len(values) == 3:
+            (loc_type, loc, options) = values
+        else:
+            (loc_type, loc) = values
+            options = {}
         if target is arobase.main_software:
             if hasattr(recipe, 'openerp_dir'):
                 target = recipe.openerp_dir
