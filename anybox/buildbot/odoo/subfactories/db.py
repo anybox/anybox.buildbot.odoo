@@ -28,6 +28,21 @@ def simple_create(configurator, options, environ=()):
         env=environ,
         haltOnFailure=True,
     ))
+    steps.append(ShellCommand(
+        command=[
+            'psql', 'postgres', '-d', '{}'.format(Property('testing_db')), '-c',
+            WithProperties(
+                "INSERT INTO ir_mail_server "
+                "(smtp_host, smtp_port, name, smtp_encryption) VALUES "
+                "('disabled.test', 25, "
+                "'Disabled (adresses in .test are unroutable)', 'none'"
+            ),
+        ],
+        name='create_disabled_outgoing_mail_server',
+        description=["create_disabled_outgoing_mail_server", Property('testing_db')],
+        env=environ,
+        haltOnFailure=True,
+    ))
     return steps
 
 
