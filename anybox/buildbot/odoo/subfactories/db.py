@@ -28,6 +28,7 @@ def simple_create(configurator, options, environ=()):
         env=environ,
         haltOnFailure=True,
     ))
+    """
     steps.append(ShellCommand(
         command=[
             'psql', 'postgres', '-d', '%s' % (Property('testing_db')), '-c',
@@ -43,6 +44,7 @@ def simple_create(configurator, options, environ=()):
         env=environ,
         haltOnFailure=True,
     ))
+    """
     return steps
 
 
