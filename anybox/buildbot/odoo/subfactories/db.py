@@ -30,7 +30,7 @@ def simple_create(configurator, options, environ=()):
     ))
     steps.append(ShellCommand(
         command=[
-            'psql', 'postgres', '-d', "%(testing_db)s", '-c',
+            'psql', 'postgres', '-d', '%s' % (testing_db), '-c',
             WithProperties(
                 "INSERT INTO ir_mail_server "
                 "(smtp_host, smtp_port, name, smtp_encryption) VALUES "
