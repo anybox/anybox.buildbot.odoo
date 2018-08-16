@@ -28,11 +28,11 @@ def simple_create(configurator, options, environ=()):
         env=environ,
         haltOnFailure=True,
     ))
-    """
     steps.append(ShellCommand(
         command=[
-            'psql', 'postgres', '-d', '%s' % (Property('testing_db')), '-c',
+            'psql', 'postgres',
             WithProperties(
+                "-d \"%%(testing_db)s\" -c "
                 "INSERT INTO ir_mail_server "
                 "(smtp_host, smtp_port, name, smtp_encryption) VALUES "
                 "('disabled.test', 25, "
@@ -44,7 +44,6 @@ def simple_create(configurator, options, environ=()):
         env=environ,
         haltOnFailure=True,
     ))
-    """
     return steps
 
 
