@@ -30,14 +30,11 @@ def simple_create(configurator, options, environ=()):
     ))
     steps.append(ShellCommand(
         command=[
-            'psql',
-            WithProperties(
-                '-d %(testing_db)s -c '
-                'INSERT INTO ir_mail_server '
-                '(smtp_host, smtp_port, name, smtp_encryption) VALUES '
-                '("disabled.test", 25, '
-                '"Disabled (adresses in .test are unroutable)", "none"'
-            ),
+            'psql', '-d', WithProperties('%(testing_db)s'), '-c',
+            'INSERT INTO ir_mail_server '
+            '(smtp_host, smtp_port, name, smtp_encryption) VALUES '
+            '("disabled.test", 25, '
+            '"Disabled (adresses in .test are unroutable)", "none"'
         ],
         name='create_disabled_outgoing_mail_server',
         description=["create_disabled_outgoing_mail_server", Property('testing_db')],
