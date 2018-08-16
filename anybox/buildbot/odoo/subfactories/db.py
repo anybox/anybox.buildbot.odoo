@@ -32,7 +32,7 @@ def simple_create(configurator, options, environ=()):
         command=[
             'psql', 'postgres',
             WithProperties(
-                '-d "%%(testing_db)s" -c '
+                '-d %(testing_db)s -c '
                 'INSERT INTO ir_mail_server '
                 '(smtp_host, smtp_port, name, smtp_encryption) VALUES '
                 '("disabled.test", 25, '
