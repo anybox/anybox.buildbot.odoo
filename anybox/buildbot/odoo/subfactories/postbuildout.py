@@ -335,6 +335,20 @@ def install_modules_nose(configurator, options, buildout_worker_path,
         descriptionDone="checked install log",
     ))
 
+    steps.append(ShellCommand(
+        command=[
+            'psql', '-d', WithProperties('%(testing_db)s'), '-c',
+            "INSERT INTO ir_mail_server "
+            "(smtp_host, smtp_port, name, smtp_encryption) VALUES "
+            "('disabled.test', 25, "
+            "'Disabled (adresses in .test are unroutable)', 'none')"
+        ],
+        name='create_disabled_outgoing_mail_server',
+        description=["create_disabled_outgoing_mail_server", Property('testing_db')],
+        env=environ,
+        haltOnFailure=True,
+    ))
+
     addons = addons.split(',')
     nose_output_dir = 'nose_output'
     nose_cmd = ["bin/nosetests", "-v"]
