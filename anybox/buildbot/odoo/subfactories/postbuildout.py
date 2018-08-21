@@ -337,7 +337,7 @@ def install_modules_nose(configurator, options, buildout_worker_path,
 
     steps.append(ShellCommand(
         command=[
-            'psql', '-d', WithProperties('%s(testing_db)s'), '-c',
+            'psql', '-d', WithProperties('%(testing_db)s'), '-c',
             "DELETE FROM ir_mail_server"
         ],
         name='delete_outgoing_mail_server',
