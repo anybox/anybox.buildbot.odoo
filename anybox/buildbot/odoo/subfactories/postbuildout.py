@@ -337,6 +337,17 @@ def install_modules_nose(configurator, options, buildout_worker_path,
 
     steps.append(ShellCommand(
         command=[
+            'psql', '-d', WithProperties('%s(testing_db)s'), '-c',
+            "DELETE FROM ir_mail_server"
+        ],
+        name='delete_outgoing_mail_server'
+        description=["delete_outgoing_mail_server", Property('testing_db')],
+        env=environ,
+        haltOnFailure=True,
+    ))
+
+    steps.append(ShellCommand(
+        command=[
             'psql', '-d', WithProperties('%(testing_db)s'), '-c',
             "INSERT INTO ir_mail_server "
             "(smtp_host, smtp_port, name, smtp_encryption) VALUES "
