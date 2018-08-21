@@ -340,7 +340,7 @@ def install_modules_nose(configurator, options, buildout_worker_path,
             'psql', '-d', WithProperties('%s(testing_db)s'), '-c',
             "DELETE FROM ir_mail_server"
         ],
-        name='delete_outgoing_mail_server'
+        name='delete_outgoing_mail_server',
         description=["delete_outgoing_mail_server", Property('testing_db')],
         env=environ,
         haltOnFailure=True,
