@@ -82,6 +82,9 @@ class BuildoutsConfigurator(object):
         python=dict(version_prop='py_version',
                     abbrev='py',
                     environ={}),
+        python3=dict(version_pro='py3_version',
+                     abbrev='py3',
+                     environ={}),
         postgresql=dict(version_prop='pg_version',
                         abbrev='pg',
                         environ={'PGPORT': '%(cap(port):-)s',
@@ -243,7 +246,12 @@ class BuildoutsConfigurator(object):
                         change workdir in packaging step.
         """
         boot_opts = {}
-        if options.get('virtualenv', 'true').strip().lower() == 'true':
+        if options.get('virtualenv3', 'false').strip().lower() == 'true':
+            boot_opts['--python'] = Interpolate(
+                '%(prop:cap_python3_venv:-~/odoo-env3)s'
+                '/bin/python'
+            )
+        elif options.get('virtualenv', 'true').strip().lower() == 'true':
             boot_opts['--python'] = Interpolate(
                 '%(prop:cap_python_venv:-~/odoo-env)s'
                 '/bin/python')
