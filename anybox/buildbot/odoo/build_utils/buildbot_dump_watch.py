@@ -110,26 +110,48 @@ def read_sources(confpath, part):
     # one) bzr. But we don't really need the latter. Actually we are better
     # off with our FakeLaunchpadDirectory
     recipe = arobase.BaseRecipe(buildout, part, buildout[part])
-    for target, values in recipe.sources.iteritems():
-        if len(values) == 3:
-            (loc_type, loc, options) = values
-        else:
-            (loc_type, loc) = values
-            options = {}
-        if target is arobase.main_software:
-            if hasattr(recipe, 'openerp_dir'):
-                target = recipe.openerp_dir
+    if sys.version_info[0] >= 3:
+        for target, values in recipe.sources.items():
+            if len(values) == 3:
+                (loc_type, loc, options) = values
             else:
-                target = recipe.odoo_dir
-        # vcs package is imported into aro.base
-        vcs_cls = arobase.vcs.SUPPORTED.get(loc_type)
-        if vcs_cls is None:  # probably not a VCS location at all
-            continue
-        url, rev = loc
-        target = fix_standalone_magic(vcs_cls, target)
-        repo = vcs_cls(target, url, options)
-        if repo.buildbot_to_watch(rev):
-            yield loc_type, url, rev
+                (loc_type, loc) = values
+                options = {}
+            if target is arobase.main_software:
+                if hasattr(recipe, 'openerp_dir'):
+                    target = recipe.openerp_dir
+                else:
+                    target = recipe.odoo_dir
+            # vcs package is imported into aro.base
+            vcs_cls = arobase.vcs.SUPPORTED.get(loc_type)
+            if vcs_cls is None:  # probably not a VCS location at all
+                continue
+            url, rev = loc
+            target = fix_standalone_magic(vcs_cls, target)
+            repo = vcs_cls(target, url, options)
+            if repo.buildbot_to_watch(rev):
+                yield loc_type, url, rev
+    else:
+	for target, values in recipe.sources.iteritems():
+            if len(values) == 3:
+                (loc_type, loc, options) = values
+            else:
+                (loc_type, loc) = values
+                options = {}
+            if target is arobase.main_software:
+                if hasattr(recipe, 'openerp_dir'):
+                    target = recipe.openerp_dir
+                else:
+                    target = recipe.odoo_dir
+            # vcs package is imported into aro.base
+            vcs_cls = arobase.vcs.SUPPORTED.get(loc_type)
+            if vcs_cls is None:  # probably not a VCS location at all
+                continue
+            url, rev = loc
+            target = fix_standalone_magic(vcs_cls, target)
+            repo = vcs_cls(target, url, options)
+            if repo.buildbot_to_watch(rev):
+                yield loc_type, url, rev
 
 
 def main():
