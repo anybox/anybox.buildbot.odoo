@@ -132,7 +132,7 @@ def read_sources(confpath, part):
             if repo.buildbot_to_watch(rev):
                 yield loc_type, url, rev
     else:
-	for target, values in recipe.sources.iteritems():
+        for target, values in recipe.sources.iteritems():
             if len(values) == 3:
                 (loc_type, loc, options) = values
             else:
