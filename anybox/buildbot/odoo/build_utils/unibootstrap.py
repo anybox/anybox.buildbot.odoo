@@ -171,7 +171,7 @@ def guess_versions(buildout_version, python_version=None):
     elif bv_tuple < (2, 3, 0):
         setuptools_req = ('setuptools', '==3.3')  # improve
     else:
-        setuptools_req = ('setuptools', '==18.3.2')  # improve
+        setuptools_req = ('setuptools', '==43.0.0')  # improve
     return (buildout_rhs, ) + setuptools_req
 
 # it is deliberate that the imports are after ``guess_versions()``, stressing
